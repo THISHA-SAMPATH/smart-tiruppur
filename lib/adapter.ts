@@ -15,6 +15,7 @@ import type {
   ContractEvent,
   Decision,
   HariSimulateEventResponse,
+  LedgerEntry,
   TopCandidate,
 } from "./types";
 
@@ -53,7 +54,7 @@ function normalizeDecision(raw: "INVESTIGATE" | "ABSTAIN"): Decision {
 
 function estimateSeverity(
   confidence: number | undefined,
-  decision: Decision
+  decision: Decision,
 ): ContractEvent["estimated_release_severity"] {
   if (decision !== "investigate" || confidence == null) return null;
   if (confidence >= 0.75) return "high";
@@ -61,13 +62,28 @@ function estimateSeverity(
   return "low";
 }
 
+/** Normalise both known API versions into the dashboard candidate shape. */
+function getTopCandidates(raw: HariSimulateEventResponse): TopCandidate[] {
+  const entries = Array.isArray(raw.posterior_top3)
+    ? raw.posterior_top3.map(({ unit, probability }) => [unit, probability] as const)
+    : Object.entries(raw.posterior_top3);
+
+  return entries
+    .filter(([, probability]) => typeof probability === "number")
+    .sort(([, left], [, right]) => right - left)
+    .map(([unit, probability]) => ({
+      unit_id: toLedgerUnitId(unit),
+      probability,
+    }));
+}
+
 function buildExplanation(
   raw: HariSimulateEventResponse,
   decision: Decision,
-  topUnitLedgerId: string | null
+  topUnitLedgerId: string | null,
 ): string {
   if (decision === "investigate" && topUnitLedgerId) {
-    const top = raw.posterior_top3[0];
+    const top = getTopCandidates(raw)[0];
     const pct = top ? Math.round(top.probability * 100) : null;
     return pct != null
       ? `Sensor pattern is most consistent with a release from ${topUnitLedgerId} (${pct}% posterior probability).`
@@ -84,15 +100,12 @@ function buildExplanation(
  */
 export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
   const decision = normalizeDecision(raw.decision.decision);
-  const topCandidates: TopCandidate[] = raw.posterior_top3.map((c) => ({
-    unit_id: toLedgerUnitId(c.unit),
-    probability: c.probability,
-  }));
+  const topCandidates = getTopCandidates(raw);
 
   const mostLikelySource =
     decision === "investigate" && raw.decision.unit
       ? toLedgerUnitId(raw.decision.unit)
-      : topCandidates[0]?.unit_id ?? null;
+      : (topCandidates[0]?.unit_id ?? null);
 
   const confidence =
     raw.decision.confidence ?? topCandidates[0]?.probability ?? 0;
@@ -108,7 +121,10 @@ export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
       ? topCandidates[0].probability - topCandidates[1].probability
       : 1;
   const evidenceSufficiency: ContractEvent["evidence_sufficiency"] =
-    decision === "abstain" || confidence < 0.55 || gap < 0.15 || missingCount > 1
+    decision === "abstain" ||
+    confidence < 0.55 ||
+    gap < 0.15 ||
+    missingCount > 1
       ? "insufficient"
       : "adequate";
 
@@ -119,7 +135,9 @@ export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
     decision,
     most_likely_source: mostLikelySource,
     source_probability:
-      decision === "investigate" ? confidence : topCandidates[0]?.probability ?? null,
+      decision === "investigate"
+        ? confidence
+        : (topCandidates[0]?.probability ?? null),
     top_candidates: topCandidates,
     estimated_release_severity: estimateSeverity(confidence, decision),
     confidence,
@@ -131,5 +149,41 @@ export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
     explanation: buildExplanation(raw, decision, mostLikelySource),
     model_version: "haripriya-inference-v1 (adapted)",
     source: "adapter",
+  };
+}
+
+/**
+ * Vamika's ledger stores (and returns from GET /ledger/events and
+ * GET /units/{id}/ledger) a simpler record than the full ContractEvent
+ * shape — no sensor_conditions, top_candidates, explanation, etc. This
+ * fills in safe defaults for whatever her stored record doesn't carry, so
+ * every ContractEvent the UI touches is always a complete, safe-to-render
+ * object regardless of which service it came from.
+ */
+export function mapLedgerEntryToContractEvent(
+  entry: LedgerEntry,
+): ContractEvent {
+  const decision = (entry.decision?.toLowerCase() as Decision) || "abstain";
+  return {
+    event_id: entry.event_id,
+    timestamp: entry.timestamp,
+    status: decision === "investigate" ? "flagged" : "normal",
+    decision,
+    most_likely_source: decision === "investigate" ? entry.unit_id : null,
+    source_probability: decision === "investigate" ? entry.confidence : null,
+    top_candidates: [],
+    estimated_release_severity: null,
+    confidence: entry.confidence ?? 0,
+    evidence_sufficiency: decision === "abstain" ? "insufficient" : "adequate",
+    sensor_conditions: {
+      missing_sensor_count: 0,
+      drift_detected: false,
+    },
+    explanation:
+      decision === "investigate"
+        ? `Recorded event for ${entry.unit_id}.`
+        : "Recorded as abstain — insufficient evidence.",
+    model_version: entry.model_version,
+    source: "ledger",
   };
 }

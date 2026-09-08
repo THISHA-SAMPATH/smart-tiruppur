@@ -65,8 +65,22 @@ export interface LedgerEntry {
 
 export interface UnitLedgerResponse {
   unit_id: string;
-  entries: LedgerEntry[];
-  chain_valid: boolean;
+  unit_name?: string;
+  latest_decision?: string | null;
+  latest_confidence?: number | null;
+  chain: LedgerBlock[];
+  valid: boolean;
+  invalid_reason?: string | null;
+}
+
+export interface LedgerBlock {
+  block_index: number;
+  timestamp: string;
+  block_type: string;
+  event_id: string | null;
+  data: Record<string, unknown>;
+  prev_hash: string;
+  hash: string;
 }
 
 export interface DppResponse {
@@ -81,6 +95,23 @@ export interface DppResponse {
     status: string;
     last_event_id: string | null;
     confidence: number | null;
+  };
+  issue_date: string;
+  verification_id: string;
+  qr_url: string;
+}
+
+/** Actual shape returned by the ledger service's GET /units/{id}/dpp. */
+export interface LedgerDppResponse {
+  unit: LedgerUnit;
+  compliance_summary: {
+    cetp_zld_status: string;
+    compliance_status: string;
+    certifications: string[];
+  };
+  environmental_evidence: {
+    status: string;
+    latest_confidence: number | null;
   };
   issue_date: string;
   verification_id: string;
@@ -122,7 +153,9 @@ export interface HariSensorHealth {
 
 export interface HariSimulateEventResponse {
   event_id: string;
-  posterior_top3: HariPosteriorEntry[];
+  // The running inference API returns this as a unit-to-probability object,
+  // while earlier versions returned an array of entries.
+  posterior_top3: HariPosteriorEntry[] | Record<string, number>;
   decision: HariDecision;
   sensor_health: HariSensorHealth;
 }

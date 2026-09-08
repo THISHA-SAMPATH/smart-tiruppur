@@ -5,5 +5,6 @@
 export const LEDGER_BASE_URL =
   process.env.NEXT_PUBLIC_LEDGER_BASE_URL || "http://localhost:8000";
 
-export const INFERENCE_BASE_URL =
-  process.env.NEXT_PUBLIC_INFERENCE_BASE_URL || "http://localhost:8001";
+// Browser requests use Next's same-origin proxy. This avoids requiring the
+// separately-run inference service to implement CORS for the dashboard.
+export const INFERENCE_BASE_URL = "/api/inference";

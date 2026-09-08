@@ -36,6 +36,13 @@ export default function UnitDetailPage() {
     });
   }, [unitId]);
 
+  // Ledger responses always include a genesis block. Only blocks with an
+  // event id represent evidence, and the array guard keeps a bad response
+  // from taking down the page.
+  const ledgerEntries = Array.isArray(chain?.chain)
+    ? chain.chain.filter((block) => block.event_id)
+    : [];
+
   return (
     <div>
       <p className="small muted" style={{ marginBottom: 4 }}>
@@ -106,12 +113,12 @@ export default function UnitDetailPage() {
 
       <section>
         <h3 style={{ fontSize: 16, marginBottom: 10 }}>
-          Evidence ledger {chain && (chain.chain_valid ? "(chain verified)" : "(⚠ chain broken)")}
+          Evidence ledger {chain && (chain.valid ? "(chain verified)" : "(⚠ chain broken)")}
         </h3>
         {chainMeta.stale && (
           <StaleBanner serviceName="Ledger service" fetchedAt={chainMeta.fetchedAt} error={chainMeta.error} />
         )}
-        {chain && chain.entries.length > 0 ? (
+        {ledgerEntries.length > 0 ? (
           <table>
             <thead>
               <tr>
@@ -123,15 +130,29 @@ export default function UnitDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {chain.entries.map((e) => (
-                <tr key={e.event_id}>
-                  <td className="mono">{e.event_id}</td>
-                  <td>{new Date(e.timestamp).toLocaleString()}</td>
-                  <td>{e.decision}</td>
-                  <td>{(e.confidence * 100).toFixed(0)}%</td>
-                  <td className="mono small muted">{e.current_hash.slice(0, 10)}…</td>
-                </tr>
-              ))}
+              {ledgerEntries.map((e) => {
+                const decision =
+                  typeof e.data.decision === "string"
+                    ? e.data.decision
+                    : e.block_type;
+                const confidence =
+                  typeof e.data.confidence === "number"
+                    ? e.data.confidence
+                    : null;
+                return (
+                  <tr key={e.event_id}>
+                    <td className="mono">{e.event_id}</td>
+                    <td>{new Date(e.timestamp).toLocaleString()}</td>
+                    <td>{decision}</td>
+                    <td>
+                      {confidence != null
+                        ? `${(confidence * 100).toFixed(0)}%`
+                        : "—"}
+                    </td>
+                    <td className="mono small muted">{e.hash.slice(0, 10)}…</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         ) : (
