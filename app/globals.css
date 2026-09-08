@@ -1,0 +1,225 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+:root {
+  /* Paper + ink — civic report, not SaaS card */
+  --paper: #eee9dc;
+  --paper-raised: #f6f3ea;
+  --ink: #1f2a24;
+  --ink-soft: #4b5850;
+  --hairline: #d8d0bc;
+
+  /* Dye vernacular — Tiruppur is a textile-dyeing town; the three
+     statuses borrow from indigo, madder root and turmeric dye rather
+     than generic traffic-light red/amber/green. */
+  --indigo: #2b3a67;
+  --indigo-soft: #e4e7f0;
+  --madder: #9c3b22;
+  --madder-soft: #f3e2da;
+  --turmeric: #a8721c;
+  --turmeric-soft: #f2e8d3;
+  --teal: #3e6b63;
+
+  --radius-sm: 3px;
+  --radius-md: 6px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Fraunces", ui-serif, Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+code,
+.mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.shell {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+.card {
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+}
+
+.hairline {
+  border: none;
+  border-top: 1px solid var(--hairline);
+  margin: 20px 0;
+}
+
+.muted {
+  color: var(--ink-soft);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.badge-investigate {
+  background: var(--madder-soft);
+  color: var(--madder);
+}
+.badge-investigate .badge-dot {
+  background: var(--madder);
+}
+
+.badge-abstain {
+  background: var(--turmeric-soft);
+  color: var(--turmeric);
+}
+.badge-abstain .badge-dot {
+  background: var(--turmeric);
+}
+
+.badge-normal {
+  background: var(--indigo-soft);
+  color: var(--indigo);
+}
+.badge-normal .badge-dot {
+  background: var(--indigo);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+}
+
+.stale-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--turmeric-soft);
+  color: var(--turmeric);
+  border: 1px solid var(--turmeric);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.error-banner {
+  background: var(--madder-soft);
+  color: var(--madder);
+  border: 1px solid var(--madder);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+nav.topnav {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+nav.topnav .links {
+  display: flex;
+  gap: 22px;
+  font-size: 14px;
+}
+
+nav.topnav .links a {
+  text-decoration: none;
+  color: var(--ink-soft);
+  padding-bottom: 3px;
+}
+
+nav.topnav .links a.active {
+  color: var(--ink);
+  border-bottom: 2px solid var(--indigo);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+th {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
