@@ -23,9 +23,15 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const user = token ? await verifySessionToken(token) : null;
 
-  // 1. Unauthenticated users trying to access login or verify page can proceed
+  // 1. Unauthenticated users trying to access public pages can proceed
   if (!user) {
-    if (pathname === "/login" || pathname.startsWith("/verify")) {
+    if (
+      pathname === "/login" ||
+      pathname === "/about" ||
+      pathname === "/map" ||
+      pathname === "/" ||
+      pathname.startsWith("/verify")
+    ) {
       return NextResponse.next();
     }
     // Any other protected route redirects to login
