@@ -30,8 +30,6 @@ export interface ContractEvent {
   };
   explanation: string;
   model_version: string;
-  // true if this event was translated from Haripriya's raw shape rather
-  // than read directly from the ledger's own stored records.
   source: "ledger" | "adapter";
 }
 
@@ -65,22 +63,8 @@ export interface LedgerEntry {
 
 export interface UnitLedgerResponse {
   unit_id: string;
-  unit_name?: string;
-  latest_decision?: string | null;
-  latest_confidence?: number | null;
-  chain: LedgerBlock[];
-  valid: boolean;
-  invalid_reason?: string | null;
-}
-
-export interface LedgerBlock {
-  block_index: number;
-  timestamp: string;
-  block_type: string;
-  event_id: string | null;
-  data: Record<string, unknown>;
-  prev_hash: string;
-  hash: string;
+  entries: LedgerEntry[];
+  chain_valid: boolean;
 }
 
 export interface DppResponse {
@@ -95,23 +79,6 @@ export interface DppResponse {
     status: string;
     last_event_id: string | null;
     confidence: number | null;
-  };
-  issue_date: string;
-  verification_id: string;
-  qr_url: string;
-}
-
-/** Actual shape returned by the ledger service's GET /units/{id}/dpp. */
-export interface LedgerDppResponse {
-  unit: LedgerUnit;
-  compliance_summary: {
-    cetp_zld_status: string;
-    compliance_status: string;
-    certifications: string[];
-  };
-  environmental_evidence: {
-    status: string;
-    latest_confidence: number | null;
   };
   issue_date: string;
   verification_id: string;
@@ -153,9 +120,7 @@ export interface HariSensorHealth {
 
 export interface HariSimulateEventResponse {
   event_id: string;
-  // The running inference API returns this as a unit-to-probability object,
-  // while earlier versions returned an array of entries.
-  posterior_top3: HariPosteriorEntry[] | Record<string, number>;
+  posterior_top3: HariPosteriorEntry[];
   decision: HariDecision;
   sensor_health: HariSensorHealth;
 }

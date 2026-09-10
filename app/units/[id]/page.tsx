@@ -79,32 +79,40 @@ export default function UnitDetailPage() {
               <p className="small muted" style={{ margin: 0 }}>
                 CETP / ZLD status
               </p>
-              <p style={{ margin: "2px 0 0" }}>{unit.cetp_zld_status}</p>
+              <p style={{ margin: "2px 0 0" }}>{unit.cetp_zld_status ?? "—"}</p>
             </div>
             <div>
               <p className="small muted" style={{ margin: 0 }}>
                 Compliance status
               </p>
-              <p style={{ margin: "2px 0 0" }}>{unit.compliance_status}</p>
+              <p style={{ margin: "2px 0 0" }}>
+                {unit.compliance_status ?? "—"}
+              </p>
             </div>
             <div>
               <p className="small muted" style={{ margin: 0 }}>
                 Reuse
               </p>
-              <p style={{ margin: "2px 0 0" }}>{unit.reuse_percentage}%</p>
+              <p style={{ margin: "2px 0 0" }}>
+                {unit.reuse_percentage != null
+                  ? `${unit.reuse_percentage}%`
+                  : "—"}
+              </p>
             </div>
             <div>
               <p className="small muted" style={{ margin: 0 }}>
                 Renewable energy
               </p>
               <p style={{ margin: "2px 0 0" }}>
-                {unit.renewable_energy_percentage}%
+                {unit.renewable_energy_percentage != null
+                  ? `${unit.renewable_energy_percentage}%`
+                  : "—"}
               </p>
             </div>
           </div>
-          {unit.certifications?.length > 0 && (
+          {(unit.certifications?.length ?? 0) > 0 && (
             <p className="small muted" style={{ marginTop: 12 }}>
-              Certifications: {unit.certifications.join(", ")}
+              Certifications: {unit.certifications!.join(", ")}
             </p>
           )}
         </div>
@@ -123,10 +131,13 @@ export default function UnitDetailPage() {
         )}
         {dpp ? (
           <div className="card">
-            <p style={{ margin: 0 }}>{dpp.compliance_summary}</p>
+            <p style={{ margin: 0 }}>
+              {dpp.compliance_summary ?? "No compliance summary available."}
+            </p>
             <p className="small muted" style={{ margin: "8px 0 0" }}>
-              Environmental evidence: {dpp.recent_environmental_evidence.status}
-              {dpp.recent_environmental_evidence.confidence != null &&
+              Environmental evidence:{" "}
+              {dpp.recent_environmental_evidence?.status ?? "unknown"}
+              {dpp.recent_environmental_evidence?.confidence != null &&
                 ` · confidence ${(dpp.recent_environmental_evidence.confidence * 100).toFixed(0)}%`}
             </p>
             <div
@@ -137,12 +148,14 @@ export default function UnitDetailPage() {
                 alignItems: "center",
               }}
             >
-              <Link
-                href={`/verify?verification_id=${dpp.verification_id}`}
-                className="btn btn-ghost"
-              >
-                Open verification page
-              </Link>
+              {dpp.verification_id && (
+                <Link
+                  href={`/verify?verification_id=${dpp.verification_id}`}
+                  className="btn btn-ghost"
+                >
+                  Open verification page
+                </Link>
+              )}
               {dpp.qr_url && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -163,7 +176,7 @@ export default function UnitDetailPage() {
         <h3 style={{ fontSize: 16, marginBottom: 10 }}>
           Evidence ledger{" "}
           {chain &&
-            (chain.valid ? "(chain verified)" : "(⚠ chain broken)")}
+            (chain.chain_valid ? "(chain verified)" : "(⚠ chain broken)")}
         </h3>
         {chainMeta.stale && (
           <StaleBanner
@@ -172,24 +185,32 @@ export default function UnitDetailPage() {
             error={chainMeta.error}
           />
         )}
-        {chain && chain.chain.length > 0 ? (
+        {chain && (chain.entries?.length ?? 0) > 0 ? (
           <table>
             <thead>
               <tr>
                 <th>Event</th>
                 <th>Timestamp</th>
-                <th>Block type</th>
+                <th>Decision</th>
+                <th>Confidence</th>
                 <th>Hash</th>
               </tr>
             </thead>
             <tbody>
-              {chain.chain.map((block) => (
-                <tr key={block.hash}>
-                  <td className="mono">{block.event_id ?? "—"}</td>
-                  <td>{new Date(block.timestamp).toLocaleString()}</td>
-                  <td>{block.block_type}</td>
+              {chain.entries.map((e) => (
+                <tr key={e.event_id}>
+                  <td className="mono">{e.event_id ?? "—"}</td>
+                  <td>
+                    {e.timestamp ? new Date(e.timestamp).toLocaleString() : "—"}
+                  </td>
+                  <td>{e.decision ?? "—"}</td>
+                  <td>
+                    {e.confidence != null
+                      ? `${(e.confidence * 100).toFixed(0)}%`
+                      : "—"}
+                  </td>
                   <td className="mono small muted">
-                    {block.hash.slice(0, 10)}…
+                    {e.current_hash ? `${e.current_hash.slice(0, 10)}…` : "—"}
                   </td>
                 </tr>
               ))}

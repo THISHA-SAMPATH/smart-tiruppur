@@ -19,12 +19,6 @@ import type {
   TopCandidate,
 } from "./types";
 
-/**
- * Haripriya's simulator uses "U001".."U012".
- * Vamika's ledger (and the contract) uses "unit_001".."unit_012".
- * This is the fix for the 400 you'd get posting her raw unit id straight
- * into POST /ledger/events.
- */
 export function toLedgerUnitId(hariUnitId: string): string {
   const match = hariUnitId.match(/^U0*(\d+)$/i);
   if (match) {
@@ -34,7 +28,6 @@ export function toLedgerUnitId(hariUnitId: string): string {
   return hariUnitId;
 }
 
-/** Inverse of toLedgerUnitId, in case anything needs to call back into her API by id. */
 export function toHariUnitId(ledgerUnitId: string): string {
   const match = ledgerUnitId.match(/^unit_0*(\d+)$/i);
   if (match) {
@@ -62,10 +55,10 @@ function buildExplanation(
   raw: HariSimulateEventResponse,
   decision: Decision,
   topUnitLedgerId: string | null,
-  topProbability: number | null,
 ): string {
   if (decision === "investigate" && topUnitLedgerId) {
-    const pct = topProbability != null ? Math.round(topProbability * 100) : null;
+    const top = raw.posterior_top3[0];
+    const pct = top ? Math.round(top.probability * 100) : null;
     return pct != null
       ? `Sensor pattern is most consistent with a release from ${topUnitLedgerId} (${pct}% posterior probability).`
       : `Sensor pattern is most consistent with a release from ${topUnitLedgerId}.`;
@@ -76,13 +69,7 @@ function buildExplanation(
 
 export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
   const decision = normalizeDecision(raw.decision.decision);
-  const posterior = Array.isArray(raw.posterior_top3)
-    ? raw.posterior_top3
-    : Object.entries(raw.posterior_top3).map(([unit, probability]) => ({
-        unit,
-        probability,
-      }));
-  const topCandidates: TopCandidate[] = posterior.map((c) => ({
+  const topCandidates: TopCandidate[] = raw.posterior_top3.map((c) => ({
     unit_id: toLedgerUnitId(c.unit),
     probability: c.probability,
   }));
@@ -128,12 +115,7 @@ export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
       missing_sensor_count: missingCount,
       drift_detected: driftDetected,
     },
-    explanation: buildExplanation(
-      raw,
-      decision,
-      mostLikelySource,
-      topCandidates[0]?.probability ?? null,
-    ),
+    explanation: buildExplanation(raw, decision, mostLikelySource),
     model_version: "haripriya-inference-v1 (adapted)",
     source: "adapter",
   };
