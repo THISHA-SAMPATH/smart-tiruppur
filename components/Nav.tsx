@@ -56,6 +56,10 @@ export default function Nav() {
       <div className="links" style={{ alignItems: "center" }}>
         {!loading && user && (
           <>
+            <Link href="/map" className={isActive("/map") ? "active" : ""}>
+              City Map
+            </Link>
+
             {user.role === "ADMIN" && (
               <>
                 <Link href="/admin" className={isActive("/admin") && pathname === "/admin" ? "active" : ""}>
