@@ -54,6 +54,11 @@ function TrendChart({
   metric: (typeof METRICS)[number];
 }) {
   const values = readings.map((reading) => reading[metric.key]).filter(Number.isFinite);
+  const validReadings = readings
+    .map((reading, index) => ({ reading, index, value: reading[metric.key] }))
+    .filter((item): item is { reading: SensorReading; index: number; value: number } =>
+      Number.isFinite(item.value),
+    );
   const width = 360;
   const height = 170;
   const pad = { top: 18, right: 12, bottom: 30, left: 45 };
@@ -64,10 +69,14 @@ function TrendChart({
   const upper = max + range * 0.1;
   const chartWidth = width - pad.left - pad.right;
   const chartHeight = height - pad.top - pad.bottom;
-  const points = readings
-    .map((reading, index) => {
-      const x = pad.left + (readings.length <= 1 ? 0 : (index / (readings.length - 1)) * chartWidth);
-      const y = pad.top + ((upper - reading[metric.key]) / (upper - lower)) * chartHeight;
+  const pointFor = (index: number, value: number) => {
+    const x = pad.left + (readings.length <= 1 ? 0 : (index / (readings.length - 1)) * chartWidth);
+    const y = pad.top + ((upper - value) / (upper - lower)) * chartHeight;
+    return { x, y };
+  };
+  const points = validReadings
+    .map(({ index, value }) => {
+      const { x, y } = pointFor(index, value);
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
@@ -84,10 +93,9 @@ function TrendChart({
           return <g key={fraction}><line className="chart-gridline" x1={pad.left} x2={width - pad.right} y1={y} y2={y} /><text className="chart-axis" x={pad.left - 6} y={y + 3} textAnchor="end">{label}</text></g>;
         })}
         <polyline className="chart-line" points={points} style={{ stroke: metric.color }} />
-        {readings.map((reading, index) => {
-          const x = pad.left + (readings.length <= 1 ? 0 : (index / (readings.length - 1)) * chartWidth);
-          const y = pad.top + ((upper - reading[metric.key]) / (upper - lower)) * chartHeight;
-          return <circle key={reading.timestamp} cx={x} cy={y} r="2.6" style={{ fill: metric.color }}><title>{`${formatTime(reading.timestamp)}: ${reading[metric.key]} ${metric.unit}`}</title></circle>;
+        {validReadings.map(({ reading, index, value }) => {
+          const { x, y } = pointFor(index, value);
+          return <circle key={`${reading.timestamp}-${index}`} cx={x} cy={y} r="2.6" style={{ fill: metric.color }}><title>{`${formatTime(reading.timestamp)}: ${value} ${metric.unit}`}</title></circle>;
         })}
         <text className="chart-axis" x={pad.left} y={height - 8}>{start}</text>
         <text className="chart-axis" x={width - pad.right} y={height - 8} textAnchor="end">{end}</text>
