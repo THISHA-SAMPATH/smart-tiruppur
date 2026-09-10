@@ -10,6 +10,10 @@ export const INFERENCE_BASE_URL =
   process.env.NEXT_PUBLIC_INFERENCE_BASE_URL ||
   "https://noyyalsense.onrender.com";
 
+export const GROUNDWATER_BASE_URL =
+  process.env.NEXT_PUBLIC_GROUNDWATER_BASE_URL ||
+  "https://smart-tiruppur-groundwater.onrender.com";
+
 /**
  * Vamika's ledger returns some URLs (e.g. qr_url) as paths relative to her
  * own service, like "/units/unit_002/qr". Dropped straight into an <img src>,

@@ -304,9 +304,38 @@ th {
 .chart-gridline { stroke: var(--hairline); stroke-dasharray: 2 3; }
 .chart-line { fill: none; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
 .trend-card > p { margin: 4px 0 0; }
+.groundwater-panel { border-top: 1px solid var(--hairline); padding: 56px 0; }
+.groundwater-header { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 20px; }
+.groundwater-header h2 { font-size: clamp(30px, 4vw, 46px); }
+.groundwater-header .eyebrow { margin-bottom: 9px; }
+.groundwater-header .muted { margin: 5px 0 0; }
+.groundwater-select { display: grid; gap: 5px; color: var(--ink-soft); font-size: 13px; }
+.groundwater-select select { min-width: 205px; padding: 8px 10px; border: 1px solid var(--hairline); border-radius: var(--radius-sm); background: var(--paper-raised); color: var(--ink); font: inherit; }
+.scenario-control { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--hairline); border-radius: var(--radius-md); background: rgba(246, 243, 234, .65); }
+.scenario-control > span { color: var(--ink-soft); font-size: 13px; }
+.scenario-control [role="group"] { display: flex; gap: 4px; }
+.scenario-button { border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; color: var(--ink-soft); padding: 6px 10px; font: 500 13px "IBM Plex Sans", sans-serif; }
+.scenario-button:hover:not(:disabled) { background: var(--indigo-soft); color: var(--indigo); }
+.scenario-button.active { background: var(--ink); color: var(--paper); }
+.scenario-button:disabled { cursor: default; opacity: .55; }
+.groundwater-loading { margin: 14px 0 0; }
+.groundwater-summary { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--hairline); border-radius: var(--radius-md) var(--radius-md) 0 0; overflow: hidden; }
+.groundwater-summary > div { min-height: 76px; padding: 12px 14px; border-left: 1px solid var(--hairline); display: grid; align-content: space-between; gap: 5px; }
+.groundwater-summary > div:first-child { border-left: 0; }
+.groundwater-summary span, .groundwater-metric > span { color: var(--ink-soft); font-size: 12px; }
+.groundwater-summary strong { font: 500 19px "Fraunces", serif; }
+.risk-pill { width: fit-content; padding: 2px 8px; border-radius: 999px; font: 500 13px "IBM Plex Sans", sans-serif !important; }
+.risk-safe { color: var(--teal); background: #dcece4; }
+.risk-semi-critical { color: var(--turmeric); background: var(--turmeric-soft); }
+.risk-critical, .risk-over-exploited { color: var(--madder); background: var(--madder-soft); }
+.groundwater-metrics { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--hairline); border-top: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); overflow: hidden; }
+.groundwater-metric { min-height: 120px; padding: 14px; border-left: 1px solid var(--hairline); display: flex; flex-direction: column; gap: 6px; background: var(--paper-raised); }
+.groundwater-metric:first-child { border-left: 0; }
+.groundwater-metric strong { font: 500 20px "Fraunces", serif; line-height: 1.15; }
+.groundwater-metric small { margin-top: auto; color: var(--ink-soft); font-size: 11px; line-height: 1.35; }
 @keyframes blink { 50% { opacity: 0; } }
 @keyframes pulse { 50% { transform: scale(1.7); opacity: .35; } }
 @keyframes drift { 50% { transform: translate(12px, -9px); } }
 @keyframes card-float { 50% { transform: rotate(5deg) translateY(-9px); } }
 @keyframes type-reveal { from { width: 0; } to { width: 8.5ch; } }
-@media (max-width: 760px) { .shell { padding: 20px 18px 48px; } .hero { grid-template-columns: 1fr; padding-top: 34px; } .hero-art { min-height: 320px; } .weave-card-main { left: 29%; top: 28px; transform: scale(.82) rotate(5deg); transform-origin: top left; } .weave-card-back { top: 45px; transform: scale(.82) rotate(-10deg); transform-origin: top left; } .impact-strip { grid-template-columns: 1fr 1fr; } .impact-strip div:nth-child(3) { border-left: 0; border-top: 1px solid var(--hairline); } .impact-strip div:nth-child(4) { border-top: 1px solid var(--hairline); } .story-grid, .events-section, .trend-grid { grid-template-columns: 1fr; } .story-section, .events-section { padding: 65px 0; } .dashboard-heading, .sensor-trends-header { align-items: start; flex-direction: column; } .regulator-action-controls { flex-direction: column; } nav.topnav { padding: 16px 18px; } nav.topnav .links { gap: 13px; font-size: 12px; } }
+@media (max-width: 760px) { .shell { padding: 20px 18px 48px; } .hero { grid-template-columns: 1fr; padding-top: 34px; } .hero-art { min-height: 320px; } .weave-card-main { left: 29%; top: 28px; transform: scale(.82) rotate(5deg); transform-origin: top left; } .weave-card-back { top: 45px; transform: scale(.82) rotate(-10deg); transform-origin: top left; } .impact-strip { grid-template-columns: 1fr 1fr; } .impact-strip div:nth-child(3) { border-left: 0; border-top: 1px solid var(--hairline); } .impact-strip div:nth-child(4) { border-top: 1px solid var(--hairline); } .story-grid, .events-section, .trend-grid { grid-template-columns: 1fr; } .story-section, .events-section { padding: 65px 0; } .dashboard-heading, .sensor-trends-header, .groundwater-header { align-items: start; flex-direction: column; } .regulator-action-controls { flex-direction: column; } .groundwater-select, .groundwater-select select { width: 100%; } .scenario-control { align-items: start; flex-direction: column; } .groundwater-summary { grid-template-columns: 1fr 1fr; } .groundwater-summary > div:nth-child(3) { border-left: 0; border-top: 1px solid var(--hairline); } .groundwater-summary > div:nth-child(4) { border-top: 1px solid var(--hairline); } .groundwater-metrics { grid-template-columns: 1fr 1fr; } .groundwater-metric:nth-child(3), .groundwater-metric:nth-child(5) { border-left: 0; border-top: 1px solid var(--hairline); } .groundwater-metric:nth-child(4) { border-top: 1px solid var(--hairline); } nav.topnav { padding: 16px 18px; } nav.topnav .links { gap: 13px; font-size: 12px; } }

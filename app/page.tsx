@@ -4,17 +4,20 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   getGlobalEvents,
+  getGroundwaterAssessment,
+  getGroundwaterZones,
   getSensorReadings,
   getUnits,
   postEventToLedger,
   postRegulatorAction,
   simulateInferenceEvent,
 } from "@/lib/api";
-import type { ContractEvent, LedgerUnit, SensorReading } from "@/lib/types";
+import type { ContractEvent, GroundwaterAssessment, GroundwaterZone, LedgerUnit, SensorReading } from "@/lib/types";
 import UnitCard from "@/components/UnitCard";
 import AlertFeed from "@/components/AlertFeed";
 import StaleBanner, { ErrorBanner } from "@/components/StaleBanner";
 import SensorTrends from "@/components/SensorTrends";
+import GroundwaterPanel from "@/components/GroundwaterPanel";
 
 export default function RegulatorDashboard() {
   const [units, setUnits] = useState<LedgerUnit[]>([]);
@@ -38,6 +41,12 @@ export default function RegulatorDashboard() {
   const [readings, setReadings] = useState<SensorReading[]>([]);
   const [readingsError, setReadingsError] = useState<string | null>(null);
   const [readingsLoading, setReadingsLoading] = useState(false);
+  const [groundwaterZones, setGroundwaterZones] = useState<GroundwaterZone[]>([]);
+  const [groundwaterAssessment, setGroundwaterAssessment] = useState<GroundwaterAssessment | null>(null);
+  const [groundwaterZoneId, setGroundwaterZoneId] = useState("");
+  const [groundwaterMultiplier, setGroundwaterMultiplier] = useState(1);
+  const [groundwaterLoading, setGroundwaterLoading] = useState(false);
+  const [groundwaterError, setGroundwaterError] = useState<string | null>(null);
 
   async function loadReadings(sensorId: string) {
     setReadingsLoading(true);
@@ -71,9 +80,47 @@ export default function RegulatorDashboard() {
     setEventsStale({ stale: res.stale, fetchedAt: res.fetchedAt, error: res.error });
   }
 
+  async function loadGroundwaterAssessment(zoneId: string, multiplier: number) {
+    setGroundwaterLoading(true);
+    setGroundwaterError(null);
+    const res = await getGroundwaterAssessment(zoneId, multiplier);
+    if (res.data) {
+      setGroundwaterAssessment(res.data);
+    } else {
+      setGroundwaterAssessment(null);
+      setGroundwaterError(res.error || "Could not load this FIRKA assessment.");
+    }
+    setGroundwaterLoading(false);
+  }
+
+  async function loadGroundwaterZones() {
+    setGroundwaterLoading(true);
+    setGroundwaterError(null);
+    const res = await getGroundwaterZones();
+    if (!res.data || res.data.length === 0) {
+      setGroundwaterError(res.error || "Could not load groundwater FIRKAs.");
+      setGroundwaterLoading(false);
+      return;
+    }
+    setGroundwaterZones(res.data);
+    setGroundwaterZoneId(res.data[0].zone_id);
+    await loadGroundwaterAssessment(res.data[0].zone_id, 1);
+  }
+
+  function handleGroundwaterZoneChange(zoneId: string) {
+    setGroundwaterZoneId(zoneId);
+    void loadGroundwaterAssessment(zoneId, groundwaterMultiplier);
+  }
+
+  function handleGroundwaterScenarioChange(multiplier: number) {
+    setGroundwaterMultiplier(multiplier);
+    if (groundwaterZoneId) void loadGroundwaterAssessment(groundwaterZoneId, multiplier);
+  }
+
   useEffect(() => {
     loadUnits();
     loadEvents();
+    void loadGroundwaterZones();
   }, []);
 
   async function handleSimulate() {
@@ -188,6 +235,17 @@ export default function RegulatorDashboard() {
       {!readingsLoading && readings.length > 0 && (
         <SensorTrends readings={readings} sensor={sensor} onSensorChange={handleSensorChange} />
       )}
+
+      {groundwaterError && <ErrorBanner message={`Groundwater service: ${groundwaterError}`} />}
+      <GroundwaterPanel
+        zones={groundwaterZones}
+        assessment={groundwaterAssessment}
+        selectedZoneId={groundwaterZoneId}
+        multiplier={groundwaterMultiplier}
+        loading={groundwaterLoading}
+        onZoneChange={handleGroundwaterZoneChange}
+        onScenarioChange={handleGroundwaterScenarioChange}
+      />
 
       <section className="network-section" style={{ marginBottom: 56 }}>
         <h3 className="section-label">Connected units</h3>

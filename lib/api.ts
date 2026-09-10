@@ -1,4 +1,4 @@
-import { LEDGER_BASE_URL, INFERENCE_BASE_URL } from "./config";
+import { GROUNDWATER_BASE_URL, LEDGER_BASE_URL, INFERENCE_BASE_URL } from "./config";
 import { adaptHariEvent, mapLedgerEntryToContractEvent } from "./adapter";
 import type {
   ContractEvent,
@@ -11,6 +11,8 @@ import type {
   RegulatorActionResponse,
   UnitLedgerResponse,
   VerifyResponse,
+  GroundwaterAssessment,
+  GroundwaterZone,
 } from "./types";
 
 export interface FetchResult<T> {
@@ -258,5 +260,29 @@ export function getSensorReadings(sensor = "S_A", interval = 1) {
   return fetchWithFallback<HariReadingsResponse>(
     `readings_${sensor}_${interval}`,
     `${INFERENCE_BASE_URL}/readings?${params.toString()}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Groundwater service
+// ---------------------------------------------------------------------------
+
+export function getGroundwaterZones() {
+  return fetchWithFallback<GroundwaterZone[]>(
+    "groundwater_zones",
+    `${GROUNDWATER_BASE_URL}/zones`,
+  );
+}
+
+export function getGroundwaterAssessment(
+  zoneId: string,
+  extractionMultiplier = 1,
+) {
+  const params = new URLSearchParams({
+    extraction_multiplier: String(extractionMultiplier),
+  });
+  return fetchWithFallback<GroundwaterAssessment>(
+    `groundwater_assessment_${zoneId}_${extractionMultiplier}`,
+    `${GROUNDWATER_BASE_URL}/zones/${encodeURIComponent(zoneId)}/assess?${params.toString()}`,
   );
 }

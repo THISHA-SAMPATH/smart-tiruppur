@@ -162,3 +162,44 @@ export interface HariReadingsResponse {
   sensor: string;
   readings: SensorReading[];
 }
+
+// ---------------------------------------------------------------------------
+// GROUNDWATER SERVICE — CGWB baseline figures and simulated scenarios.
+// ---------------------------------------------------------------------------
+
+export type GroundwaterRisk =
+  | "Safe"
+  | "Semi Critical"
+  | "Critical"
+  | "Over Exploited";
+
+export interface GroundwaterZone {
+  zone_id: string;
+  name: string;
+  assessment_year: number;
+  num_piezometers: number;
+}
+
+export interface CgwbBaseline {
+  annual_extractable_resource_ham: number;
+  total_extraction_ham: number;
+  stage_percent: number;
+  category: GroundwaterRisk;
+}
+
+export interface GroundwaterSimulation {
+  status: "assessed";
+  estimated_extraction_ham: number;
+  resource_ham: number;
+  estimated_stage_percent: number;
+  confidence: number;
+  risk: GroundwaterRisk;
+  observations: Array<number | null>;
+  valid_observations: number;
+  total_observations: number;
+}
+
+export interface GroundwaterAssessment extends GroundwaterZone {
+  cgwb_baseline: CgwbBaseline;
+  simulation: GroundwaterSimulation;
+}
