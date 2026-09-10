@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import NoyyalRiverLayer from "@/components/NoyyalRiverLayer";
+import IndustrialAreasLayer from "@/components/IndustrialAreasLayer";
 import IndustrialUnitsLayer, { IndustrialUnitGeo } from "@/components/IndustrialUnitsLayer";
 
 const TIRUPPUR_CENTER: [number, number] = [11.1085, 77.3411];
@@ -10,6 +11,7 @@ const DEFAULT_ZOOM = 13;
 
 export default function TiruppurMap() {
   const [showRiverLayer, setShowRiverLayer] = useState(true);
+  const [showAreasLayer, setShowAreasLayer] = useState(true);
   const [showUnitsLayer, setShowUnitsLayer] = useState(true);
   const [geocodedCount, setGeocodedCount] = useState(0);
   const [totalUnitsCount, setTotalUnitsCount] = useState(0);
@@ -47,7 +49,7 @@ export default function TiruppurMap() {
           borderRadius: "var(--radius-sm)",
           border: "1px solid var(--hairline)",
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-          minWidth: "210px",
+          minWidth: "220px",
         }}
       >
         <p
@@ -84,6 +86,35 @@ export default function TiruppurMap() {
               }}
             />
             Noyyal River
+          </label>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showAreasLayer}
+              onChange={(e) => setShowAreasLayer(e.target.checked)}
+              style={{ accentColor: "#d97706", cursor: "pointer" }}
+            />
+            <span
+              style={{
+                width: "12px",
+                height: "12px",
+                background: "#fef3c7",
+                border: "1.5px dashed #b45309",
+                borderRadius: "2px",
+                display: "inline-block",
+              }}
+            />
+            Industrial Areas
           </label>
 
           <label
@@ -136,6 +167,8 @@ export default function TiruppurMap() {
         />
 
         {showRiverLayer && <NoyyalRiverLayer />}
+
+        {showAreasLayer && <IndustrialAreasLayer />}
 
         {showUnitsLayer && (
           <IndustrialUnitsLayer onUnitsLoaded={handleUnitsLoaded} />

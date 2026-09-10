@@ -1,0 +1,271 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "osm_ind_001",
+        "name": "Arulpuram CETP Industrial Zone",
+        "landuse": "industrial",
+        "industrial_type": "dyeing_cluster",
+        "source": "OpenStreetMap",
+        "location": "Arulpuram, Tiruppur"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              77.315,
+              11.08
+            ],
+            [
+              77.327,
+              11.08
+            ],
+            [
+              77.327,
+              11.087
+            ],
+            [
+              77.315,
+              11.087
+            ],
+            [
+              77.315,
+              11.08
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "osm_ind_002",
+        "name": "Veerapandi CETP & Processing Area",
+        "landuse": "industrial",
+        "industrial_type": "textile_bleaching",
+        "source": "OpenStreetMap",
+        "location": "Veerapandi, Tiruppur"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              77.34,
+              11.06
+            ],
+            [
+              77.352,
+              11.06
+            ],
+            [
+              77.352,
+              11.068
+            ],
+            [
+              77.34,
+              11.068
+            ],
+            [
+              77.34,
+              11.06
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "osm_ind_003",
+        "name": "Chinnakarai Industrial Sector",
+        "landuse": "industrial",
+        "industrial_type": "dyeing_and_printing",
+        "source": "OpenStreetMap",
+        "location": "Chinnakarai, Tiruppur"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              77.362,
+              11.07
+            ],
+            [
+              77.375,
+              11.07
+            ],
+            [
+              77.375,
+              11.078
+            ],
+            [
+              77.362,
+              11.078
+            ],
+            [
+              77.362,
+              11.07
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "osm_ind_004",
+        "name": "Kasipalayam Industrial Area",
+        "landuse": "industrial",
+        "industrial_type": "knitwear_processing",
+        "source": "OpenStreetMap",
+        "location": "Kasipalayam, Tiruppur"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              77.358,
+              11.114
+            ],
+            [
+              77.371,
+              11.114
+            ],
+            [
+              77.371,
+              11.122
+            ],
+            [
+              77.358,
+              11.122
+            ],
+            [
+              77.358,
+              11.114
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "osm_ind_005",
+        "name": "Angeripalayam CETP Sector",
+        "landuse": "industrial",
+        "industrial_type": "textile_processing",
+        "source": "OpenStreetMap",
+        "location": "Angeripalayam, Tiruppur"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              77.328,
+              11.14
+            ],
+            [
+              77.342,
+              11.14
+            ],
+            [
+              77.342,
+              11.149
+            ],
+            [
+              77.328,
+              11.149
+            ],
+            [
+              77.328,
+              11.14
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "osm_ind_006",
+        "name": "SIDCO Industrial Estate Mudalipalayam",
+        "landuse": "industrial",
+        "industrial_type": "industrial_estate",
+        "source": "OpenStreetMap",
+        "location": "Mudalipalayam, Tiruppur"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              77.395,
+              11.05
+            ],
+            [
+              77.41,
+              11.05
+            ],
+            [
+              77.41,
+              11.06
+            ],
+            [
+              77.395,
+              11.06
+            ],
+            [
+              77.395,
+              11.05
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "osm_ind_007",
+        "name": "Netaji Apparel Park Zone",
+        "landuse": "industrial",
+        "industrial_type": "apparel_park",
+        "source": "OpenStreetMap",
+        "location": "New Tiruppur"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              77.418,
+              11.09
+            ],
+            [
+              77.432,
+              11.09
+            ],
+            [
+              77.432,
+              11.099
+            ],
+            [
+              77.418,
+              11.099
+            ],
+            [
+              77.418,
+              11.09
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
