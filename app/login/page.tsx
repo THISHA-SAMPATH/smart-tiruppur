@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import backdropImg from "@/public/noyyal_green_landscape_backdrop.jpg";
 
 function LoginForm() {
   const router = useRouter();
@@ -117,11 +118,12 @@ function LoginForm() {
           pointerEvents: "none",
           zIndex: 0,
           overflow: "hidden",
+          background: `url(${backdropImg.src}) no-repeat bottom center / cover`,
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/noyyal_green_landscape_backdrop.jpg"
+          src={backdropImg.src}
           alt="Green Landscape Backdrop"
           style={{
             width: "100%",
