@@ -49,6 +49,9 @@ async function fetchWithFallback<T>(
   url: string,
   init?: RequestInit,
 ): Promise<FetchResult<T>> {
+  // A cached mutation response is unsafe: it can report an action as recorded
+  // even when a later request never reached the ledger.
+  const isReadRequest = !init?.method || init.method.toUpperCase() === "GET";
   try {
     const res = await fetch(url, {
       ...init,
@@ -59,7 +62,7 @@ async function fetchWithFallback<T>(
       throw new Error(`${res.status} ${res.statusText}`);
     }
     const data = (await res.json()) as T;
-    writeCache(key, data);
+    if (isReadRequest) writeCache(key, data);
     return {
       data,
       stale: false,
@@ -67,7 +70,7 @@ async function fetchWithFallback<T>(
       fetchedAt: new Date().toISOString(),
     };
   } catch (err) {
-    const cached = readCache<T>(key);
+    const cached = isReadRequest ? readCache<T>(key) : null;
     if (cached) {
       return {
         data: cached.data,

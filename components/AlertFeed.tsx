@@ -17,11 +17,20 @@ export default function AlertFeed({
   }
 
   return (
-    <div className="grid" style={{ gap: 10 }}>
-      {events.map((ev) => (
-        <AlertCard key={ev.event_id} event={ev} onRecordAction={onRecordAction} />
-      ))}
-    </div>
+    <>
+      <datalist id="regulator-action-options">
+        <option value="Inspection requested" />
+        <option value="Notice issued to unit" />
+        <option value="Follow-up sample collection ordered" />
+        <option value="Escalated for enforcement review" />
+        <option value="Closed after review" />
+      </datalist>
+      <div className="grid" style={{ gap: 10 }}>
+        {events.map((ev) => (
+          <AlertCard key={ev.event_id} event={ev} onRecordAction={onRecordAction} />
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -106,6 +115,7 @@ function AlertCard({
             <input
               id={`action-${ev.event_id}`}
               list="regulator-action-options"
+              aria-describedby={`action-help-${ev.event_id}`}
               value={action}
               onChange={(event) => setAction(event.target.value)}
               placeholder="e.g. Inspection requested"
@@ -115,6 +125,9 @@ function AlertCard({
               {saving ? "Recording…" : ev.regulator_action ? "Update action" : "Record action"}
             </button>
           </div>
+          <p id={`action-help-${ev.event_id}`} className="small muted" style={{ margin: "6px 0 0" }}>
+            Choose a suggested disposition or enter a precise action for the audit trail.
+          </p>
           {message && (
             <p className={`small action-message${message.startsWith("Action recorded") ? " success" : ""}`} role="status">
               {message}

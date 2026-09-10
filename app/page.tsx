@@ -183,7 +183,7 @@ export default function RegulatorDashboard() {
         </div>
       )}
 
-      {readingsError && <ErrorBanner message={`Sensor readings: ${readingsError}`} />}
+      {readingsError && <ErrorBanner message={`Sensor trends are unavailable: ${readingsError}. The inference service needs GET /readings?sensor=S_A&interval=1 returning timestamped pH, EC, turbidity, and flow values.`} />}
       {readingsLoading && <p className="muted small">Loading sensor trends…</p>}
       {!readingsLoading && readings.length > 0 && (
         <SensorTrends readings={readings} sensor={sensor} onSensorChange={handleSensorChange} />
