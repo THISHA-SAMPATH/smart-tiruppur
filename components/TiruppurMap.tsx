@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import NoyyalRiverLayer from "@/components/NoyyalRiverLayer";
+import IndustrialUnitsLayer, { IndustrialUnitGeo } from "@/components/IndustrialUnitsLayer";
 
 const TIRUPPUR_CENTER: [number, number] = [11.1085, 77.3411];
 const DEFAULT_ZOOM = 13;
 
 export default function TiruppurMap() {
   const [showRiverLayer, setShowRiverLayer] = useState(true);
+  const [showUnitsLayer, setShowUnitsLayer] = useState(true);
+  const [geocodedCount, setGeocodedCount] = useState(0);
+  const [totalUnitsCount, setTotalUnitsCount] = useState(0);
+
+  const handleUnitsLoaded = useCallback((units: IndustrialUnitGeo[]) => {
+    setTotalUnitsCount(units.length);
+    const geocoded = units.filter((u) => u.coordinates && u.coordinates.length === 2);
+    setGeocodedCount(geocoded.length);
+  }, []);
 
   return (
     <div
@@ -37,7 +47,7 @@ export default function TiruppurMap() {
           borderRadius: "var(--radius-sm)",
           border: "1px solid var(--hairline)",
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-          minWidth: "180px",
+          minWidth: "210px",
         }}
       >
         <p
@@ -47,33 +57,69 @@ export default function TiruppurMap() {
           MAP LAYERS
         </p>
 
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "13px",
-            fontWeight: 500,
-            cursor: "pointer",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={showRiverLayer}
-            onChange={(e) => setShowRiverLayer(e.target.checked)}
-            style={{ accentColor: "#2563eb", cursor: "pointer" }}
-          />
-          <span
+        <div style={{ display: "grid", gap: "8px" }}>
+          <label
             style={{
-              width: "16px",
-              height: "4px",
-              background: "#2563eb",
-              borderRadius: "2px",
-              display: "inline-block",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: "pointer",
             }}
-          />
-          Noyyal River
-        </label>
+          >
+            <input
+              type="checkbox"
+              checked={showRiverLayer}
+              onChange={(e) => setShowRiverLayer(e.target.checked)}
+              style={{ accentColor: "#2563eb", cursor: "pointer" }}
+            />
+            <span
+              style={{
+                width: "16px",
+                height: "4px",
+                background: "#2563eb",
+                borderRadius: "2px",
+                display: "inline-block",
+              }}
+            />
+            Noyyal River
+          </label>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showUnitsLayer}
+              onChange={(e) => setShowUnitsLayer(e.target.checked)}
+              style={{ accentColor: "#9c3b22", cursor: "pointer" }}
+            />
+            <span
+              style={{
+                width: "12px",
+                height: "12px",
+                background: "#9c3b22",
+                borderRadius: "2px",
+                display: "inline-block",
+              }}
+            />
+            Industrial Units ({geocodedCount}/{totalUnitsCount || 12})
+          </label>
+        </div>
+
+        {totalUnitsCount > 0 && geocodedCount === 0 && (
+          <p className="small muted" style={{ fontSize: "11px", margin: "8px 0 0", color: "var(--turmeric)" }}>
+            ℹ 0 units contain GIS coordinates. Markers will appear once coordinates are added.
+          </p>
+        )}
       </div>
 
       <MapContainer
@@ -90,6 +136,10 @@ export default function TiruppurMap() {
         />
 
         {showRiverLayer && <NoyyalRiverLayer />}
+
+        {showUnitsLayer && (
+          <IndustrialUnitsLayer onUnitsLoaded={handleUnitsLoaded} />
+        )}
       </MapContainer>
     </div>
   );
