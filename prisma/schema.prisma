@@ -37,16 +37,27 @@ model User {
 }
 
 model CitizenReport {
-  id                  String       @id @default(cuid())
+  id                  String                @id @default(cuid())
   title               String
   description         String
   pollutionType       String
   locationDescription String
   latitude            Float?
   longitude           Float?
-  status              ReportStatus @default(SUBMITTED)
+  status              ReportStatus          @default(SUBMITTED)
   reporterId          String
-  reporter            User         @relation(fields: [reporterId], references: [id])
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+  reporter            User                  @relation(fields: [reporterId], references: [id])
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  statusHistory       ReportStatusHistory[]
+}
+
+model ReportStatusHistory {
+  id        String        @id @default(cuid())
+  reportId  String
+  report    CitizenReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  status    ReportStatus
+  updatedBy String
+  notes     String?
+  createdAt DateTime      @default(now())
 }

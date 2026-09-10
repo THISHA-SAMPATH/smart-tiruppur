@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
+import { prisma } from "./prisma";
 
 export type Role = "ADMIN" | "REGULATOR" | "INDUSTRY" | "GROUNDWATER_OFFICER" | "CITIZEN";
 
@@ -45,10 +46,8 @@ export interface CitizenReport {
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
-const REPORTS_FILE = path.join(DATA_DIR, "citizen_reports.json");
 
 let inMemoryUsers: User[] | null = null;
-let inMemoryReports: CitizenReport[] | null = null;
 
 function ensureDataDirectory() {
   try {
@@ -161,65 +160,66 @@ function writeUsersRaw(users: User[]) {
   }
 }
 
-function getInitialReportsSeed(): CitizenReport[] {
-  const now = new Date().toISOString();
-  return [
-    {
-      id: "rep_seed_001",
-      title: "Foam accumulation along river bank",
-      description: "Dense white foam observed downstream of Kasipalayam bridge during evening hours.",
-      pollutionType: "Water Pollution",
-      locationDescription: "Noyyal River bank near Kasipalayam Bridge, Tiruppur North",
-      latitude: 11.11975,
-      longitude: 77.39716,
-      status: "SUBMITTED",
-      reporterId: "usr_citizen_001",
-      reporterName: "Tiruppur Citizen Representative",
-      reporterEmail: "citizen@smarttiruppur.local",
-      createdAt: now,
-      updatedAt: now,
-      statusHistory: [
-        {
-          status: "SUBMITTED",
-          updatedAt: now,
-          updatedBy: "usr_citizen_001",
-          notes: "Initial citizen observation logged.",
-        },
-      ],
-    },
-  ];
-}
+/** Ensures that the user record exists in the Prisma SQLite database for foreign keys */
+async function ensureUserInPrisma(userId: string) {
+  const users = readUsersRaw();
+  const target = users.find((u) => u.id === userId);
+  if (!target) return;
 
-function readReportsRaw(): CitizenReport[] {
-  if (inMemoryReports) return inMemoryReports;
-
-  ensureDataDirectory();
-  if (fs.existsSync(REPORTS_FILE)) {
-    try {
-      const raw = fs.readFileSync(REPORTS_FILE, "utf-8");
-      const reports = JSON.parse(raw);
-      if (Array.isArray(reports)) {
-        inMemoryReports = reports;
-        return inMemoryReports;
-      }
-    } catch {
-      // Fallback
-    }
-  }
-
-  inMemoryReports = getInitialReportsSeed();
-  writeReportsRaw(inMemoryReports);
-  return inMemoryReports;
-}
-
-function writeReportsRaw(reports: CitizenReport[]) {
-  inMemoryReports = reports;
   try {
-    ensureDataDirectory();
-    fs.writeFileSync(REPORTS_FILE, JSON.stringify(reports, null, 2), "utf-8");
+    await prisma.user.upsert({
+      where: { id: target.id },
+      update: {
+        name: target.name,
+        email: target.email,
+        passwordHash: target.passwordHash,
+        role: target.role as any,
+        industryUnitId: target.industryUnitId,
+        organization: target.organization,
+        active: target.active,
+      },
+      create: {
+        id: target.id,
+        name: target.name,
+        email: target.email,
+        passwordHash: target.passwordHash,
+        role: target.role as any,
+        industryUnitId: target.industryUnitId,
+        organization: target.organization,
+        active: target.active,
+        createdAt: new Date(target.createdAt),
+        updatedAt: new Date(target.updatedAt),
+      },
+    });
   } catch {
-    // Fail silently on read-only environments
+    // Graceful error handling
   }
+}
+
+function mapPrismaReportToDomain(raw: any): CitizenReport {
+  return {
+    id: raw.id,
+    title: raw.title,
+    description: raw.description,
+    pollutionType: raw.pollutionType,
+    locationDescription: raw.locationDescription,
+    latitude: raw.latitude,
+    longitude: raw.longitude,
+    status: raw.status as ReportStatus,
+    reporterId: raw.reporterId,
+    reporterName: raw.reporter?.name || "Anonymous Citizen",
+    reporterEmail: raw.reporter?.email || undefined,
+    createdAt: raw.createdAt instanceof Date ? raw.createdAt.toISOString() : String(raw.createdAt),
+    updatedAt: raw.updatedAt instanceof Date ? raw.updatedAt.toISOString() : String(raw.updatedAt),
+    statusHistory: Array.isArray(raw.statusHistory)
+      ? raw.statusHistory.map((h: any) => ({
+          status: h.status as ReportStatus,
+          updatedAt: h.createdAt instanceof Date ? h.createdAt.toISOString() : String(h.createdAt),
+          updatedBy: h.updatedBy,
+          notes: h.notes || undefined,
+        }))
+      : [],
+  };
 }
 
 export const db = {
@@ -274,6 +274,7 @@ export const db = {
       };
       const updated = [newUser, ...users];
       writeUsersRaw(updated);
+      await ensureUserInPrisma(newUser.id);
       return newUser;
     },
 
@@ -295,6 +296,7 @@ export const db = {
       const updated = [...users];
       updated[index] = updatedUser;
       writeUsersRaw(updated);
+      await ensureUserInPrisma(updatedUser.id);
       return updatedUser;
     },
 
@@ -318,32 +320,51 @@ export const db = {
       where?: Partial<CitizenReport>;
       orderBy?: { createdAt?: "asc" | "desc" };
     }) => {
-      let reports = readReportsRaw();
-      if (options?.where) {
-        reports = reports.filter((r) => {
-          for (const [key, val] of Object.entries(options.where!)) {
-            if ((r as unknown as Record<string, unknown>)[key] !== val) return false;
-          }
-          return true;
+      try {
+        const whereClause: any = {};
+        if (options?.where?.reporterId) {
+          whereClause.reporterId = options.where.reporterId;
+        }
+        if (options?.where?.status) {
+          whereClause.status = options.where.status;
+        }
+
+        const reports = await prisma.citizenReport.findMany({
+          where: whereClause,
+          orderBy: {
+            createdAt: options?.orderBy?.createdAt || "desc",
+          },
+          include: {
+            reporter: true,
+            statusHistory: {
+              orderBy: { createdAt: "asc" },
+            },
+          },
         });
+
+        return reports.map(mapPrismaReportToDomain);
+      } catch (err) {
+        console.error("Prisma error in citizenReport.findMany:", err);
+        return [];
       }
-      if (options?.orderBy?.createdAt) {
-        const dir = options.orderBy.createdAt === "asc" ? 1 : -1;
-        reports = [...reports].sort(
-          (a, b) => dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
-        );
-      } else {
-        // Default newest first
-        reports = [...reports].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
-      }
-      return reports;
     },
 
     findUnique: async (options: { where: { id: string } }) => {
-      const reports = readReportsRaw();
-      return reports.find((r) => r.id === options.where.id) || null;
+      try {
+        const raw = await prisma.citizenReport.findUnique({
+          where: { id: options.where.id },
+          include: {
+            reporter: true,
+            statusHistory: {
+              orderBy: { createdAt: "asc" },
+            },
+          },
+        });
+        return raw ? mapPrismaReportToDomain(raw) : null;
+      } catch (err) {
+        console.error("Prisma error in citizenReport.findUnique:", err);
+        return null;
+      }
     },
 
     create: async (options: {
@@ -359,35 +380,36 @@ export const db = {
         reporterEmail?: string;
       };
     }) => {
-      const reports = readReportsRaw();
-      const now = new Date().toISOString();
-      const newReport: CitizenReport = {
-        id: `rep_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        title: options.data.title.trim(),
-        description: options.data.description.trim(),
-        pollutionType: options.data.pollutionType.trim(),
-        locationDescription: options.data.locationDescription.trim(),
-        latitude: typeof options.data.latitude === "number" ? options.data.latitude : null,
-        longitude: typeof options.data.longitude === "number" ? options.data.longitude : null,
-        status: "SUBMITTED",
-        reporterId: options.data.reporterId,
-        reporterName: options.data.reporterName || "Anonymous Citizen",
-        reporterEmail: options.data.reporterEmail,
-        createdAt: now,
-        updatedAt: now,
-        statusHistory: [
-          {
-            status: "SUBMITTED",
-            updatedAt: now,
-            updatedBy: options.data.reporterName || options.data.reporterId,
-            notes: "Report submitted by citizen.",
-          },
-        ],
-      };
+      // Ensure User exists in Prisma SQLite database before establishing relation
+      await ensureUserInPrisma(options.data.reporterId);
 
-      const updated = [newReport, ...reports];
-      writeReportsRaw(updated);
-      return newReport;
+      const created = await prisma.citizenReport.create({
+        data: {
+          title: options.data.title.trim(),
+          description: options.data.description.trim(),
+          pollutionType: options.data.pollutionType.trim(),
+          locationDescription: options.data.locationDescription.trim(),
+          latitude: typeof options.data.latitude === "number" ? options.data.latitude : null,
+          longitude: typeof options.data.longitude === "number" ? options.data.longitude : null,
+          status: "SUBMITTED",
+          reporterId: options.data.reporterId,
+          statusHistory: {
+            create: {
+              status: "SUBMITTED",
+              updatedBy: options.data.reporterName || options.data.reporterId,
+              notes: "Report submitted by citizen.",
+            },
+          },
+        },
+        include: {
+          reporter: true,
+          statusHistory: {
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      });
+
+      return mapPrismaReportToDomain(created);
     },
 
     updateStatus: async (options: {
@@ -396,30 +418,27 @@ export const db = {
       updatedBy: string;
       notes?: string;
     }) => {
-      const reports = readReportsRaw();
-      const index = reports.findIndex((r) => r.id === options.id);
-      if (index === -1) throw new Error("Citizen report not found");
+      const updated = await prisma.citizenReport.update({
+        where: { id: options.id },
+        data: {
+          status: options.status,
+          statusHistory: {
+            create: {
+              status: options.status,
+              updatedBy: options.updatedBy,
+              notes: options.notes || `Status changed to ${options.status}`,
+            },
+          },
+        },
+        include: {
+          reporter: true,
+          statusHistory: {
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      });
 
-      const existing = reports[index];
-      const now = new Date().toISOString();
-      const historyLog: StatusAuditLog = {
-        status: options.status,
-        updatedAt: now,
-        updatedBy: options.updatedBy,
-        notes: options.notes || `Status changed to ${options.status}`,
-      };
-
-      const updatedReport: CitizenReport = {
-        ...existing,
-        status: options.status,
-        updatedAt: now,
-        statusHistory: [...(existing.statusHistory || []), historyLog],
-      };
-
-      const updated = [...reports];
-      updated[index] = updatedReport;
-      writeReportsRaw(updated);
-      return updatedReport;
+      return mapPrismaReportToDomain(updated);
     },
   },
 };
