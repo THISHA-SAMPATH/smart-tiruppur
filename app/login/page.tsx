@@ -98,94 +98,132 @@ function LoginForm() {
         height: "100vh",
         zIndex: 9999,
         overflowY: "auto",
-        background: "#faf9f6 url('/noyyal_green_landscape_backdrop.jpg') no-repeat bottom center / cover",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
+        backgroundColor: "#faf9f6",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
         color: "#18181b",
         boxSizing: "border-box",
       }}
     >
-      {/* Header Navigation floating over backdrop */}
-      <header
+      {/* Dedicated Landscape Graphic Pinned to Bottom */}
+      <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "24px 44px",
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
           width: "100%",
+          height: "60vh",
+          maxHeight: "520px",
+          pointerEvents: "none",
+          zIndex: 0,
+          overflow: "hidden",
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/noyyal_green_landscape_backdrop.jpg"
+          alt="Green Landscape Backdrop"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "bottom center",
+            display: "block",
+          }}
+        />
+      </div>
+
+      {/* Main Page Layout Container */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
           boxSizing: "border-box",
         }}
       >
-        <Link
-          href="/"
-          style={{
-            fontSize: "14px",
-            color: "#3f3f46",
-            textDecoration: "none",
-            fontWeight: 500,
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          ← Back
-        </Link>
-
-        {/* Center Logo */}
-        <div
+        {/* Header Navigation floating over backdrop */}
+        <header
           style={{
             display: "flex",
+            justifyContent: "space-between",
             alignItems: "center",
-            gap: "8px",
-            fontWeight: 700,
-            fontSize: "18px",
-            color: "#18181b",
-            letterSpacing: "-0.02em",
+            padding: "24px 44px",
+            width: "100%",
+            boxSizing: "border-box",
           }}
         >
-          <span
+          <Link
+            href="/"
             style={{
-              width: "24px",
-              height: "24px",
-              borderRadius: "50%",
-              background: "#0284c7",
-              color: "#ffffff",
-              display: "inline-flex",
+              fontSize: "14px",
+              color: "#3f3f46",
+              textDecoration: "none",
+              fontWeight: 500,
+              display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              fontSize: "12px",
+              gap: "6px",
             }}
           >
-            💧
-          </span>
-          <span>NoyyalSense</span>
-        </div>
+            ← Back
+          </Link>
 
-        <a
-          href="mailto:support@smarttiruppur.local"
+          {/* Center Logo */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontWeight: 700,
+              fontSize: "18px",
+              color: "#18181b",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            <span
+              style={{
+                width: "24px",
+                height: "24px",
+                borderRadius: "50%",
+                background: "#0284c7",
+                color: "#ffffff",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "12px",
+              }}
+            >
+              💧
+            </span>
+            <span>NoyyalSense</span>
+          </div>
+
+          <a
+            href="mailto:support@smarttiruppur.local"
+            style={{
+              fontSize: "13.5px",
+              color: "#3f3f46",
+              textDecoration: "none",
+              fontWeight: 500,
+            }}
+          >
+            Contact support
+          </a>
+        </header>
+
+        {/* Main Centered Login Card */}
+        <main
           style={{
-            fontSize: "13.5px",
-            color: "#3f3f46",
-            textDecoration: "none",
-            fontWeight: 500,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "20px 16px 60px",
+            flex: 1,
           }}
         >
-          Contact support
-        </a>
-      </header>
-
-      {/* Main Centered Login Card */}
-      <main
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: "20px 16px 80px",
-          flex: 1,
-        }}
-      >
         <div
           style={{
             background: "#ffffff",
@@ -529,6 +567,7 @@ function LoginForm() {
           </p>
         </div>
       </main>
+    </div>
     </div>
   );
 }
