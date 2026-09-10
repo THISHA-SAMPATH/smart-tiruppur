@@ -158,19 +158,45 @@ function LoginForm() {
             boxSizing: "border-box",
           }}
         >
+          {/* Top Left Brand Title & Tagline */}
           <Link
-            href="/"
+            href="/about"
             style={{
-              fontSize: "14px",
-              color: "#3f3f46",
               textDecoration: "none",
-              fontWeight: 500,
               display: "flex",
-              alignItems: "center",
-              gap: "6px",
+              flexDirection: "column",
+              gap: "2px",
             }}
           >
-            ← Back
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: "16px",
+                color: "#18181b",
+                letterSpacing: "-0.02em",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <span>Tiruppur</span>
+              <span
+                style={{
+                  fontSize: "10px",
+                  padding: "2px 7px",
+                  borderRadius: "999px",
+                  background: "#e0f2fe",
+                  color: "#0369a1",
+                  fontWeight: 600,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                SMART CITY
+              </span>
+            </div>
+            <span style={{ fontSize: "11.5px", color: "#71717a", fontWeight: 400 }}>
+              Noyyal River Basin Environmental Intelligence
+            </span>
           </Link>
 
           {/* Center Logo */}
@@ -203,17 +229,28 @@ function LoginForm() {
             <span>NoyyalSense</span>
           </div>
 
-          <a
-            href="mailto:support@smarttiruppur.local"
+          {/* Top Right About Link */}
+          <Link
+            href="/about"
             style={{
               fontSize: "13.5px",
-              color: "#3f3f46",
+              color: "#18181b",
               textDecoration: "none",
-              fontWeight: 500,
+              fontWeight: 600,
+              padding: "8px 18px",
+              borderRadius: "999px",
+              border: "1px solid #e4e4e7",
+              background: "#ffffff",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+              transition: "all 0.15s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
             }}
           >
-            Contact support
-          </a>
+            <span>About</span>
+            <span style={{ fontSize: "12px", opacity: 0.6 }}>→</span>
+          </Link>
         </header>
 
         {/* Main Centered Login Card */}
