@@ -128,7 +128,7 @@ export const db = {
       if (!options?.where) return users;
       return users.filter((u) => {
         for (const [key, val] of Object.entries(options.where!)) {
-          if ((u as Record<string, unknown>)[key] !== val) return false;
+          if ((u as unknown as Record<string, unknown>)[key] !== val) return false;
         }
         return true;
       });
