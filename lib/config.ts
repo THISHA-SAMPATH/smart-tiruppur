@@ -16,6 +16,12 @@ export const INFERENCE_BASE_URL =
  * 404s silently. This makes sure any such field is always absolute.
  */
 export function resolveLedgerUrl(maybeRelative: string): string {
-  if (/^https?:\/\//i.test(maybeRelative)) return maybeRelative;
+  if (/^https?:\/\//i.test(maybeRelative)) {
+    const url = new URL(maybeRelative);
+    if (url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+      return maybeRelative;
+    }
+    return `${LEDGER_BASE_URL}${url.pathname}${url.search}`;
+  }
   return `${LEDGER_BASE_URL}${maybeRelative.startsWith("/") ? "" : "/"}${maybeRelative}`;
 }
