@@ -1,0 +1,62 @@
+[
+  {
+    "id": "usr_admin_001",
+    "name": "System Administrator",
+    "email": "admin@smarttiruppur.local",
+    "passwordHash": "$2b$10$wSDizvsSZYwARsWWDq5RGuVm0B3eZVHc7nQERGyNvEIIxAtu4ocwq",
+    "role": "ADMIN",
+    "industryUnitId": null,
+    "organization": "Smart Tiruppur Core Admin",
+    "active": true,
+    "createdAt": "2026-09-10T14:58:04.087Z",
+    "updatedAt": "2026-09-10T14:58:04.087Z"
+  },
+  {
+    "id": "usr_regulator_001",
+    "name": "TNPCB Regional Officer",
+    "email": "regulator@smarttiruppur.local",
+    "passwordHash": "$2b$10$wSDizvsSZYwARsWWDq5RGuVm0B3eZVHc7nQERGyNvEIIxAtu4ocwq",
+    "role": "REGULATOR",
+    "industryUnitId": null,
+    "organization": "Tamil Nadu Pollution Control Board",
+    "active": true,
+    "createdAt": "2026-09-10T14:58:04.087Z",
+    "updatedAt": "2026-09-10T14:58:04.087Z"
+  },
+  {
+    "id": "usr_industry_001",
+    "name": "Unit 001 Operations Manager",
+    "email": "industry@smarttiruppur.local",
+    "passwordHash": "$2b$10$wSDizvsSZYwARsWWDq5RGuVm0B3eZVHc7nQERGyNvEIIxAtu4ocwq",
+    "role": "INDUSTRY",
+    "industryUnitId": "unit_001",
+    "organization": "Arulpuram CETP Textile Dyeing Unit 001",
+    "active": true,
+    "createdAt": "2026-09-10T14:58:04.087Z",
+    "updatedAt": "2026-09-10T14:58:04.087Z"
+  },
+  {
+    "id": "usr_groundwater_001",
+    "name": "CGWB Hydrogeologist",
+    "email": "groundwater@smarttiruppur.local",
+    "passwordHash": "$2b$10$wSDizvsSZYwARsWWDq5RGuVm0B3eZVHc7nQERGyNvEIIxAtu4ocwq",
+    "role": "GROUNDWATER_OFFICER",
+    "industryUnitId": null,
+    "organization": "Central Ground Water Board - Tiruppur",
+    "active": true,
+    "createdAt": "2026-09-10T14:58:04.087Z",
+    "updatedAt": "2026-09-10T14:58:04.087Z"
+  },
+  {
+    "id": "usr_citizen_001",
+    "name": "Tiruppur Citizen Representative",
+    "email": "citizen@smarttiruppur.local",
+    "passwordHash": "$2b$10$wSDizvsSZYwARsWWDq5RGuVm0B3eZVHc7nQERGyNvEIIxAtu4ocwq",
+    "role": "CITIZEN",
+    "industryUnitId": null,
+    "organization": "Civic Environmental Forum",
+    "active": true,
+    "createdAt": "2026-09-10T14:58:04.087Z",
+    "updatedAt": "2026-09-10T14:58:04.087Z"
+  }
+]
