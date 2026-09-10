@@ -4,6 +4,8 @@ import { getUnit, getUnitDpp, getUnitLedger } from "@/lib/api";
 import { resolveLedgerUrl } from "@/lib/config";
 import StaleBanner from "@/components/StaleBanner";
 
+export const dynamic = "force-dynamic";
+
 export default async function IndustryDashboardPage() {
   const currentUser = await getCurrentUser();
   const unitId = currentUser?.industryUnitId || "unit_001";

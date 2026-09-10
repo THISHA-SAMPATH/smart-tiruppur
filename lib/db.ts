@@ -20,41 +20,24 @@ export interface User {
 const DATA_DIR = path.join(process.cwd(), "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 
+let inMemoryUsers: User[] | null = null;
+
 function ensureDataDirectory() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
-
-function readUsersRaw(): User[] {
-  ensureDataDirectory();
-  if (!fs.existsSync(USERS_FILE)) {
-    return seedInitialUsers();
-  }
   try {
-    const raw = fs.readFileSync(USERS_FILE, "utf-8");
-    const users = JSON.parse(raw);
-    if (!Array.isArray(users) || users.length === 0) {
-      return seedInitialUsers();
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    return users;
   } catch {
-    return seedInitialUsers();
+    // Ignore read-only filesystem errors on Vercel
   }
 }
 
-function writeUsersRaw(users: User[]) {
-  ensureDataDirectory();
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf-8");
-}
-
-function seedInitialUsers(): User[] {
-  ensureDataDirectory();
+function getInitialUserSeed(): User[] {
   const defaultPassword = "SmartTiruppur2026!";
   const passwordHash = bcrypt.hashSync(defaultPassword, 10);
   const now = new Date().toISOString();
 
-  const initialUsers: User[] = [
+  return [
     {
       id: "usr_admin_001",
       name: "System Administrator",
@@ -116,9 +99,38 @@ function seedInitialUsers(): User[] {
       updatedAt: now,
     },
   ];
+}
 
-  fs.writeFileSync(USERS_FILE, JSON.stringify(initialUsers, null, 2), "utf-8");
-  return initialUsers;
+function readUsersRaw(): User[] {
+  if (inMemoryUsers) return inMemoryUsers;
+
+  ensureDataDirectory();
+  if (fs.existsSync(USERS_FILE)) {
+    try {
+      const raw = fs.readFileSync(USERS_FILE, "utf-8");
+      const users = JSON.parse(raw);
+      if (Array.isArray(users) && users.length > 0) {
+        inMemoryUsers = users;
+        return inMemoryUsers;
+      }
+    } catch {
+      // Fallback if file read fails
+    }
+  }
+
+  inMemoryUsers = getInitialUserSeed();
+  writeUsersRaw(inMemoryUsers);
+  return inMemoryUsers;
+}
+
+function writeUsersRaw(users: User[]) {
+  inMemoryUsers = users;
+  try {
+    ensureDataDirectory();
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf-8");
+  } catch {
+    // Fail silently on read-only environments like Vercel
+  }
 }
 
 export const db = {
@@ -171,8 +183,8 @@ export const db = {
         createdAt: now,
         updatedAt: now,
       };
-      users.unshift(newUser);
-      writeUsersRaw(users);
+      const updated = [newUser, ...users];
+      writeUsersRaw(updated);
       return newUser;
     },
 
@@ -191,17 +203,18 @@ export const db = {
         updatedAt: new Date().toISOString(),
       };
 
-      users[index] = updatedUser;
-      writeUsersRaw(users);
+      const updated = [...users];
+      updated[index] = updatedUser;
+      writeUsersRaw(updated);
       return updatedUser;
     },
 
     delete: async (options: { where: { id: string } }) => {
-      let users = readUsersRaw();
+      const users = readUsersRaw();
       const existing = users.find((u) => u.id === options.where.id);
       if (!existing) throw new Error("User not found");
-      users = users.filter((u) => u.id !== options.where.id);
-      writeUsersRaw(users);
+      const updated = users.filter((u) => u.id !== options.where.id);
+      writeUsersRaw(updated);
       return existing;
     },
 

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { LEDGER_BASE_URL, INFERENCE_BASE_URL, GROUNDWATER_BASE_URL } from "@/lib/config";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminSettingsPage() {
   const currentUser = await getCurrentUser();
 

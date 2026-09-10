@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 export default async function RegulatorDashboardPage() {
   const currentUser = await getCurrentUser();
 
