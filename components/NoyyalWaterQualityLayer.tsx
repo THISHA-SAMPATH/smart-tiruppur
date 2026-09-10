@@ -29,7 +29,7 @@ export default function NoyyalWaterQualityLayer() {
   const [icon, setIcon] = useState<L.DivIcon | null>(null);
 
   useEffect(() => {
-    // Create Leaflet Icon on client side only to ensure SSR safety
+    // Create Leaflet Icon on client side only for SSR safety
     if (typeof window !== "undefined") {
       const wqIcon = L.divIcon({
         className: "tnpcb-wq-marker-icon",
@@ -73,15 +73,16 @@ export default function NoyyalWaterQualityLayer() {
           icon={icon}
         >
           <Popup>
-            <div style={{ fontFamily: "IBM Plex Sans, sans-serif", padding: "4px", minWidth: "240px" }}>
+            <div style={{ fontFamily: "IBM Plex Sans, sans-serif", padding: "4px", minWidth: "250px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
                 <h4 style={{ margin: 0, fontFamily: "Fraunces, serif", fontSize: "15px", color: "#0369a1" }}>
                   {st.station_name}
                 </h4>
               </div>
 
-              <div style={{ fontSize: "11px", color: "#64748b", marginBottom: "6px" }}>
+              <div style={{ fontSize: "11.5px", color: "#475569", marginBottom: "6px", lineHeight: "1.5" }}>
                 <div><strong>Designation:</strong> <span style={{ color: "#0284c7", fontWeight: 600 }}>{st.designation}</span></div>
+                <div><strong>Coordinates:</strong> {st.latitude}, {st.longitude}</div>
                 <div><strong>Agency:</strong> {st.monitoring_agency}</div>
               </div>
 
@@ -89,11 +90,11 @@ export default function NoyyalWaterQualityLayer() {
               <div
                 style={{
                   background: "#f0f9ff",
-                  padding: "4px 6px",
+                  padding: "6px 8px",
                   borderRadius: "4px",
                   border: "1px solid #bae6fd",
                   marginBottom: "8px",
-                  fontSize: "10.5px",
+                  fontSize: "11px",
                   color: "#0369a1",
                   lineHeight: "1.4",
                 }}
@@ -102,28 +103,28 @@ export default function NoyyalWaterQualityLayer() {
                 <div><strong>Period:</strong> {st.period}</div>
               </div>
 
-              {/* Parameters Table */}
-              <div style={{ fontSize: "12px", lineHeight: "1.6", marginBottom: "8px", background: "#f8fafc", padding: "6px 8px", borderRadius: "4px", border: "1px solid #e2e8f0" }}>
+              {/* Verified Parameters Status */}
+              <div style={{ fontSize: "11.5px", lineHeight: "1.6", marginBottom: "8px", background: "#f8fafc", padding: "6px 8px", borderRadius: "4px", border: "1px solid #e2e8f0" }}>
                 <div style={{ fontSize: "10px", fontWeight: "bold", color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>
-                  Measured Parameters (2024 Baseline)
+                  Water Quality Measurements Status
                 </div>
                 <div>
-                  <strong>pH:</strong> {st.parameters.ph !== null ? st.parameters.ph : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>not available in verified source data</span>}
+                  <strong>pH:</strong> {st.parameters.ph !== null ? st.parameters.ph : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Not available in verified source data</span>}
                 </div>
                 <div>
-                  <strong>TDS:</strong> {st.parameters.tds_mg_l !== null ? `${st.parameters.tds_mg_l} mg/L` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>not available in verified source data</span>}
+                  <strong>TDS:</strong> {st.parameters.tds_mg_l !== null ? `${st.parameters.tds_mg_l} mg/L` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Not available in verified source data</span>}
                 </div>
                 <div>
-                  <strong>DO:</strong> {st.parameters.do_mg_l !== null ? `${st.parameters.do_mg_l} mg/L` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>not available in verified source data</span>}
+                  <strong>DO:</strong> {st.parameters.do_mg_l !== null ? `${st.parameters.do_mg_l} mg/L` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Not available in verified source data</span>}
                 </div>
                 <div>
-                  <strong>BOD:</strong> {st.parameters.bod_mg_l !== null ? `${st.parameters.bod_mg_l} mg/L` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>not available in verified source data</span>}
+                  <strong>BOD:</strong> {st.parameters.bod_mg_l !== null ? `${st.parameters.bod_mg_l} mg/L` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Not available in verified source data</span>}
                 </div>
                 <div>
-                  <strong>EC:</strong> {st.parameters.ec_us_cm !== null ? `${st.parameters.ec_us_cm} µS/cm` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>not available in verified source data</span>}
+                  <strong>EC:</strong> {st.parameters.ec_us_cm !== null ? `${st.parameters.ec_us_cm} µS/cm` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Not available in verified source data</span>}
                 </div>
                 <div>
-                  <strong>TSS:</strong> {st.parameters.tss_mg_l !== null ? `${st.parameters.tss_mg_l} mg/L` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>not available in verified source data</span>}
+                  <strong>TSS:</strong> {st.parameters.tss_mg_l !== null ? `${st.parameters.tss_mg_l} mg/L` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Not available in verified source data</span>}
                 </div>
               </div>
 
