@@ -94,7 +94,7 @@ function LoginForm() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        background: "#f7f6f0 url('/noyyal_landscape_backdrop.jpg') no-repeat bottom center / cover",
+        background: "#faf9f5 url('/noyyal_green_landscape_backdrop.jpg') no-repeat bottom center / cover",
         fontFamily: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         color: "#0f172a",
         position: "relative",
@@ -106,7 +106,7 @@ function LoginForm() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "24px 40px",
+          padding: "24px 44px",
           position: "relative",
           zIndex: 10,
         }}
@@ -115,13 +115,12 @@ function LoginForm() {
           href="/"
           style={{
             fontSize: "14px",
-            color: "#475569",
+            color: "#334155",
             textDecoration: "none",
             fontWeight: 500,
             display: "flex",
             alignItems: "center",
             gap: "6px",
-            transition: "color 0.2s ease",
           }}
         >
           ← Back
@@ -159,7 +158,7 @@ function LoginForm() {
           href="mailto:support@smarttiruppur.local"
           style={{
             fontSize: "13.5px",
-            color: "#475569",
+            color: "#334155",
             textDecoration: "none",
             fontWeight: 500,
           }}
@@ -174,24 +173,24 @@ function LoginForm() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          padding: "20px 16px 60px",
+          padding: "10px 16px 70px",
           flex: 1,
           zIndex: 10,
         }}
       >
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.96)",
+            background: "rgba(255, 255, 255, 0.97)",
             backdropFilter: "blur(12px)",
-            borderRadius: "24px",
-            boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08), 0 4px 16px rgba(0, 0, 0, 0.02)",
+            borderRadius: "20px",
+            boxShadow: "0 25px 60px rgba(15, 23, 42, 0.1), 0 4px 16px rgba(0, 0, 0, 0.03)",
             border: "1px solid rgba(226, 232, 240, 0.9)",
             width: "100%",
-            maxWidth: "440px",
+            maxWidth: "430px",
             padding: "36px 36px 32px",
           }}
         >
-          <div style={{ textAlign: "center", marginBottom: "24px" }}>
+          <div style={{ textAlign: "center", marginBottom: "22px" }}>
             <h1
               style={{
                 fontSize: "26px",
@@ -211,30 +210,17 @@ function LoginForm() {
                 margin: 0,
               }}
             >
-              Sign in to your role-based Smart Tiruppur workspace
+              Sign in to your role-based workspace
             </p>
           </div>
 
-          {/* Quick Demo Role Selector Row */}
-          <div style={{ marginBottom: "20px" }}>
-            <p
-              style={{
-                fontSize: "11px",
-                fontWeight: 700,
-                color: "#94a3b8",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                margin: "0 0 10px",
-                textAlign: "center",
-              }}
-            >
-              Select Demo Role Account
-            </p>
+          {/* Quick Social / Role Pills Bar matching reference screenshot */}
+          <div style={{ marginBottom: "18px" }}>
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "8px",
+                gap: "10px",
                 marginBottom: "8px",
               }}
             >
@@ -242,23 +228,23 @@ function LoginForm() {
                 type="button"
                 onClick={() => selectDemoRole("admin", "admin@smarttiruppur.local")}
                 style={{
-                  padding: "10px 8px",
-                  borderRadius: "12px",
+                  height: "44px",
+                  borderRadius: "10px",
                   border: selectedRole === "admin" ? "2px solid #0284c7" : "1px solid #e2e8f0",
                   background: selectedRole === "admin" ? "#f0f9ff" : "#ffffff",
                   color: selectedRole === "admin" ? "#0369a1" : "#334155",
                   fontWeight: 600,
                   fontSize: "12.5px",
                   cursor: "pointer",
-                  transition: "all 0.15s ease",
-                  textAlign: "center",
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
-                  gap: "4px",
+                  justifyContent: "center",
+                  gap: "6px",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                  transition: "all 0.15s ease",
                 }}
               >
-                <span style={{ fontSize: "15px" }}>👑</span>
+                <span>👑</span>
                 <span>Admin</span>
               </button>
 
@@ -266,23 +252,23 @@ function LoginForm() {
                 type="button"
                 onClick={() => selectDemoRole("regulator", "regulator@smarttiruppur.local")}
                 style={{
-                  padding: "10px 8px",
-                  borderRadius: "12px",
+                  height: "44px",
+                  borderRadius: "10px",
                   border: selectedRole === "regulator" ? "2px solid #0284c7" : "1px solid #e2e8f0",
                   background: selectedRole === "regulator" ? "#f0f9ff" : "#ffffff",
                   color: selectedRole === "regulator" ? "#0369a1" : "#334155",
                   fontWeight: 600,
                   fontSize: "12.5px",
                   cursor: "pointer",
-                  transition: "all 0.15s ease",
-                  textAlign: "center",
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
-                  gap: "4px",
+                  justifyContent: "center",
+                  gap: "6px",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                  transition: "all 0.15s ease",
                 }}
               >
-                <span style={{ fontSize: "15px" }}>🛡️</span>
+                <span>🛡️</span>
                 <span>Regulator</span>
               </button>
 
@@ -290,23 +276,23 @@ function LoginForm() {
                 type="button"
                 onClick={() => selectDemoRole("industry", "industry@smarttiruppur.local")}
                 style={{
-                  padding: "10px 8px",
-                  borderRadius: "12px",
+                  height: "44px",
+                  borderRadius: "10px",
                   border: selectedRole === "industry" ? "2px solid #0284c7" : "1px solid #e2e8f0",
                   background: selectedRole === "industry" ? "#f0f9ff" : "#ffffff",
                   color: selectedRole === "industry" ? "#0369a1" : "#334155",
                   fontWeight: 600,
                   fontSize: "12.5px",
                   cursor: "pointer",
-                  transition: "all 0.15s ease",
-                  textAlign: "center",
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
-                  gap: "4px",
+                  justifyContent: "center",
+                  gap: "6px",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                  transition: "all 0.15s ease",
                 }}
               >
-                <span style={{ fontSize: "15px" }}>🏭</span>
+                <span>🏭</span>
                 <span>Industry</span>
               </button>
             </div>
@@ -315,26 +301,27 @@ function LoginForm() {
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "8px",
+                gap: "10px",
               }}
             >
               <button
                 type="button"
                 onClick={() => selectDemoRole("groundwater", "groundwater@smarttiruppur.local")}
                 style={{
-                  padding: "8px 10px",
-                  borderRadius: "12px",
+                  height: "38px",
+                  borderRadius: "10px",
                   border: selectedRole === "groundwater" ? "2px solid #0284c7" : "1px solid #e2e8f0",
                   background: selectedRole === "groundwater" ? "#f0f9ff" : "#ffffff",
-                  color: selectedRole === "groundwater" ? "#0369a1" : "#334155",
+                  color: selectedRole === "groundwater" ? "#0369a1" : "#475569",
                   fontWeight: 600,
                   fontSize: "12px",
                   cursor: "pointer",
-                  transition: "all 0.15s ease",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                  transition: "all 0.15s ease",
                 }}
               >
                 <span>🌐</span>
@@ -345,19 +332,20 @@ function LoginForm() {
                 type="button"
                 onClick={() => selectDemoRole("citizen", "citizen@smarttiruppur.local")}
                 style={{
-                  padding: "8px 10px",
-                  borderRadius: "12px",
+                  height: "38px",
+                  borderRadius: "10px",
                   border: selectedRole === "citizen" ? "2px solid #0284c7" : "1px solid #e2e8f0",
                   background: selectedRole === "citizen" ? "#f0f9ff" : "#ffffff",
-                  color: selectedRole === "citizen" ? "#0369a1" : "#334155",
+                  color: selectedRole === "citizen" ? "#0369a1" : "#475569",
                   fontWeight: 600,
                   fontSize: "12px",
                   cursor: "pointer",
-                  transition: "all 0.15s ease",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                  transition: "all 0.15s ease",
                 }}
               >
                 <span>👤</span>
@@ -366,12 +354,12 @@ function LoginForm() {
             </div>
           </div>
 
-          {/* Form Divider */}
+          {/* Divider */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              margin: "20px 0",
+              margin: "18px 0",
               color: "#94a3b8",
               fontSize: "12px",
             }}
@@ -426,7 +414,7 @@ function LoginForm() {
                   padding: "11px 14px",
                   border: "1px solid #cbd5e1",
                   borderRadius: "10px",
-                  background: "#f8fafc",
+                  background: "#ffffff",
                   color: "#0f172a",
                   fontSize: "14px",
                   outline: "none",
@@ -483,7 +471,7 @@ function LoginForm() {
                   padding: "11px 14px",
                   border: "1px solid #cbd5e1",
                   borderRadius: "10px",
-                  background: "#f8fafc",
+                  background: "#ffffff",
                   color: "#0f172a",
                   fontSize: "14px",
                   outline: "none",
@@ -498,7 +486,7 @@ function LoginForm() {
               disabled={loading}
               style={{
                 width: "100%",
-                background: "#0f172a",
+                background: "#1e293b",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: "10px",
@@ -506,11 +494,11 @@ function LoginForm() {
                 fontSize: "14.5px",
                 fontWeight: 600,
                 cursor: loading ? "wait" : "pointer",
-                marginTop: "4px",
-                transition: "background 0.2s ease, transform 0.1s ease",
+                marginTop: "6px",
+                transition: "background 0.2s ease",
               }}
             >
-              {loading ? "Authenticating session…" : "Continue with Email →"}
+              {loading ? "Authenticating session…" : "Continue with Email"}
             </button>
           </form>
 
@@ -532,7 +520,7 @@ function LoginForm() {
                 textDecoration: "none",
               }}
             >
-              Request Access
+              Sign up
             </a>
           </p>
         </div>
