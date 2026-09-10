@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import NoyyalRiverLayer from "@/components/NoyyalRiverLayer";
 import IndustrialAreasLayer from "@/components/IndustrialAreasLayer";
+import FirkaGroundwaterLayer from "@/components/FirkaGroundwaterLayer";
 import IndustrialUnitsLayer, { IndustrialUnitGeo } from "@/components/IndustrialUnitsLayer";
 
 const TIRUPPUR_CENTER: [number, number] = [11.1085, 77.3411];
@@ -12,7 +13,9 @@ const DEFAULT_ZOOM = 13;
 export default function TiruppurMap() {
   const [showRiverLayer, setShowRiverLayer] = useState(true);
   const [showAreasLayer, setShowAreasLayer] = useState(true);
+  const [showFirkaLayer, setShowFirkaLayer] = useState(true);
   const [showUnitsLayer, setShowUnitsLayer] = useState(true);
+  const [extractionMultiplier, setExtractionMultiplier] = useState(1.0);
   const [geocodedCount, setGeocodedCount] = useState(0);
   const [totalUnitsCount, setTotalUnitsCount] = useState(0);
 
@@ -43,13 +46,14 @@ export default function TiruppurMap() {
           top: "14px",
           right: "14px",
           zIndex: 1000,
-          background: "rgba(246, 243, 234, 0.94)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(246, 243, 234, 0.96)",
+          backdropFilter: "blur(8px)",
           padding: "12px 16px",
           borderRadius: "var(--radius-sm)",
           border: "1px solid var(--hairline)",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-          minWidth: "220px",
+          boxShadow: "0 4px 14px rgba(0, 0, 0, 0.12)",
+          minWidth: "240px",
+          maxWidth: "280px",
         }}
       >
         <p
@@ -129,6 +133,37 @@ export default function TiruppurMap() {
           >
             <input
               type="checkbox"
+              checked={showFirkaLayer}
+              onChange={(e) => setShowFirkaLayer(e.target.checked)}
+              style={{ accentColor: "#16a34a", cursor: "pointer" }}
+            />
+            <span
+              style={{
+                display: "inline-flex",
+                gap: "2px",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ width: "4px", height: "10px", background: "#16a34a", borderRadius: "1px" }} />
+              <span style={{ width: "4px", height: "10px", background: "#ca8a04", borderRadius: "1px" }} />
+              <span style={{ width: "4px", height: "10px", background: "#ea580c", borderRadius: "1px" }} />
+              <span style={{ width: "4px", height: "10px", background: "#dc2626", borderRadius: "1px" }} />
+            </span>
+            FIRKA Groundwater (33)
+          </label>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
               checked={showUnitsLayer}
               onChange={(e) => setShowUnitsLayer(e.target.checked)}
               style={{ accentColor: "#9c3b22", cursor: "pointer" }}
@@ -145,6 +180,58 @@ export default function TiruppurMap() {
             Industrial Units ({geocodedCount}/{totalUnitsCount || 12})
           </label>
         </div>
+
+        {showFirkaLayer && (
+          <div
+            style={{
+              marginTop: "10px",
+              paddingTop: "8px",
+              borderTop: "1px solid var(--hairline)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                marginBottom: "4px",
+              }}
+            >
+              <span style={{ fontSize: "11px", fontWeight: 600, color: "#475569" }}>
+                Groundwater Scenario:
+              </span>
+              <span style={{ fontSize: "11px", fontWeight: "bold", color: extractionMultiplier === 1.0 ? "#1e293b" : "#b45309" }}>
+                {extractionMultiplier === 1.0 ? "Baseline (1.0x)" : `${extractionMultiplier}x Extraction`}
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: "4px" }}>
+              <button
+                type="button"
+                className={`btn ${extractionMultiplier === 1.0 ? "btn-primary" : "btn-ghost"}`}
+                style={{ padding: "2px 6px", fontSize: "10px", flex: 1 }}
+                onClick={() => setExtractionMultiplier(1.0)}
+              >
+                1.0x Base
+              </button>
+              <button
+                type="button"
+                className={`btn ${extractionMultiplier === 1.2 ? "btn-primary" : "btn-ghost"}`}
+                style={{ padding: "2px 6px", fontSize: "10px", flex: 1 }}
+                onClick={() => setExtractionMultiplier(1.2)}
+              >
+                1.2x (+20%)
+              </button>
+              <button
+                type="button"
+                className={`btn ${extractionMultiplier === 0.8 ? "btn-primary" : "btn-ghost"}`}
+                style={{ padding: "2px 6px", fontSize: "10px", flex: 1 }}
+                onClick={() => setExtractionMultiplier(0.8)}
+              >
+                0.8x (-20%)
+              </button>
+            </div>
+          </div>
+        )}
 
         {totalUnitsCount > 0 && geocodedCount === 0 && (
           <p className="small muted" style={{ fontSize: "11px", margin: "8px 0 0", color: "var(--turmeric)" }}>
@@ -169,6 +256,10 @@ export default function TiruppurMap() {
         {showRiverLayer && <NoyyalRiverLayer />}
 
         {showAreasLayer && <IndustrialAreasLayer />}
+
+        {showFirkaLayer && (
+          <FirkaGroundwaterLayer multiplier={extractionMultiplier} />
+        )}
 
         {showUnitsLayer && (
           <IndustrialUnitsLayer onUnitsLoaded={handleUnitsLoaded} />
