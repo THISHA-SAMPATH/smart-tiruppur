@@ -8,6 +8,8 @@ export default function Nav() {
   const pathname = usePathname();
   const { user, logout, loading } = useAuth();
 
+  if (pathname === "/login") return null;
+
   const isActive = (path: string) =>
     path === "/" ? pathname === "/" : pathname.startsWith(path);
 

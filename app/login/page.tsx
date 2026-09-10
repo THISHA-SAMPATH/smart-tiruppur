@@ -89,33 +89,41 @@ function LoginForm() {
   return (
     <div
       style={{
-        minHeight: "100vh",
-        width: "100%",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 9999,
+        overflowY: "auto",
+        background: "#f7f6f0 url('/noyyal_green_landscape_backdrop.jpg') no-repeat bottom center",
+        backgroundSize: "100% auto",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        background: "#faf9f5 url('/noyyal_green_landscape_backdrop.jpg') no-repeat bottom center / cover",
-        fontFamily: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        color: "#0f172a",
-        position: "relative",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+        color: "#18181b",
+        boxSizing: "border-box",
       }}
     >
-      {/* Top Header Navigation */}
+      {/* Header Navigation floating over backdrop */}
       <header
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           padding: "24px 44px",
-          position: "relative",
-          zIndex: 10,
+          width: "100%",
+          boxSizing: "border-box",
         }}
       >
         <Link
           href="/"
           style={{
             fontSize: "14px",
-            color: "#334155",
+            color: "#3f3f46",
             textDecoration: "none",
             fontWeight: 500,
             display: "flex",
@@ -126,6 +134,7 @@ function LoginForm() {
           ← Back
         </Link>
 
+        {/* Center Logo */}
         <div
           style={{
             display: "flex",
@@ -133,20 +142,21 @@ function LoginForm() {
             gap: "8px",
             fontWeight: 700,
             fontSize: "18px",
+            color: "#18181b",
             letterSpacing: "-0.02em",
           }}
         >
           <span
             style={{
-              width: "26px",
-              height: "26px",
+              width: "24px",
+              height: "24px",
               borderRadius: "50%",
               background: "#0284c7",
               color: "#ffffff",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "13px",
+              fontSize: "12px",
             }}
           >
             💧
@@ -158,7 +168,7 @@ function LoginForm() {
           href="mailto:support@smarttiruppur.local"
           style={{
             fontSize: "13.5px",
-            color: "#334155",
+            color: "#3f3f46",
             textDecoration: "none",
             fontWeight: 500,
           }}
@@ -173,30 +183,30 @@ function LoginForm() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          padding: "10px 16px 70px",
+          padding: "20px 16px 80px",
           flex: 1,
-          zIndex: 10,
         }}
       >
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.97)",
-            backdropFilter: "blur(12px)",
+            background: "#ffffff",
             borderRadius: "20px",
-            boxShadow: "0 25px 60px rgba(15, 23, 42, 0.1), 0 4px 16px rgba(0, 0, 0, 0.03)",
-            border: "1px solid rgba(226, 232, 240, 0.9)",
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04)",
+            border: "1px solid rgba(0, 0, 0, 0.06)",
             width: "100%",
-            maxWidth: "430px",
-            padding: "36px 36px 32px",
+            maxWidth: "410px",
+            padding: "36px 32px 32px",
+            boxSizing: "border-box",
           }}
         >
-          <div style={{ textAlign: "center", marginBottom: "22px" }}>
+          {/* Card Title & Subtitle */}
+          <div style={{ textAlign: "center", marginBottom: "24px" }}>
             <h1
               style={{
-                fontSize: "26px",
-                fontFamily: "'Fraunces', serif",
-                fontWeight: 600,
-                color: "#0f172a",
+                fontSize: "25px",
+                fontFamily: "'Fraunces', Georgia, serif",
+                fontWeight: 500,
+                color: "#18181b",
                 margin: "0 0 6px",
                 letterSpacing: "-0.01em",
               }}
@@ -206,7 +216,7 @@ function LoginForm() {
             <p
               style={{
                 fontSize: "13.5px",
-                color: "#64748b",
+                color: "#71717a",
                 margin: 0,
               }}
             >
@@ -214,13 +224,13 @@ function LoginForm() {
             </p>
           </div>
 
-          {/* Quick Social / Role Pills Bar matching reference screenshot */}
-          <div style={{ marginBottom: "18px" }}>
+          {/* Quick Role Selection Pills */}
+          <div style={{ marginBottom: "20px" }}>
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "10px",
+                gap: "8px",
                 marginBottom: "8px",
               }}
             >
@@ -228,19 +238,18 @@ function LoginForm() {
                 type="button"
                 onClick={() => selectDemoRole("admin", "admin@smarttiruppur.local")}
                 style={{
-                  height: "44px",
+                  height: "42px",
                   borderRadius: "10px",
-                  border: selectedRole === "admin" ? "2px solid #0284c7" : "1px solid #e2e8f0",
-                  background: selectedRole === "admin" ? "#f0f9ff" : "#ffffff",
-                  color: selectedRole === "admin" ? "#0369a1" : "#334155",
-                  fontWeight: 600,
+                  border: selectedRole === "admin" ? "1.5px solid #18181b" : "1px solid #e4e4e7",
+                  background: selectedRole === "admin" ? "#fafafa" : "#ffffff",
+                  color: selectedRole === "admin" ? "#18181b" : "#3f3f46",
+                  fontWeight: 500,
                   fontSize: "12.5px",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -252,19 +261,18 @@ function LoginForm() {
                 type="button"
                 onClick={() => selectDemoRole("regulator", "regulator@smarttiruppur.local")}
                 style={{
-                  height: "44px",
+                  height: "42px",
                   borderRadius: "10px",
-                  border: selectedRole === "regulator" ? "2px solid #0284c7" : "1px solid #e2e8f0",
-                  background: selectedRole === "regulator" ? "#f0f9ff" : "#ffffff",
-                  color: selectedRole === "regulator" ? "#0369a1" : "#334155",
-                  fontWeight: 600,
+                  border: selectedRole === "regulator" ? "1.5px solid #18181b" : "1px solid #e4e4e7",
+                  background: selectedRole === "regulator" ? "#fafafa" : "#ffffff",
+                  color: selectedRole === "regulator" ? "#18181b" : "#3f3f46",
+                  fontWeight: 500,
                   fontSize: "12.5px",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -276,19 +284,18 @@ function LoginForm() {
                 type="button"
                 onClick={() => selectDemoRole("industry", "industry@smarttiruppur.local")}
                 style={{
-                  height: "44px",
+                  height: "42px",
                   borderRadius: "10px",
-                  border: selectedRole === "industry" ? "2px solid #0284c7" : "1px solid #e2e8f0",
-                  background: selectedRole === "industry" ? "#f0f9ff" : "#ffffff",
-                  color: selectedRole === "industry" ? "#0369a1" : "#334155",
-                  fontWeight: 600,
+                  border: selectedRole === "industry" ? "1.5px solid #18181b" : "1px solid #e4e4e7",
+                  background: selectedRole === "industry" ? "#fafafa" : "#ffffff",
+                  color: selectedRole === "industry" ? "#18181b" : "#3f3f46",
+                  fontWeight: 500,
                   fontSize: "12.5px",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -301,7 +308,7 @@ function LoginForm() {
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "10px",
+                gap: "8px",
               }}
             >
               <button
@@ -310,17 +317,16 @@ function LoginForm() {
                 style={{
                   height: "38px",
                   borderRadius: "10px",
-                  border: selectedRole === "groundwater" ? "2px solid #0284c7" : "1px solid #e2e8f0",
-                  background: selectedRole === "groundwater" ? "#f0f9ff" : "#ffffff",
-                  color: selectedRole === "groundwater" ? "#0369a1" : "#475569",
-                  fontWeight: 600,
+                  border: selectedRole === "groundwater" ? "1.5px solid #18181b" : "1px solid #e4e4e7",
+                  background: selectedRole === "groundwater" ? "#fafafa" : "#ffffff",
+                  color: selectedRole === "groundwater" ? "#18181b" : "#52525b",
+                  fontWeight: 500,
                   fontSize: "12px",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -334,17 +340,16 @@ function LoginForm() {
                 style={{
                   height: "38px",
                   borderRadius: "10px",
-                  border: selectedRole === "citizen" ? "2px solid #0284c7" : "1px solid #e2e8f0",
-                  background: selectedRole === "citizen" ? "#f0f9ff" : "#ffffff",
-                  color: selectedRole === "citizen" ? "#0369a1" : "#475569",
-                  fontWeight: 600,
+                  border: selectedRole === "citizen" ? "1.5px solid #18181b" : "1px solid #e4e4e7",
+                  background: selectedRole === "citizen" ? "#fafafa" : "#ffffff",
+                  color: selectedRole === "citizen" ? "#18181b" : "#52525b",
+                  fontWeight: 500,
                   fontSize: "12px",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -359,22 +364,22 @@ function LoginForm() {
             style={{
               display: "flex",
               alignItems: "center",
-              margin: "18px 0",
-              color: "#94a3b8",
+              margin: "20px 0",
+              color: "#a1a1aa",
               fontSize: "12px",
             }}
           >
-            <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-            <span style={{ padding: "0 12px" }}>or</span>
-            <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
+            <div style={{ flex: 1, height: "1px", background: "#f4f4f5" }} />
+            <span style={{ padding: "0 10px", color: "#a1a1aa" }}>or</span>
+            <div style={{ flex: 1, height: "1px", background: "#f4f4f5" }} />
           </div>
 
-          {/* Error Message Display */}
+          {/* Error Message */}
           {error && (
             <div
               style={{
                 background: "#fef2f2",
-                border: "1px solid #fecaca",
+                border: "1px solid #fee2e2",
                 color: "#991b1b",
                 padding: "10px 14px",
                 borderRadius: "10px",
@@ -386,7 +391,7 @@ function LoginForm() {
             </div>
           )}
 
-          {/* Login Form */}
+          {/* Form */}
           <form onSubmit={handleSubmit} style={{ display: "grid", gap: "16px" }}>
             <div>
               <label
@@ -395,7 +400,7 @@ function LoginForm() {
                   display: "block",
                   fontSize: "13px",
                   fontWeight: 500,
-                  color: "#334155",
+                  color: "#3f3f46",
                   marginBottom: "6px",
                 }}
               >
@@ -411,11 +416,11 @@ function LoginForm() {
                 disabled={loading}
                 style={{
                   width: "100%",
-                  padding: "11px 14px",
-                  border: "1px solid #cbd5e1",
+                  padding: "12px 14px",
+                  border: "1px solid #e4e4e7",
                   borderRadius: "10px",
                   background: "#ffffff",
-                  color: "#0f172a",
+                  color: "#18181b",
                   fontSize: "14px",
                   outline: "none",
                   boxSizing: "border-box",
@@ -437,7 +442,7 @@ function LoginForm() {
                   style={{
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#334155",
+                    color: "#3f3f46",
                   }}
                 >
                   Password
@@ -468,11 +473,11 @@ function LoginForm() {
                 disabled={loading}
                 style={{
                   width: "100%",
-                  padding: "11px 14px",
-                  border: "1px solid #cbd5e1",
+                  padding: "12px 14px",
+                  border: "1px solid #e4e4e7",
                   borderRadius: "10px",
                   background: "#ffffff",
-                  color: "#0f172a",
+                  color: "#18181b",
                   fontSize: "14px",
                   outline: "none",
                   boxSizing: "border-box",
@@ -486,16 +491,16 @@ function LoginForm() {
               disabled={loading}
               style={{
                 width: "100%",
-                background: "#1e293b",
+                background: "#18181b",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: "10px",
                 padding: "13px",
-                fontSize: "14.5px",
+                fontSize: "14px",
                 fontWeight: 600,
                 cursor: loading ? "wait" : "pointer",
-                marginTop: "6px",
-                transition: "background 0.2s ease",
+                marginTop: "4px",
+                transition: "background 0.15s ease",
               }}
             >
               {loading ? "Authenticating session…" : "Continue with Email"}
@@ -505,7 +510,7 @@ function LoginForm() {
           <p
             style={{
               fontSize: "12.5px",
-              color: "#64748b",
+              color: "#71717a",
               textAlign: "center",
               marginTop: "20px",
               marginBottom: 0,
@@ -515,7 +520,7 @@ function LoginForm() {
             <a
               href="mailto:admin@smarttiruppur.local"
               style={{
-                color: "#0f172a",
+                color: "#18181b",
                 fontWeight: 600,
                 textDecoration: "none",
               }}
@@ -534,7 +539,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div style={{ textAlign: "center", padding: "60px 20px" }}>
-          <p style={{ color: "#64748b", fontSize: "14px" }}>Loading portal…</p>
+          <p style={{ color: "#71717a", fontSize: "14px" }}>Loading portal…</p>
         </div>
       }
     >
@@ -542,3 +547,4 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
