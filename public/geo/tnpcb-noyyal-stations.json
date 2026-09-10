@@ -1,0 +1,59 @@
+[
+  {
+    "station_id": "tnpcb_noyyal_001",
+    "station_name": "Noyyal River at Mangalam",
+    "designation": "Upstream Entry",
+    "latitude": 11.10651,
+    "longitude": 77.26001,
+    "monitoring_agency": "TNPCB / DEE Tiruppur North",
+    "data_type": "Historical / Periodic TNPCB NWMP Field Measurement",
+    "period": "2023–2024 / 2024 Baseline",
+    "source": "Tamil Nadu Environment Policy Note (2024) / CPCB NWMP",
+    "parameters": {
+      "ph": 7.2,
+      "tds_mg_l": 480,
+      "do_mg_l": 5.8,
+      "bod_mg_l": 4.2,
+      "tss_mg_l": null,
+      "ec_us_cm": 790
+    }
+  },
+  {
+    "station_id": "tnpcb_noyyal_002",
+    "station_name": "Noyyal River at Kasipalayam Bridge",
+    "designation": "Urban/Industrial Exit",
+    "latitude": 11.11975,
+    "longitude": 77.39716,
+    "monitoring_agency": "TNPCB / DEE Tiruppur North",
+    "data_type": "Historical / Periodic TNPCB NWMP Field Measurement",
+    "period": "2023–2024 / 2024 Baseline",
+    "source": "Tamil Nadu Environment Policy Note (2024) / CPCB NWMP",
+    "parameters": {
+      "ph": 8.4,
+      "tds_mg_l": 2850,
+      "do_mg_l": 1.2,
+      "bod_mg_l": 38.0,
+      "tss_mg_l": null,
+      "ec_us_cm": 4750
+    }
+  },
+  {
+    "station_id": "tnpcb_noyyal_003",
+    "station_name": "Noyyal River Downstream of Orathapalayam Dam",
+    "designation": "Downstream Reservoir Exit",
+    "latitude": 11.11084,
+    "longitude": 77.53981,
+    "monitoring_agency": "TNPCB / DEE Tiruppur North",
+    "data_type": "Historical / Periodic TNPCB NWMP Field Measurement",
+    "period": "2023–2024 / 2024 Baseline",
+    "source": "Tamil Nadu Environment Policy Note (2024) / CPCB NWMP",
+    "parameters": {
+      "ph": 8.8,
+      "tds_mg_l": 3150,
+      "do_mg_l": 0.8,
+      "bod_mg_l": 44.0,
+      "tss_mg_l": null,
+      "ec_us_cm": 5200
+    }
+  }
+]

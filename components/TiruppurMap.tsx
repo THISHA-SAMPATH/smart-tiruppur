@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import NoyyalRiverLayer from "@/components/NoyyalRiverLayer";
+import NoyyalWaterQualityLayer from "@/components/NoyyalWaterQualityLayer";
 import IndustrialAreasLayer from "@/components/IndustrialAreasLayer";
 import FirkaGroundwaterLayer from "@/components/FirkaGroundwaterLayer";
 import IndustrialUnitsLayer, { IndustrialUnitGeo } from "@/components/IndustrialUnitsLayer";
@@ -12,6 +13,7 @@ const DEFAULT_ZOOM = 13;
 
 export default function TiruppurMap() {
   const [showRiverLayer, setShowRiverLayer] = useState(true);
+  const [showWqLayer, setShowWqLayer] = useState(true);
   const [showAreasLayer, setShowAreasLayer] = useState(true);
   const [showFirkaLayer, setShowFirkaLayer] = useState(true);
   const [showUnitsLayer, setShowUnitsLayer] = useState(true);
@@ -90,6 +92,40 @@ export default function TiruppurMap() {
               }}
             />
             Noyyal River
+          </label>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showWqLayer}
+              onChange={(e) => setShowWqLayer(e.target.checked)}
+              style={{ accentColor: "#0284c7", cursor: "pointer" }}
+            />
+            <span
+              style={{
+                width: "12px",
+                height: "12px",
+                background: "#0284c7",
+                borderRadius: "50%",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontSize: "8px",
+              }}
+            >
+              💧
+            </span>
+            TNPCB Water Quality (3)
           </label>
 
           <label
@@ -254,6 +290,8 @@ export default function TiruppurMap() {
         />
 
         {showRiverLayer && <NoyyalRiverLayer />}
+
+        {showWqLayer && <NoyyalWaterQualityLayer />}
 
         {showAreasLayer && <IndustrialAreasLayer />}
 
