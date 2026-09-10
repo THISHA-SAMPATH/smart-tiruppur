@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Nav from "@/components/Nav";
+import { AuthProvider } from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
   title: "NoyyalSense — Smart Tiruppur",
-  description: "Regulator dashboard for the NoyyalSense Green Ledger project",
+  description: "Civic intelligence & regulator dashboard for Smart Tiruppur",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <Nav />
-        <main className="shell">{children}</main>
+        <AuthProvider>
+          <Nav />
+          <main className="shell">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );
