@@ -31,8 +31,6 @@ export function toLedgerUnitId(hariUnitId: string): string {
     const num = match[1].padStart(3, "0");
     return `unit_${num}`;
   }
-  // Already in unit_XXX form, or something unexpected — pass through
-  // unchanged rather than silently mangling it.
   return hariUnitId;
 }
 
@@ -47,8 +45,6 @@ export function toHariUnitId(ledgerUnitId: string): string {
 }
 
 function normalizeDecision(raw: "INVESTIGATE" | "ABSTAIN"): Decision {
-  // Her API never emits a "normal" case today — see README for why the
-  // dashboard only shows "normal" for Vamika's seeded demo events.
   return raw === "INVESTIGATE" ? "investigate" : "abstain";
 }
 
@@ -62,29 +58,14 @@ function estimateSeverity(
   return "low";
 }
 
-/** Normalise both known API versions into the dashboard candidate shape. */
-function getTopCandidates(raw: HariSimulateEventResponse): TopCandidate[] {
-  const entries = Array.isArray(raw.posterior_top3)
-    ? raw.posterior_top3.map(({ unit, probability }) => [unit, probability] as const)
-    : Object.entries(raw.posterior_top3);
-
-  return entries
-    .filter(([, probability]) => typeof probability === "number")
-    .sort(([, left], [, right]) => right - left)
-    .map(([unit, probability]) => ({
-      unit_id: toLedgerUnitId(unit),
-      probability,
-    }));
-}
-
 function buildExplanation(
   raw: HariSimulateEventResponse,
   decision: Decision,
   topUnitLedgerId: string | null,
+  topProbability: number | null,
 ): string {
   if (decision === "investigate" && topUnitLedgerId) {
-    const top = getTopCandidates(raw)[0];
-    const pct = top ? Math.round(top.probability * 100) : null;
+    const pct = topProbability != null ? Math.round(topProbability * 100) : null;
     return pct != null
       ? `Sensor pattern is most consistent with a release from ${topUnitLedgerId} (${pct}% posterior probability).`
       : `Sensor pattern is most consistent with a release from ${topUnitLedgerId}.`;
@@ -93,14 +74,18 @@ function buildExplanation(
   return "Evidence across candidate sources was too close to make a defensible attribution.";
 }
 
-/**
- * Translate Haripriya's raw /simulate_event or /infer response into the
- * ContractEvent shape the rest of the dashboard (and Vamika's ledger
- * POST /ledger/events body) expects.
- */
 export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
   const decision = normalizeDecision(raw.decision.decision);
-  const topCandidates = getTopCandidates(raw);
+  const posterior = Array.isArray(raw.posterior_top3)
+    ? raw.posterior_top3
+    : Object.entries(raw.posterior_top3).map(([unit, probability]) => ({
+        unit,
+        probability,
+      }));
+  const topCandidates: TopCandidate[] = posterior.map((c) => ({
+    unit_id: toLedgerUnitId(c.unit),
+    probability: c.probability,
+  }));
 
   const mostLikelySource =
     decision === "investigate" && raw.decision.unit
@@ -113,9 +98,6 @@ export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
   const missingCount = raw.sensor_health?.missing_count ?? 0;
   const driftDetected = raw.sensor_health?.drift_detected ?? false;
 
-  // Contract's abstention rules, mirrored here so "evidence_sufficiency"
-  // reflects the same thresholds the brief specifies (top prob < 0.55,
-  // gap < 0.15, or too many sensors missing/drifting).
   const gap =
     topCandidates.length >= 2
       ? topCandidates[0].probability - topCandidates[1].probability
@@ -146,20 +128,17 @@ export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
       missing_sensor_count: missingCount,
       drift_detected: driftDetected,
     },
-    explanation: buildExplanation(raw, decision, mostLikelySource),
+    explanation: buildExplanation(
+      raw,
+      decision,
+      mostLikelySource,
+      topCandidates[0]?.probability ?? null,
+    ),
     model_version: "haripriya-inference-v1 (adapted)",
     source: "adapter",
   };
 }
 
-/**
- * Vamika's ledger stores (and returns from GET /ledger/events and
- * GET /units/{id}/ledger) a simpler record than the full ContractEvent
- * shape — no sensor_conditions, top_candidates, explanation, etc. This
- * fills in safe defaults for whatever her stored record doesn't carry, so
- * every ContractEvent the UI touches is always a complete, safe-to-render
- * object regardless of which service it came from.
- */
 export function mapLedgerEntryToContractEvent(
   entry: LedgerEntry,
 ): ContractEvent {

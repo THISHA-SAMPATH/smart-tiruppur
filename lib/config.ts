@@ -5,6 +5,16 @@
 export const LEDGER_BASE_URL =
   process.env.NEXT_PUBLIC_LEDGER_BASE_URL || "http://localhost:8000";
 
-// Browser requests use Next's same-origin proxy. This avoids requiring the
-// separately-run inference service to implement CORS for the dashboard.
-export const INFERENCE_BASE_URL = "/api/inference";
+export const INFERENCE_BASE_URL =
+  process.env.NEXT_PUBLIC_INFERENCE_BASE_URL || "http://localhost:8001";
+
+/**
+ * Vamika's ledger returns some URLs (e.g. qr_url) as paths relative to her
+ * own service, like "/units/unit_002/qr". Dropped straight into an <img src>,
+ * a relative path resolves against *this* app's domain instead of hers and
+ * 404s silently. This makes sure any such field is always absolute.
+ */
+export function resolveLedgerUrl(maybeRelative: string): string {
+  if (/^https?:\/\//i.test(maybeRelative)) return maybeRelative;
+  return `${LEDGER_BASE_URL}${maybeRelative.startsWith("/") ? "" : "/"}${maybeRelative}`;
+}

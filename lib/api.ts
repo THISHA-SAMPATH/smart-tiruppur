@@ -4,7 +4,6 @@ import type {
   ContractEvent,
   DppResponse,
   HariSimulateEventResponse,
-  LedgerDppResponse,
   LedgerEntry,
   LedgerUnit,
   UnitLedgerResponse,
@@ -42,13 +41,6 @@ function writeCache<T>(key: string, data: T) {
   }
 }
 
-/**
- * Fetch JSON with a cache-backed fallback. If the request fails (service
- * down, network error, non-2xx), falls back to the last successful response
- * for this key and marks the result `stale: true` so the UI can show a
- * "last-known data" banner instead of crashing — per the integration
- * requirement that one service being down shouldn't take out the dashboard.
- */
 async function fetchWithFallback<T>(
   key: string,
   url: string,
@@ -106,35 +98,10 @@ export function getUnit(unitId: string) {
 }
 
 export function getUnitDpp(unitId: string) {
-  return fetchWithFallback<LedgerDppResponse>(
+  return fetchWithFallback<DppResponse>(
     `dpp_${unitId}`,
     `${LEDGER_BASE_URL}/units/${unitId}/dpp`,
-  ).then((result): FetchResult<DppResponse> => ({
-    ...result,
-    data: result.data ? adaptLedgerDpp(result.data) : null,
-  }));
-}
-
-/** Translate the ledger's DPP payload into the shape rendered by the UI. */
-function adaptLedgerDpp(raw: LedgerDppResponse): DppResponse {
-  const { unit, compliance_summary: summary, environmental_evidence: evidence } = raw;
-  return {
-    unit_id: unit.unit_id,
-    unit_profile: unit,
-    compliance_summary: `${summary.cetp_zld_status}; ${summary.compliance_status.replace(/_/g, " ")}.`,
-    reuse_and_energy: {
-      reuse_percentage: unit.reuse_percentage,
-      renewable_energy_percentage: unit.renewable_energy_percentage,
-    },
-    recent_environmental_evidence: {
-      status: evidence.status,
-      last_event_id: null,
-      confidence: evidence.latest_confidence,
-    },
-    issue_date: raw.issue_date,
-    verification_id: raw.verification_id,
-    qr_url: raw.qr_url,
-  };
+  );
 }
 
 export function getUnitLedger(unitId: string) {
@@ -145,10 +112,6 @@ export function getUnitLedger(unitId: string) {
 }
 
 export async function getGlobalEvents(): Promise<FetchResult<ContractEvent[]>> {
-  // Vamika's GET /ledger/events returns her stored LedgerEntry[] shape, not
-  // the full ContractEvent shape — map each entry through the adapter so
-  // every field the UI expects is always present, even if her stored
-  // record doesn't carry it (see mapLedgerEntryToContractEvent).
   const res = await fetchWithFallback<LedgerEntry[]>(
     "global_events",
     `${LEDGER_BASE_URL}/ledger/events`,
@@ -187,8 +150,6 @@ export async function simulateInferenceEvent(): Promise<
   const raw = await fetchWithFallback<HariSimulateEventResponse>(
     "last_simulated_raw",
     `${INFERENCE_BASE_URL}/simulate_event`,
-    // The inference API declares its request body as required, even though
-    // every field has a default. An empty JSON object satisfies that contract.
     { method: "POST", body: JSON.stringify({}) },
   );
   if (!raw.data) {
