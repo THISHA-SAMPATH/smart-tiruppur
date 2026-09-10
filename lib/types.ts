@@ -85,6 +85,23 @@ export interface DppResponse {
   qr_url: string;
 }
 
+/** The raw DPP shape returned by the ledger service. */
+export interface LedgerDppResponse {
+  unit: LedgerUnit;
+  compliance_summary: {
+    cetp_zld_status: string;
+    compliance_status: string;
+    certifications: string[];
+  };
+  environmental_evidence: {
+    status: string;
+    latest_confidence: number | null;
+  };
+  issue_date: string;
+  verification_id: string;
+  qr_url: string;
+}
+
 export interface VerifyResponse {
   verification_id: string;
   unit_id: string;

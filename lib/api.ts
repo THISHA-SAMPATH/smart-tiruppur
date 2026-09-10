@@ -4,6 +4,7 @@ import type {
   ContractEvent,
   DppResponse,
   HariSimulateEventResponse,
+  LedgerDppResponse,
   LedgerEntry,
   LedgerUnit,
   UnitLedgerResponse,
@@ -97,11 +98,48 @@ export function getUnit(unitId: string) {
   );
 }
 
-export function getUnitDpp(unitId: string) {
-  return fetchWithFallback<DppResponse>(
+function isDashboardDpp(
+  dpp: LedgerDppResponse | DppResponse,
+): dpp is DppResponse {
+  return typeof dpp.compliance_summary === "string";
+}
+
+function adaptLedgerDpp(dpp: LedgerDppResponse | DppResponse): DppResponse {
+  if (isDashboardDpp(dpp)) return dpp;
+
+  const { compliance_summary: summary, unit, environmental_evidence } = dpp;
+  const certifications = summary.certifications.length
+    ? ` Certifications: ${summary.certifications.join(", ")}.`
+    : "";
+
+  return {
+    unit_id: unit.unit_id,
+    unit_profile: unit,
+    compliance_summary: `CETP / ZLD: ${summary.cetp_zld_status}. Compliance: ${summary.compliance_status}.${certifications}`,
+    reuse_and_energy: {
+      reuse_percentage: unit.reuse_percentage,
+      renewable_energy_percentage: unit.renewable_energy_percentage,
+    },
+    recent_environmental_evidence: {
+      status: environmental_evidence.status,
+      last_event_id: null,
+      confidence: environmental_evidence.latest_confidence,
+    },
+    issue_date: dpp.issue_date,
+    verification_id: dpp.verification_id,
+    qr_url: dpp.qr_url,
+  };
+}
+
+export async function getUnitDpp(unitId: string): Promise<FetchResult<DppResponse>> {
+  const res = await fetchWithFallback<LedgerDppResponse | DppResponse>(
     `dpp_${unitId}`,
     `${LEDGER_BASE_URL}/units/${unitId}/dpp`,
   );
+  return {
+    ...res,
+    data: res.data ? adaptLedgerDpp(res.data) : null,
+  };
 }
 
 export function getUnitLedger(unitId: string) {
