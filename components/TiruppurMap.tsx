@@ -56,6 +56,8 @@ export default function TiruppurMap() {
           boxShadow: "0 4px 14px rgba(0, 0, 0, 0.12)",
           minWidth: "240px",
           maxWidth: "280px",
+          maxHeight: "calc(100% - 28px)",
+          overflowY: "auto",
         }}
       >
         <p
@@ -274,6 +276,61 @@ export default function TiruppurMap() {
             ℹ 0 units contain GIS coordinates. Markers will appear once coordinates are added.
           </p>
         )}
+
+        {/* River Flow Data Availability Notice */}
+        <div
+          style={{
+            marginTop: "12px",
+            paddingTop: "10px",
+            borderTop: "1px solid var(--hairline)",
+            fontSize: "11px",
+            lineHeight: "1.4",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+              color: "#1e3a8a",
+              textTransform: "uppercase",
+              margin: "0 0 6px",
+            }}
+          >
+            River Flow Data Availability
+          </p>
+
+          <p style={{ margin: "0 0 6px", fontSize: "11px", color: "var(--ink)", fontWeight: 500 }}>
+            Public real-time or daily CWC/India-WRIS discharge data for the Noyyal River within the Tiruppur reach was not verified.
+          </p>
+
+          <p style={{ margin: "0 0 4px", fontSize: "10.5px", color: "#475569" }}>
+            • Regional CWC/India-WRIS historical stations exist upstream/downstream, but they are not used as Tiruppur flow values.
+          </p>
+
+          <p style={{ margin: "0 0 6px", fontSize: "10.5px", color: "#475569" }}>
+            • Orathapalayam reservoir operations are monitored by Tamil Nadu Water Resources Department, but an open programmatic discharge dataset was not verified.
+          </p>
+
+          <div
+            style={{
+              background: "#f1f5f9",
+              border: "1px solid #cbd5e1",
+              padding: "4px 6px",
+              borderRadius: "4px",
+              marginBottom: "6px",
+              fontSize: "10px",
+              fontWeight: 600,
+              color: "#334155",
+            }}
+          >
+            Status: No verified public Tiruppur river-flow telemetry
+          </div>
+
+          <div style={{ fontSize: "9.5px", color: "#64748b", fontStyle: "italic" }}>
+            Sources investigated: India-WRIS / NWIC / CWC / Tamil Nadu WRD
+          </div>
+        </div>
       </div>
 
       <MapContainer
