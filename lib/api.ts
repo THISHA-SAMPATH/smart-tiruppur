@@ -4,9 +4,11 @@ import type {
   ContractEvent,
   DppResponse,
   HariSimulateEventResponse,
+  HariReadingsResponse,
   LedgerDppResponse,
   LedgerEntry,
   LedgerUnit,
+  RegulatorActionResponse,
   UnitLedgerResponse,
   VerifyResponse,
 } from "./types";
@@ -177,6 +179,18 @@ export function postEventToLedger(event: ContractEvent) {
   );
 }
 
+/** Records the regulator's disposition against an already-flagged ledger event. */
+export function postRegulatorAction(eventId: string, regulatorAction: string) {
+  return fetchWithFallback<RegulatorActionResponse>(
+    `regulator_action_${eventId}`,
+    `${LEDGER_BASE_URL}/ledger/events/${eventId}/action`,
+    {
+      method: "POST",
+      body: JSON.stringify({ regulator_action: regulatorAction }),
+    },
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Haripriya's inference service — raw responses always go through the
 // adapter before anything else in the app sees them.
@@ -230,4 +244,16 @@ export async function inferForUnit(
     error: raw.error,
     fetchedAt: raw.fetchedAt,
   };
+}
+
+/**
+ * Gets the sensor series produced by the latest inference/simulation run.
+ * Haripriya's service requires that run to exist before this endpoint is used.
+ */
+export function getSensorReadings(sensor = "S_A", interval = 1) {
+  const params = new URLSearchParams({ sensor, interval: String(interval) });
+  return fetchWithFallback<HariReadingsResponse>(
+    `readings_${sensor}_${interval}`,
+    `${INFERENCE_BASE_URL}/readings?${params.toString()}`,
+  );
 }

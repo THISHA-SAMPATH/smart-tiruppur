@@ -4,14 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   getGlobalEvents,
+  getSensorReadings,
   getUnits,
   postEventToLedger,
+  postRegulatorAction,
   simulateInferenceEvent,
 } from "@/lib/api";
-import type { ContractEvent, LedgerUnit } from "@/lib/types";
+import type { ContractEvent, LedgerUnit, SensorReading } from "@/lib/types";
 import UnitCard from "@/components/UnitCard";
 import AlertFeed from "@/components/AlertFeed";
 import StaleBanner, { ErrorBanner } from "@/components/StaleBanner";
+import SensorTrends from "@/components/SensorTrends";
 
 export default function RegulatorDashboard() {
   const [units, setUnits] = useState<LedgerUnit[]>([]);
@@ -31,6 +34,28 @@ export default function RegulatorDashboard() {
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<ContractEvent | null>(null);
+  const [sensor, setSensor] = useState("S_A");
+  const [readings, setReadings] = useState<SensorReading[]>([]);
+  const [readingsError, setReadingsError] = useState<string | null>(null);
+  const [readingsLoading, setReadingsLoading] = useState(false);
+
+  async function loadReadings(sensorId: string) {
+    setReadingsLoading(true);
+    setReadingsError(null);
+    const result = await getSensorReadings(sensorId, 1);
+    if (result.data) {
+      setReadings(result.data.readings);
+    } else {
+      setReadings([]);
+      setReadingsError(result.error || "Could not load sensor readings.");
+    }
+    setReadingsLoading(false);
+  }
+
+  function handleSensorChange(sensorId: string) {
+    setSensor(sensorId);
+    void loadReadings(sensorId);
+  }
 
   async function loadUnits() {
     const res = await getUnits();
@@ -62,6 +87,7 @@ export default function RegulatorDashboard() {
         return;
       }
       setLastResult(inferRes.data);
+      await loadReadings(sensor);
       const pushRes = await postEventToLedger(inferRes.data);
       if (pushRes.error && !pushRes.data) {
         setRunError(
@@ -72,6 +98,21 @@ export default function RegulatorDashboard() {
     } finally {
       setRunning(false);
     }
+  }
+
+  async function handleRecordAction(eventId: string, action: string) {
+    const result = await postRegulatorAction(eventId, action);
+    if (!result.data) {
+      return result.error || "Could not record the regulator action.";
+    }
+    setEvents((current) =>
+      current.map((event) =>
+        event.event_id === eventId
+          ? { ...event, regulator_action: result.data?.regulator_action ?? action }
+          : event,
+      ),
+    );
+    return null;
   }
 
   return (
@@ -142,6 +183,12 @@ export default function RegulatorDashboard() {
         </div>
       )}
 
+      {readingsError && <ErrorBanner message={`Sensor readings: ${readingsError}`} />}
+      {readingsLoading && <p className="muted small">Loading sensor trends…</p>}
+      {!readingsLoading && readings.length > 0 && (
+        <SensorTrends readings={readings} sensor={sensor} onSensorChange={handleSensorChange} />
+      )}
+
       <section className="network-section" style={{ marginBottom: 56 }}>
         <h3 className="section-label">Connected units</h3>
         {unitsStale.stale && (
@@ -166,7 +213,7 @@ export default function RegulatorDashboard() {
         {eventsStale.stale && (
           <StaleBanner serviceName="Ledger service" fetchedAt={eventsStale.fetchedAt} error={eventsStale.error} />
         )}
-        <AlertFeed events={events} />
+        <AlertFeed events={events} onRecordAction={handleRecordAction} />
         </div>
       </section>
     </div>

@@ -1,8 +1,17 @@
+"use client";
+
 import Link from "next/link";
+import { FormEvent, useState } from "react";
 import type { ContractEvent } from "@/lib/types";
 import StatusBadge from "./StatusBadge";
 
-export default function AlertFeed({ events }: { events: ContractEvent[] }) {
+export default function AlertFeed({
+  events,
+  onRecordAction,
+}: {
+  events: ContractEvent[];
+  onRecordAction: (eventId: string, action: string) => Promise<string | null>;
+}) {
   if (events.length === 0) {
     return <p className="muted small">No events recorded yet.</p>;
   }
@@ -10,7 +19,39 @@ export default function AlertFeed({ events }: { events: ContractEvent[] }) {
   return (
     <div className="grid" style={{ gap: 10 }}>
       {events.map((ev) => (
-        <div key={ev.event_id} className="card">
+        <AlertCard key={ev.event_id} event={ev} onRecordAction={onRecordAction} />
+      ))}
+    </div>
+  );
+}
+
+function AlertCard({
+  event: ev,
+  onRecordAction,
+}: {
+  event: ContractEvent;
+  onRecordAction: (eventId: string, action: string) => Promise<string | null>;
+}) {
+  const [action, setAction] = useState(ev.regulator_action ?? "");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function submitAction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmedAction = action.trim();
+    if (!trimmedAction) {
+      setMessage("Enter the action taken before recording it.");
+      return;
+    }
+    setSaving(true);
+    setMessage(null);
+    const error = await onRecordAction(ev.event_id, trimmedAction);
+    setSaving(false);
+    setMessage(error ?? "Action recorded in the evidence ledger.");
+  }
+
+  return (
+    <div className="card">
           <div
             style={{
               display: "flex",
@@ -58,8 +99,32 @@ export default function AlertFeed({ events }: { events: ContractEvent[] }) {
               {new Date(ev.timestamp).toLocaleString()}
             </span>
           </div>
-        </div>
-      ))}
+      {ev.decision === "investigate" && (
+        <form className="regulator-action" onSubmit={submitAction}>
+          <label htmlFor={`action-${ev.event_id}`}>Regulator action</label>
+          <div className="regulator-action-controls">
+            <input
+              id={`action-${ev.event_id}`}
+              list="regulator-action-options"
+              value={action}
+              onChange={(event) => setAction(event.target.value)}
+              placeholder="e.g. Inspection requested"
+              disabled={saving}
+            />
+            <button className="btn" type="submit" disabled={saving}>
+              {saving ? "Recording…" : ev.regulator_action ? "Update action" : "Record action"}
+            </button>
+          </div>
+          {message && (
+            <p className={`small action-message${message.startsWith("Action recorded") ? " success" : ""}`} role="status">
+              {message}
+            </p>
+          )}
+        </form>
+      )}
+      {ev.decision !== "investigate" && ev.regulator_action && (
+        <p className="small regulator-action-record">Regulator action: {ev.regulator_action}</p>
+      )}
     </div>
   );
 }

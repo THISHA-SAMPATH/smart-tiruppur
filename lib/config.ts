@@ -7,7 +7,8 @@ export const LEDGER_BASE_URL =
   "https://vaamika-repo.onrender.com";
 
 export const INFERENCE_BASE_URL =
-  process.env.NEXT_PUBLIC_INFERENCE_BASE_URL || "http://localhost:8001";
+  process.env.NEXT_PUBLIC_INFERENCE_BASE_URL ||
+  "https://noyyalsense.onrender.com";
 
 /**
  * Vamika's ledger returns some URLs (e.g. qr_url) as paths relative to her

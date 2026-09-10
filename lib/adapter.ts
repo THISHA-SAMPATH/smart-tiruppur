@@ -129,6 +129,7 @@ export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
     ),
     model_version: "haripriya-inference-v1 (adapted)",
     source: "adapter",
+    regulator_action: null,
   };
 }
 
@@ -157,5 +158,6 @@ export function mapLedgerEntryToContractEvent(
         : "Recorded as abstain — insufficient evidence.",
     model_version: entry.model_version,
     source: "ledger",
+    regulator_action: entry.regulator_action,
   };
 }

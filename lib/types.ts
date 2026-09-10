@@ -31,6 +31,7 @@ export interface ContractEvent {
   explanation: string;
   model_version: string;
   source: "ledger" | "adapter";
+  regulator_action: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -59,6 +60,11 @@ export interface LedgerEntry {
   regulator_action: string | null;
   previous_hash: string;
   current_hash: string;
+}
+
+export interface RegulatorActionResponse {
+  ok: boolean;
+  regulator_action?: string | null;
 }
 
 export interface UnitLedgerResponse {
@@ -141,4 +147,18 @@ export interface HariSimulateEventResponse {
   posterior_top3: HariPosteriorEntry[] | Record<string, number>;
   decision: HariDecision;
   sensor_health: HariSensorHealth;
+}
+
+/** One timestamped measurement from Haripriya's GET /readings endpoint. */
+export interface SensorReading {
+  timestamp: string;
+  ph: number;
+  ec: number;
+  turbidity: number;
+  flow: number;
+}
+
+export interface HariReadingsResponse {
+  sensor: string;
+  readings: SensorReading[];
 }
