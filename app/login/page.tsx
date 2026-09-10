@@ -105,16 +105,16 @@ function LoginForm() {
         boxSizing: "border-box",
       }}
     >
-      {/* Dedicated Landscape Graphic Pinned to Bottom */}
+      {/* Dedicated Landscape Graphic Pinned to Full Viewport */}
       <div
         style={{
           position: "fixed",
-          bottom: 0,
+          top: 0,
           left: 0,
           right: 0,
-          width: "100%",
-          height: "60vh",
-          maxHeight: "520px",
+          bottom: 0,
+          width: "100vw",
+          height: "100vh",
           pointerEvents: "none",
           zIndex: 0,
           overflow: "hidden",
