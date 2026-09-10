@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 
+import CitizenReportSection from "@/components/CitizenReportSection";
+
 export const dynamic = "force-dynamic";
 
 export default async function CitizenDashboardPage() {
@@ -43,13 +45,8 @@ export default async function CitizenDashboardPage() {
         </div>
       </section>
 
-      {/* Information Banner */}
-      <section className="card" style={{ borderLeft: "4px solid var(--teal)", background: "var(--paper-raised)" }}>
-        <h3 style={{ fontSize: "18px", marginBottom: "6px" }}>Civic Environmental Reporting</h3>
-        <p className="muted small" style={{ margin: 0 }}>
-          Public citizen incident reporting modules will be enabled in future releases. For urgent environmental inquiries, please contact the regional Tamil Nadu Pollution Control Board (TNPCB) office.
-        </p>
-      </section>
+      {/* Active Citizen Incident Report Loop */}
+      <CitizenReportSection />
     </div>
   );
 }

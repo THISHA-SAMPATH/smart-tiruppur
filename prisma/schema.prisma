@@ -15,15 +15,38 @@ enum Role {
   CITIZEN
 }
 
+enum ReportStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
+}
+
 model User {
-  id             String   @id @default(cuid())
+  id             String          @id @default(cuid())
   name           String
-  email          String   @unique
+  email          String          @unique
   passwordHash   String
-  role           Role     @default(CITIZEN)
+  role           Role            @default(CITIZEN)
   industryUnitId String?
   organization   String?
-  active         Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  reports        CitizenReport[]
+}
+
+model CitizenReport {
+  id                  String       @id @default(cuid())
+  title               String
+  description         String
+  pollutionType       String
+  locationDescription String
+  latitude            Float?
+  longitude           Float?
+  status              ReportStatus @default(SUBMITTED)
+  reporterId          String
+  reporter            User         @relation(fields: [reporterId], references: [id])
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
+import RegulatorCitizenReportsSection from "@/components/RegulatorCitizenReportsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +133,9 @@ export default async function RegulatorDashboardPage() {
           </Link>
         </div>
       </section>
+
+      {/* Citizen Environmental Incident Review Queue */}
+      <RegulatorCitizenReportsSection />
     </div>
   );
 }

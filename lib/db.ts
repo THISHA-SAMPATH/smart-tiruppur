@@ -17,10 +17,38 @@ export interface User {
   updatedAt: string;
 }
 
+export type ReportStatus = "SUBMITTED" | "UNDER_REVIEW" | "RESOLVED" | "REJECTED";
+
+export interface StatusAuditLog {
+  status: ReportStatus;
+  updatedAt: string;
+  updatedBy: string;
+  notes?: string;
+}
+
+export interface CitizenReport {
+  id: string;
+  title: string;
+  description: string;
+  pollutionType: "Water Pollution" | "Air Pollution" | "Solid Waste" | "Other" | string;
+  locationDescription: string;
+  latitude: number | null;
+  longitude: number | null;
+  status: ReportStatus;
+  reporterId: string;
+  reporterName?: string;
+  reporterEmail?: string;
+  createdAt: string;
+  updatedAt: string;
+  statusHistory: StatusAuditLog[];
+}
+
 const DATA_DIR = path.join(process.cwd(), "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
+const REPORTS_FILE = path.join(DATA_DIR, "citizen_reports.json");
 
 let inMemoryUsers: User[] | null = null;
+let inMemoryReports: CitizenReport[] | null = null;
 
 function ensureDataDirectory() {
   try {
@@ -133,6 +161,67 @@ function writeUsersRaw(users: User[]) {
   }
 }
 
+function getInitialReportsSeed(): CitizenReport[] {
+  const now = new Date().toISOString();
+  return [
+    {
+      id: "rep_seed_001",
+      title: "Foam accumulation along river bank",
+      description: "Dense white foam observed downstream of Kasipalayam bridge during evening hours.",
+      pollutionType: "Water Pollution",
+      locationDescription: "Noyyal River bank near Kasipalayam Bridge, Tiruppur North",
+      latitude: 11.11975,
+      longitude: 77.39716,
+      status: "SUBMITTED",
+      reporterId: "usr_citizen_001",
+      reporterName: "Tiruppur Citizen Representative",
+      reporterEmail: "citizen@smarttiruppur.local",
+      createdAt: now,
+      updatedAt: now,
+      statusHistory: [
+        {
+          status: "SUBMITTED",
+          updatedAt: now,
+          updatedBy: "usr_citizen_001",
+          notes: "Initial citizen observation logged.",
+        },
+      ],
+    },
+  ];
+}
+
+function readReportsRaw(): CitizenReport[] {
+  if (inMemoryReports) return inMemoryReports;
+
+  ensureDataDirectory();
+  if (fs.existsSync(REPORTS_FILE)) {
+    try {
+      const raw = fs.readFileSync(REPORTS_FILE, "utf-8");
+      const reports = JSON.parse(raw);
+      if (Array.isArray(reports)) {
+        inMemoryReports = reports;
+        return inMemoryReports;
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  inMemoryReports = getInitialReportsSeed();
+  writeReportsRaw(inMemoryReports);
+  return inMemoryReports;
+}
+
+function writeReportsRaw(reports: CitizenReport[]) {
+  inMemoryReports = reports;
+  try {
+    ensureDataDirectory();
+    fs.writeFileSync(REPORTS_FILE, JSON.stringify(reports, null, 2), "utf-8");
+  } catch {
+    // Fail silently on read-only environments
+  }
+}
+
 export const db = {
   user: {
     findMany: async (options?: { where?: Partial<User> }) => {
@@ -221,6 +310,116 @@ export const db = {
     count: async (options?: { where?: Partial<User> }) => {
       const users = await db.user.findMany(options);
       return users.length;
+    },
+  },
+
+  citizenReport: {
+    findMany: async (options?: {
+      where?: Partial<CitizenReport>;
+      orderBy?: { createdAt?: "asc" | "desc" };
+    }) => {
+      let reports = readReportsRaw();
+      if (options?.where) {
+        reports = reports.filter((r) => {
+          for (const [key, val] of Object.entries(options.where!)) {
+            if ((r as unknown as Record<string, unknown>)[key] !== val) return false;
+          }
+          return true;
+        });
+      }
+      if (options?.orderBy?.createdAt) {
+        const dir = options.orderBy.createdAt === "asc" ? 1 : -1;
+        reports = [...reports].sort(
+          (a, b) => dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
+        );
+      } else {
+        // Default newest first
+        reports = [...reports].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+      }
+      return reports;
+    },
+
+    findUnique: async (options: { where: { id: string } }) => {
+      const reports = readReportsRaw();
+      return reports.find((r) => r.id === options.where.id) || null;
+    },
+
+    create: async (options: {
+      data: {
+        title: string;
+        description: string;
+        pollutionType: string;
+        locationDescription: string;
+        latitude?: number | null;
+        longitude?: number | null;
+        reporterId: string;
+        reporterName?: string;
+        reporterEmail?: string;
+      };
+    }) => {
+      const reports = readReportsRaw();
+      const now = new Date().toISOString();
+      const newReport: CitizenReport = {
+        id: `rep_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        title: options.data.title.trim(),
+        description: options.data.description.trim(),
+        pollutionType: options.data.pollutionType.trim(),
+        locationDescription: options.data.locationDescription.trim(),
+        latitude: typeof options.data.latitude === "number" ? options.data.latitude : null,
+        longitude: typeof options.data.longitude === "number" ? options.data.longitude : null,
+        status: "SUBMITTED",
+        reporterId: options.data.reporterId,
+        reporterName: options.data.reporterName || "Anonymous Citizen",
+        reporterEmail: options.data.reporterEmail,
+        createdAt: now,
+        updatedAt: now,
+        statusHistory: [
+          {
+            status: "SUBMITTED",
+            updatedAt: now,
+            updatedBy: options.data.reporterName || options.data.reporterId,
+            notes: "Report submitted by citizen.",
+          },
+        ],
+      };
+
+      const updated = [newReport, ...reports];
+      writeReportsRaw(updated);
+      return newReport;
+    },
+
+    updateStatus: async (options: {
+      id: string;
+      status: ReportStatus;
+      updatedBy: string;
+      notes?: string;
+    }) => {
+      const reports = readReportsRaw();
+      const index = reports.findIndex((r) => r.id === options.id);
+      if (index === -1) throw new Error("Citizen report not found");
+
+      const existing = reports[index];
+      const now = new Date().toISOString();
+      const historyLog: StatusAuditLog = {
+        status: options.status,
+        updatedAt: now,
+        updatedBy: options.updatedBy,
+        notes: options.notes || `Status changed to ${options.status}`,
+      };
+
+      const updatedReport: CitizenReport = {
+        ...existing,
+        status: options.status,
+        updatedAt: now,
+        statusHistory: [...(existing.statusHistory || []), historyLog],
+      };
+
+      const updated = [...reports];
+      updated[index] = updatedReport;
+      writeReportsRaw(updated);
+      return updatedReport;
     },
   },
 };
