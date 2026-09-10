@@ -10,13 +10,13 @@ export default function Nav() {
 
   return (
     <nav className="topnav">
-      <h1 style={{ fontSize: 19 }}>NoyyalSense</h1>
+      <Link href="/" className="brand">NoyyalSense<span>TN</span></Link>
       <div className="links">
-        <Link href="/" className={isActive("/") ? "active" : ""}>
-          Regulator dashboard
-        </Link>
+        <Link href="/monitoring" className={isActive("/monitoring") ? "active" : ""}>Monitoring</Link>
+        <Link href="/groundwater" className={isActive("/groundwater") ? "active" : ""}>Groundwater</Link>
+        <Link href="/evidence" className={isActive("/evidence") ? "active" : ""}>Evidence</Link>
         <Link href="/verify" className={isActive("/verify") ? "active" : ""}>
-          Buyer / DPP view
+          Verify DPP
         </Link>
       </div>
     </nav>

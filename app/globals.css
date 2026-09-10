@@ -205,6 +205,8 @@ nav.topnav .links a.active {
   color: var(--ink);
   border-bottom: 2px solid var(--indigo);
 }
+.brand { color: var(--ink); text-decoration: none; font: 500 20px "Fraunces", serif; letter-spacing: -.03em; }
+.brand span { display: inline-grid; place-items: center; width: 19px; height: 19px; margin-left: 7px; border-radius: 50%; background: var(--teal); color: white; font: 9px "IBM Plex Mono", monospace; vertical-align: 2px; letter-spacing: 0; }
 
 table {
   width: 100%;
@@ -269,6 +271,7 @@ th {
 .passport-image span { border: 2px solid white; padding: 17px; border-radius: 8px; font-size: 34px; }
 .factory-image { background: linear-gradient(135deg, #a86838, #405765 52%, #162b31); }
 .ledger-image { background: linear-gradient(135deg, #18524e, #a8c76f); }
+.groundwater-image { background: radial-gradient(circle at 30% 30%, #a8d0df 0 11%, transparent 12%), linear-gradient(135deg, #2c5967, #78a79b 60%, #d8c989); }
 .ledger-image span { width: 80px; height: 80px; display: grid; place-items: center; border-radius: 50%; border: 2px solid white; }
 .dashboard-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; padding-top: 35px; margin-bottom: 28px; }
 .section-label { font-size: 17px; margin-bottom: 15px; }
@@ -333,9 +336,24 @@ th {
 .groundwater-metric:first-child { border-left: 0; }
 .groundwater-metric strong { font: 500 20px "Fraunces", serif; line-height: 1.15; }
 .groundwater-metric small { margin-top: auto; color: var(--ink-soft); font-size: 11px; line-height: 1.35; }
+.platform-intro { display: grid; grid-template-columns: 1fr .72fr; gap: 80px; align-items: end; padding: 82px 0 36px; border-top: 1px solid var(--hairline); }
+.platform-intro h2, .workspace-header h1 { font-size: clamp(40px, 5vw, 64px); line-height: .98; }
+.platform-intro > p { max-width: 430px; margin: 0 0 5px; color: var(--ink-soft); font-size: 16px; line-height: 1.7; }
+.module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-bottom: 88px; }
+.module-card { padding: 0 0 18px; color: inherit; text-decoration: none; }
+.module-card .module-art { height: 250px; display: grid; place-items: center; border-radius: 8px; overflow: hidden; color: white; font: 500 42px "Fraunces", serif; position: relative; }
+.module-art::after { content: ""; position: absolute; inset: 0; opacity: .28; background: repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,255,255,.2) 13px 14px); }
+.module-art span { position: relative; z-index: 1; }
+.module-card h3 { margin: 8px 0; font-size: 23px; }
+.module-card p:not(.card-index) { min-height: 65px; margin: 0 0 15px; color: var(--ink-soft); font-size: 14px; }
+.module-link { font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }.module-link b { margin-left: 4px; }
+.workspace-page { padding: 48px 0 72px; }
+.workspace-header { display: flex; align-items: end; justify-content: space-between; gap: 28px; padding-bottom: 36px; margin-bottom: 28px; border-bottom: 1px solid var(--hairline); }
+.workspace-header .eyebrow { margin-bottom: 12px; }.workspace-header > div > p:last-child { max-width: 600px; margin: 12px 0 0; color: var(--ink-soft); font-size: 16px; }
+.workspace-section { margin-top: 42px; }.section-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 16px; }.section-heading .eyebrow { margin-bottom: 7px; }.section-heading h2 { font-size: 30px; }
 @keyframes blink { 50% { opacity: 0; } }
 @keyframes pulse { 50% { transform: scale(1.7); opacity: .35; } }
 @keyframes drift { 50% { transform: translate(12px, -9px); } }
 @keyframes card-float { 50% { transform: rotate(5deg) translateY(-9px); } }
 @keyframes type-reveal { from { width: 0; } to { width: 8.5ch; } }
-@media (max-width: 760px) { .shell { padding: 20px 18px 48px; } .hero { grid-template-columns: 1fr; padding-top: 34px; } .hero-art { min-height: 320px; } .weave-card-main { left: 29%; top: 28px; transform: scale(.82) rotate(5deg); transform-origin: top left; } .weave-card-back { top: 45px; transform: scale(.82) rotate(-10deg); transform-origin: top left; } .impact-strip { grid-template-columns: 1fr 1fr; } .impact-strip div:nth-child(3) { border-left: 0; border-top: 1px solid var(--hairline); } .impact-strip div:nth-child(4) { border-top: 1px solid var(--hairline); } .story-grid, .events-section, .trend-grid { grid-template-columns: 1fr; } .story-section, .events-section { padding: 65px 0; } .dashboard-heading, .sensor-trends-header, .groundwater-header { align-items: start; flex-direction: column; } .regulator-action-controls { flex-direction: column; } .groundwater-select, .groundwater-select select { width: 100%; } .scenario-control { align-items: start; flex-direction: column; } .groundwater-summary { grid-template-columns: 1fr 1fr; } .groundwater-summary > div:nth-child(3) { border-left: 0; border-top: 1px solid var(--hairline); } .groundwater-summary > div:nth-child(4) { border-top: 1px solid var(--hairline); } .groundwater-metrics { grid-template-columns: 1fr 1fr; } .groundwater-metric:nth-child(3), .groundwater-metric:nth-child(5) { border-left: 0; border-top: 1px solid var(--hairline); } .groundwater-metric:nth-child(4) { border-top: 1px solid var(--hairline); } nav.topnav { padding: 16px 18px; } nav.topnav .links { gap: 13px; font-size: 12px; } }
+@media (max-width: 760px) { .shell { padding: 20px 18px 48px; } .hero { grid-template-columns: 1fr; padding-top: 34px; } .hero-art { min-height: 320px; } .weave-card-main { left: 29%; top: 28px; transform: scale(.82) rotate(5deg); transform-origin: top left; } .weave-card-back { top: 45px; transform: scale(.82) rotate(-10deg); transform-origin: top left; } .impact-strip { grid-template-columns: 1fr 1fr; } .impact-strip div:nth-child(3) { border-left: 0; border-top: 1px solid var(--hairline); } .impact-strip div:nth-child(4) { border-top: 1px solid var(--hairline); } .story-grid, .events-section, .trend-grid, .module-grid, .platform-intro { grid-template-columns: 1fr; } .story-section, .events-section { padding: 65px 0; } .platform-intro { gap: 18px; padding-top: 58px; } .dashboard-heading, .sensor-trends-header, .groundwater-header, .workspace-header { align-items: start; flex-direction: column; } .workspace-page { padding-top: 30px; } .workspace-header { padding-bottom: 26px; } .regulator-action-controls { flex-direction: column; } .groundwater-select, .groundwater-select select { width: 100%; } .scenario-control { align-items: start; flex-direction: column; } .groundwater-summary { grid-template-columns: 1fr 1fr; } .groundwater-summary > div:nth-child(3) { border-left: 0; border-top: 1px solid var(--hairline); } .groundwater-summary > div:nth-child(4) { border-top: 1px solid var(--hairline); } .groundwater-metrics { grid-template-columns: 1fr 1fr; } .groundwater-metric:nth-child(3), .groundwater-metric:nth-child(5) { border-left: 0; border-top: 1px solid var(--hairline); } .groundwater-metric:nth-child(4) { border-top: 1px solid var(--hairline); } nav.topnav { align-items: center; padding: 16px 18px; } nav.topnav .links { gap: 12px; font-size: 11px; overflow-x: auto; } }
