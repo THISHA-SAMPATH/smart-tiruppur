@@ -155,6 +155,8 @@ function LoginForm() {
             alignItems: "center",
             padding: "24px 44px",
             width: "100%",
+            position: "relative",
+            zIndex: 30,
             boxSizing: "border-box",
           }}
         >
@@ -166,6 +168,9 @@ function LoginForm() {
               display: "flex",
               flexDirection: "column",
               gap: "2px",
+              position: "relative",
+              zIndex: 30,
+              cursor: "pointer",
             }}
           >
             <div
@@ -199,34 +204,21 @@ function LoginForm() {
             </span>
           </Link>
 
-          {/* Center Logo */}
+          {/* Perfectly Centered Professional Logo (No Water Icon) */}
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              fontWeight: 700,
-              fontSize: "18px",
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontFamily: "'Fraunces', Georgia, serif",
+              fontWeight: 600,
+              fontSize: "22px",
               color: "#18181b",
-              letterSpacing: "-0.02em",
+              letterSpacing: "-0.03em",
+              pointerEvents: "none",
             }}
           >
-            <span
-              style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "50%",
-                background: "#0284c7",
-                color: "#ffffff",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "12px",
-              }}
-            >
-              💧
-            </span>
-            <span>NoyyalSense</span>
+            NoyyalSense
           </div>
 
           {/* Top Right About Link */}
@@ -246,6 +238,9 @@ function LoginForm() {
               display: "inline-flex",
               alignItems: "center",
               gap: "6px",
+              position: "relative",
+              zIndex: 30,
+              cursor: "pointer",
             }}
           >
             <span>About</span>
