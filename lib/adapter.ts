@@ -55,10 +55,10 @@ function buildExplanation(
   raw: HariSimulateEventResponse,
   decision: Decision,
   topUnitLedgerId: string | null,
+  topProbability: number | null,
 ): string {
   if (decision === "investigate" && topUnitLedgerId) {
-    const top = raw.posterior_top3[0];
-    const pct = top ? Math.round(top.probability * 100) : null;
+    const pct = topProbability != null ? Math.round(topProbability * 100) : null;
     return pct != null
       ? `Sensor pattern is most consistent with a release from ${topUnitLedgerId} (${pct}% posterior probability).`
       : `Sensor pattern is most consistent with a release from ${topUnitLedgerId}.`;
@@ -69,7 +69,13 @@ function buildExplanation(
 
 export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
   const decision = normalizeDecision(raw.decision.decision);
-  const topCandidates: TopCandidate[] = raw.posterior_top3.map((c) => ({
+  const posterior = Array.isArray(raw.posterior_top3)
+    ? raw.posterior_top3
+    : Object.entries(raw.posterior_top3).map(([unit, probability]) => ({
+        unit,
+        probability,
+      }));
+  const topCandidates: TopCandidate[] = posterior.map((c) => ({
     unit_id: toLedgerUnitId(c.unit),
     probability: c.probability,
   }));
@@ -115,7 +121,12 @@ export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
       missing_sensor_count: missingCount,
       drift_detected: driftDetected,
     },
-    explanation: buildExplanation(raw, decision, mostLikelySource),
+    explanation: buildExplanation(
+      raw,
+      decision,
+      mostLikelySource,
+      topCandidates[0]?.probability ?? null,
+    ),
     model_version: "haripriya-inference-v1 (adapted)",
     source: "adapter",
   };

@@ -137,7 +137,8 @@ export interface HariSensorHealth {
 
 export interface HariSimulateEventResponse {
   event_id: string;
-  posterior_top3: HariPosteriorEntry[];
+  // The inference service has returned both an array and a unit-to-score map.
+  posterior_top3: HariPosteriorEntry[] | Record<string, number>;
   decision: HariDecision;
   sensor_health: HariSensorHealth;
 }
