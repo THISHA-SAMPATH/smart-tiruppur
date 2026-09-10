@@ -218,6 +218,38 @@ Open **`http://localhost:3000`** in your browser.
 
 ---
 
+## 🛠️ My Role — Integration Dashboard (Thisha Sampath)
+
+### Core Development
+- **Designed & Built Full Integration Dashboard**: Developed the regulator workbench, unit detail screens, citizen portal, groundwater FIRKA risk modeling tools, and buyer/DPP verification views using Next.js 14 App Router, TypeScript, and Prisma ORM.
+- **Visual Design System**: Established the dashboard's visual design system, including typography, curated color tokens, and layout structure, used consistently across all screens.
+
+### Cross-Service Integration & Schema Adaptation
+- **Inference Service Contract Reconciliation**: Identified that the inference service's actual API diverged from the team's agreed-upon contract (differing endpoints, response structures, unit-ID formatting `U007` vs. `unit_007`, and decision-value casing).
+- **Architected Adapter Layer (`lib/adapter.ts`)**: Implemented a transformation adapter to translate the inference service's real output into the shape expected by the rest of the application, allowing integration to proceed without blocking on upstream changes.
+- **Ledger Schema Alignment**: Identified and resolved a second schema mismatch where the ledger service's `GET /ledger/events` endpoint returned a simplified stored-record format rather than the full expected event shape; implemented a dedicated mapping function (`mapLedgerEntryToContractEvent`) to normalize data across the stack.
+
+### Reliability & Resilience
+- **Offline & Fallback Data Caching**: Implemented client-side data fetching with `localStorage`-backed caching, enabling the dashboard to gracefully fall back to last-known data with a visible status indicator when a backend service becomes unreachable, rather than failing outright.
+- **Defensive Production Hardening**: Hardened all data rendering against inconsistent API responses using defensive access patterns (`optional chaining` and fallback values), preventing runtime crashes caused by unexpected `undefined` fields in production.
+
+### Deployment & Production Debugging
+- **Vercel & Render Multi-Cloud Deployment**: Deployed the dashboard to Vercel and coordinated integration across microservices deployed on Render and Neon PostgreSQL.
+- **Cross-Origin Resource Sharing (CORS) Fix**: Diagnosed and resolved a missing CORS configuration in the inference service that was blocking cross-origin requests in production.
+- **Environment & Routing Sanitization**: Identified and corrected multiple environment-variable misconfigurations, including a malformed base URL (trailing slash causing path errors) and a variable incorrectly pointing to a source repository URL instead of the live deployed endpoint.
+- **Payload & Endpoint Diagnostics**: Diagnosed a 422 error resulting from an empty request body sent to an endpoint requiring a JSON payload, and corrected the request formatting.
+- **QR Code Resolution Utility (`resolveLedgerUrl`)**: Diagnosed and fixed a broken QR code image caused by the ledger service returning a relative URL that resolved incorrectly against the dashboard's domain; implemented a URL-resolution utility to handle relative paths dynamically.
+- **State Persistence Strategy**: Identified a data-persistence issue where the deployed ledger's SQLite database reset on service restart due to platform storage limitations, proposing an auto-seed-on-startup solution.
+
+### Independent Microservice Development
+- **Groundwater Risk Assessment Engine**: Designed and built a standalone groundwater-risk assessment microservice (FastAPI) implementing an uncertainty-aware classification model with a statistically grounded abstention mechanism, developed and deployed independently with no dependency on other team members' codebases.
+
+### Technical Documentation
+- **Integration Architecture Docs**: Authored the integration dashboard's technical documentation covering setup instructions, service configuration, and the adapter layer's design rationale.
+- **Executive README**: Authored the project's top-level README, including system architecture overview, Mermaid dataflows, team ownership breakdown, and local development setup.
+
+---
+
 <div align="center">
 
 ### NoyyalSense — Building Sustainable Civic Infrastructure for Smart Tiruppur 🌊
