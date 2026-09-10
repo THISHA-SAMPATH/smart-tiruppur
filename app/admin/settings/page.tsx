@@ -64,7 +64,7 @@ export default async function AdminSettingsPage() {
               </tr>
               <tr>
                 <td className="muted small">Database Provider</td>
-                <td className="mono">Prisma ORM (SQLite / dev.db)</td>
+                <td className="mono">Prisma ORM (Neon PostgreSQL)</td>
               </tr>
             </tbody>
           </table>
