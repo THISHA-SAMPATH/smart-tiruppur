@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   getGlobalEvents,
@@ -74,11 +75,55 @@ export default function RegulatorDashboard() {
   }
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 18 }}>
-        <div>
-          <h2 style={{ fontSize: 24 }}>Regulator dashboard</h2>
-          <p className="muted small" style={{ marginTop: 4 }}>
+    <div className="landing-page">
+      <section className="hero" aria-labelledby="hero-title">
+        <div className="hero-copy">
+          <p className="eyebrow"><span className="pulse" /> NoyyalSense · live textile intelligence</p>
+          <p className="hero-kicker">THE TEXTILE CAPITAL OF SOUTH INDIA</p>
+          <h1 id="hero-title">Tiruppur<span className="type-cursor">|</span></h1>
+          <p className="hero-tagline">A city woven with <em>responsibility.</em></p>
+          <p className="hero-description">Trace environmental evidence, verify digital product passports and make every textile decision more accountable.</p>
+          <div className="hero-actions">
+            <a className="btn hero-primary" href="#network">Explore the live network <span>↓</span></a>
+            <Link className="text-link" href="/verify">Verify a product passport <span>↗</span></Link>
+          </div>
+        </div>
+        <div className="hero-art" aria-label="Abstract textile weave visual">
+          <div className="hero-orbit orbit-one" />
+          <div className="hero-orbit orbit-two" />
+          <div className="weave-card weave-card-back" />
+          <div className="weave-card weave-card-main">
+            <span className="weave-label">TRUST, TRACEABILITY, TOMORROW</span>
+            <div className="weave-mark">TN</div>
+            <span className="weave-location">TIRUPPUR · 11.1085° N</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="impact-strip" aria-label="Platform overview">
+        <div><strong>{units.length || "12"}</strong><span>connected units</span></div>
+        <div><strong>{units.filter((u) => u.compliance_status.toLowerCase() === "compliant").length || "—"}</strong><span>compliance-ready</span></div>
+        <div><strong>{events.length}</strong><span>ledger events</span></div>
+        <div><strong>24/7</strong><span>evidence monitoring</span></div>
+      </section>
+
+      <section className="story-section">
+        <div className="section-intro">
+          <p className="eyebrow">01 / THE OPPORTUNITY</p>
+          <h2>From fibre to future,<br />with proof at every step.</h2>
+        </div>
+        <div className="story-grid">
+          <article className="story-card passport-card"><div className="story-image passport-image"><span>DPP</span></div><p className="card-index">[ 01 ]</p><h3>Digital product passports</h3><p>Make product-level environmental evidence clear, portable and ready for verification.</p><Link href="/verify">Open buyer view <span>→</span></Link></article>
+          <article className="story-card factory-card"><div className="story-image factory-image"><span>01—12</span></div><p className="card-index">[ 02 ]</p><h3>A connected industrial city</h3><p>See Tiruppur’s units as a network—not isolated facilities—with live compliance context.</p><a href="#network">View the network <span>→</span></a></article>
+          <article className="story-card ledger-card"><div className="story-image ledger-image"><span>✓</span></div><p className="card-index">[ 03 ]</p><h3>Evidence you can follow</h3><p>Every recorded decision is backed by a transparent, time-stamped evidence trail.</p><a href="#events">Explore evidence <span>→</span></a></article>
+        </div>
+      </section>
+
+      <div id="network" className="dashboard-heading">
+      <div>
+          <p className="eyebrow">02 / LIVE NETWORK</p>
+          <h2>Inside the Tiruppur network.</h2>
+          <p className="muted" style={{ marginTop: 4 }}>
             Live discharge events, source attribution and evidence status across all 12 units.
           </p>
         </div>
@@ -97,8 +142,8 @@ export default function RegulatorDashboard() {
         </div>
       )}
 
-      <section style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 16, marginBottom: 10 }}>Units</h3>
+      <section className="network-section" style={{ marginBottom: 56 }}>
+        <h3 className="section-label">Connected units</h3>
         {unitsStale.stale && (
           <StaleBanner serviceName="Ledger service" fetchedAt={unitsStale.fetchedAt} error={unitsStale.error} />
         )}
@@ -107,7 +152,7 @@ export default function RegulatorDashboard() {
             {unitsStale.error ? unitsStale.error : "Loading units…"}
           </p>
         ) : (
-          <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+          <div className="unit-grid">
             {units.map((u) => (
               <UnitCard key={u.unit_id} unit={u} />
             ))}
@@ -115,12 +160,14 @@ export default function RegulatorDashboard() {
         )}
       </section>
 
-      <section>
-        <h3 style={{ fontSize: 16, marginBottom: 10 }}>Event feed</h3>
+      <section id="events" className="events-section">
+        <div className="section-intro compact"><p className="eyebrow">03 / EVIDENCE LEDGER</p><h2>A clearer view<br />of every signal.</h2></div>
+        <div className="event-panel">
         {eventsStale.stale && (
           <StaleBanner serviceName="Ledger service" fetchedAt={eventsStale.fetchedAt} error={eventsStale.error} />
         )}
         <AlertFeed events={events} />
+        </div>
       </section>
     </div>
   );
