@@ -20,6 +20,7 @@ export default function TiruppurMap() {
   const [extractionMultiplier, setExtractionMultiplier] = useState(1.0);
   const [geocodedCount, setGeocodedCount] = useState(0);
   const [totalUnitsCount, setTotalUnitsCount] = useState(0);
+  const [isLegendCollapsed, setIsLegendCollapsed] = useState(false);
 
   const handleUnitsLoaded = useCallback((units: IndustrialUnitGeo[]) => {
     setTotalUnitsCount(units.length);
@@ -30,7 +31,7 @@ export default function TiruppurMap() {
   return (
     <div
       style={{
-        height: "580px",
+        height: "clamp(420px, 65vh, 600px)",
         width: "100%",
         borderRadius: "var(--radius-md)",
         overflow: "hidden",
@@ -50,22 +51,54 @@ export default function TiruppurMap() {
           zIndex: 1000,
           background: "rgba(246, 243, 234, 0.96)",
           backdropFilter: "blur(8px)",
-          padding: "12px 16px",
+          padding: isLegendCollapsed ? "8px 12px" : "12px 16px",
           borderRadius: "var(--radius-sm)",
           border: "1px solid var(--hairline)",
           boxShadow: "0 4px 14px rgba(0, 0, 0, 0.12)",
-          minWidth: "240px",
+          minWidth: isLegendCollapsed ? "auto" : "240px",
           maxWidth: "280px",
           maxHeight: "calc(100% - 28px)",
           overflowY: "auto",
+          transition: "all 0.2s ease",
         }}
       >
-        <p
-          className="eyebrow"
-          style={{ fontSize: "10px", margin: "0 0 8px", color: "var(--ink-soft)" }}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: isLegendCollapsed ? 0 : "8px",
+            gap: "8px",
+          }}
         >
-          MAP LAYERS
-        </p>
+          <p
+            className="eyebrow"
+            style={{ fontSize: "10px", margin: 0, color: "var(--ink-soft)" }}
+          >
+            {isLegendCollapsed ? "MAP LAYERS" : "MAP LAYERS & CONTROLS"}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setIsLegendCollapsed(!isLegendCollapsed)}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: "12px",
+              cursor: "pointer",
+              color: "var(--ink-soft)",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              fontWeight: 600,
+            }}
+            title={isLegendCollapsed ? "Expand legend" : "Collapse legend"}
+          >
+            {isLegendCollapsed ? "Show +" : "Hide −"}
+          </button>
+        </div>
+
+        {!isLegendCollapsed && (
+          <>
 
         <div style={{ display: "grid", gap: "8px" }}>
           <label
@@ -331,6 +364,8 @@ export default function TiruppurMap() {
             Sources investigated: India-WRIS / NWIC / CWC / Tamil Nadu WRD
           </div>
         </div>
+        </>
+        )}
       </div>
 
       <MapContainer

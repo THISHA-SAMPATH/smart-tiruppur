@@ -76,17 +76,18 @@ export default function HomePage() {
             onClick={handleSkip}
             style={{
               position: "absolute",
-              top: "28px",
-              right: "36px",
-              background: "none",
+              top: "20px",
+              right: "20px",
+              background: "#faf9f5",
               border: "1px solid #d8d0bc",
               borderRadius: "999px",
-              padding: "8px 18px",
-              fontSize: "13px",
+              padding: "6px 14px",
+              fontSize: "12.5px",
               fontWeight: 500,
               color: "#4b5850",
               cursor: "pointer",
               transition: "all 0.15s ease",
+              zIndex: 10,
             }}
           >
             Skip Intro →
@@ -101,12 +102,13 @@ export default function HomePage() {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
+              padding: "0 12px",
             }}
           >
             <p
               style={{
                 fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: "12px",
+                fontSize: "clamp(10px, 2.5vw, 12px)",
                 letterSpacing: "0.12em",
                 color: "#3e6b63",
                 textTransform: "uppercase",
@@ -114,6 +116,8 @@ export default function HomePage() {
                 fontWeight: 600,
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
+                flexWrap: "wrap",
                 gap: "8px",
               }}
             >
@@ -132,11 +136,11 @@ export default function HomePage() {
             <p
               style={{
                 fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: "12px",
+                fontSize: "clamp(10px, 2.2vw, 12px)",
                 letterSpacing: "0.1em",
                 color: "#4b5850",
                 textTransform: "uppercase",
-                margin: "0 0 24px",
+                margin: "0 0 20px",
               }}
             >
               TIRUPPUR, TAMIL NADU
@@ -146,14 +150,15 @@ export default function HomePage() {
             <h1
               style={{
                 fontFamily: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif",
-                fontSize: "clamp(60px, 9vw, 115px)",
+                fontSize: "clamp(38px, 8.5vw, 115px)",
                 fontWeight: 600,
                 letterSpacing: "-0.08em",
-                lineHeight: 0.85,
+                lineHeight: 0.9,
                 color: "#17251e",
-                margin: "0 0 28px",
+                margin: "0 0 24px",
                 display: "inline-flex",
                 alignItems: "center",
+                justifyContent: "center",
               }}
             >
               <span>{displayedText}</span>

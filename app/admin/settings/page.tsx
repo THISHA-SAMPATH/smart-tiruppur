@@ -24,50 +24,54 @@ export default async function AdminSettingsPage() {
       <div className="grid" style={{ gap: "20px" }}>
         <div className="card">
           <h3 style={{ fontSize: "18px", marginBottom: "12px" }}>Authentication & RBAC Configuration</h3>
-          <table style={{ width: "100%" }}>
-            <tbody>
-              <tr>
-                <td className="muted small">Auth Strategy</td>
-                <td><strong>HTTP-Only Cookie + HMAC SHA-256 JWT</strong></td>
-              </tr>
-              <tr>
-                <td className="muted small">Session Cookie Name</td>
-                <td className="mono">smart_tiruppur_session</td>
-              </tr>
-              <tr>
-                <td className="muted small">Password Hashing</td>
-                <td><strong>Bcrypt (Salt Rounds: 10)</strong></td>
-              </tr>
-              <tr>
-                <td className="muted small">Active Admin Session</td>
-                <td className="mono">{currentUser?.email} ({currentUser?.id})</td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="table-container">
+            <table style={{ width: "100%" }}>
+              <tbody>
+                <tr>
+                  <td className="muted small">Auth Strategy</td>
+                  <td><strong>HTTP-Only Cookie + HMAC SHA-256 JWT</strong></td>
+                </tr>
+                <tr>
+                  <td className="muted small">Session Cookie Name</td>
+                  <td className="mono">smart_tiruppur_session</td>
+                </tr>
+                <tr>
+                  <td className="muted small">Password Hashing</td>
+                  <td><strong>Bcrypt (Salt Rounds: 10)</strong></td>
+                </tr>
+                <tr>
+                  <td className="muted small">Active Admin Session</td>
+                  <td className="mono">{currentUser?.email} ({currentUser?.id})</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="card">
           <h3 style={{ fontSize: "18px", marginBottom: "12px" }}>Microservices & Backend URLs</h3>
-          <table style={{ width: "100%" }}>
-            <tbody>
-              <tr>
-                <td className="muted small">Industrial Discharge Ledger Service</td>
-                <td className="mono">{LEDGER_BASE_URL}</td>
-              </tr>
-              <tr>
-                <td className="muted small">Inference & Signal Service</td>
-                <td className="mono">{INFERENCE_BASE_URL}</td>
-              </tr>
-              <tr>
-                <td className="muted small">FIRKA Groundwater Service</td>
-                <td className="mono">{GROUNDWATER_BASE_URL}</td>
-              </tr>
-              <tr>
-                <td className="muted small">Database Provider</td>
-                <td className="mono">Prisma ORM (Neon PostgreSQL)</td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="table-container">
+            <table style={{ width: "100%" }}>
+              <tbody>
+                <tr>
+                  <td className="muted small">Industrial Discharge Ledger Service</td>
+                  <td className="mono">{LEDGER_BASE_URL}</td>
+                </tr>
+                <tr>
+                  <td className="muted small">Inference & Signal Service</td>
+                  <td className="mono">{INFERENCE_BASE_URL}</td>
+                </tr>
+                <tr>
+                  <td className="muted small">FIRKA Groundwater Service</td>
+                  <td className="mono">{GROUNDWATER_BASE_URL}</td>
+                </tr>
+                <tr>
+                  <td className="muted small">Database Provider</td>
+                  <td className="mono">Prisma ORM (Neon PostgreSQL)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="card">

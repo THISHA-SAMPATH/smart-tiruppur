@@ -145,32 +145,34 @@ export default async function IndustryDashboardPage() {
         </div>
 
         {ledger?.entries && ledger.entries.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Event ID</th>
-                <th>Timestamp</th>
-                <th>Decision</th>
-                <th>Confidence</th>
-                <th>Regulator Action</th>
-                <th>Current Hash</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ledger.entries.map((entry) => (
-                <tr key={entry.event_id}>
-                  <td className="mono">{entry.event_id}</td>
-                  <td>{entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "—"}</td>
-                  <td>{entry.decision}</td>
-                  <td>{entry.confidence != null ? `${(entry.confidence * 100).toFixed(0)}%` : "—"}</td>
-                  <td>{entry.regulator_action || <span className="muted small">None</span>}</td>
-                  <td className="mono small muted">
-                    {entry.current_hash ? `${entry.current_hash.slice(0, 10)}…` : "—"}
-                  </td>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Event ID</th>
+                  <th>Timestamp</th>
+                  <th>Decision</th>
+                  <th>Confidence</th>
+                  <th>Regulator Action</th>
+                  <th>Current Hash</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {ledger.entries.map((entry) => (
+                  <tr key={entry.event_id}>
+                    <td className="mono">{entry.event_id}</td>
+                    <td>{entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "—"}</td>
+                    <td>{entry.decision}</td>
+                    <td>{entry.confidence != null ? `${(entry.confidence * 100).toFixed(0)}%` : "—"}</td>
+                    <td>{entry.regulator_action || <span className="muted small">None</span>}</td>
+                    <td className="mono small muted">
+                      {entry.current_hash ? `${entry.current_hash.slice(0, 10)}…` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="card">
             <p className="muted small" style={{ margin: 0 }}>

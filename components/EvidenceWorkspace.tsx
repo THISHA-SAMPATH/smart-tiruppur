@@ -1,7 +1,46 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import AlertFeed from "@/components/AlertFeed";
 import StaleBanner from "@/components/StaleBanner";
 import { getGlobalEvents, postRegulatorAction } from "@/lib/api";
 import type { ContractEvent } from "@/lib/types";
-export default function EvidenceWorkspace() { const [events, setEvents] = useState<ContractEvent[]>([]); const [meta, setMeta] = useState({ stale: false, fetchedAt: null as string | null, error: null as string | null }); useEffect(() => { void (async () => { const res = await getGlobalEvents(); if (res.data) setEvents([...res.data].sort((a, b) => b.timestamp.localeCompare(a.timestamp))); setMeta({ stale: res.stale, fetchedAt: res.fetchedAt, error: res.error }); })(); }, []); async function recordAction(eventId: string, action: string) { const res = await postRegulatorAction(eventId, action); if (!res.data) return res.error || "Could not record the regulator action."; setEvents((current) => current.map((event) => event.event_id === eventId ? { ...event, regulator_action: res.data?.regulator_action ?? action } : event)); return null; } return <div className="workspace-page"><header className="workspace-header"><div><p className="eyebrow">ACCOUNTABLE DECISIONS / 03</p><h1>Evidence ledger</h1><p>Review recorded source-attribution decisions and preserve the regulator’s proportionate response.</p></div></header>{meta.stale && <StaleBanner serviceName="Ledger service" fetchedAt={meta.fetchedAt} error={meta.error} />}<AlertFeed events={events} onRecordAction={recordAction} /></div>; }
+
+export default function EvidenceWorkspace() {
+  const [events, setEvents] = useState<ContractEvent[]>([]);
+  const [meta, setMeta] = useState({ stale: false, fetchedAt: null as string | null, error: null as string | null });
+
+  useEffect(() => {
+    void (async () => {
+      const res = await getGlobalEvents();
+      if (res.data) setEvents([...res.data].sort((a, b) => b.timestamp.localeCompare(a.timestamp)));
+      setMeta({ stale: res.stale, fetchedAt: res.fetchedAt, error: res.error });
+    })();
+  }, []);
+
+  async function recordAction(eventId: string, action: string) {
+    const res = await postRegulatorAction(eventId, action);
+    if (!res.data) return res.error || "Could not record the regulator action.";
+    setEvents((current) =>
+      current.map((event) =>
+        event.event_id === eventId ? { ...event, regulator_action: res.data?.regulator_action ?? action } : event,
+      ),
+    );
+    return null;
+  }
+
+  return (
+    <div className="workspace-page">
+      <header className="workspace-header">
+        <div>
+          <p className="eyebrow">ACCOUNTABLE DECISIONS / 03</p>
+          <h1>Evidence ledger</h1>
+          <p>Review recorded source-attribution decisions and preserve the regulator’s proportionate response.</p>
+        </div>
+      </header>
+      {meta.stale && <StaleBanner serviceName="Ledger service" fetchedAt={meta.fetchedAt} error={meta.error} />}
+      <AlertFeed events={events} onRecordAction={recordAction} />
+    </div>
+  );
+}
+

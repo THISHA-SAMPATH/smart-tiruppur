@@ -186,36 +186,38 @@ export default function UnitDetailPage() {
           />
         )}
         {chain && (chain.entries?.length ?? 0) > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Event</th>
-                <th>Timestamp</th>
-                <th>Decision</th>
-                <th>Confidence</th>
-                <th>Hash</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chain.entries.map((e) => (
-                <tr key={e.event_id}>
-                  <td className="mono">{e.event_id ?? "—"}</td>
-                  <td>
-                    {e.timestamp ? new Date(e.timestamp).toLocaleString() : "—"}
-                  </td>
-                  <td>{e.decision ?? "—"}</td>
-                  <td>
-                    {e.confidence != null
-                      ? `${(e.confidence * 100).toFixed(0)}%`
-                      : "—"}
-                  </td>
-                  <td className="mono small muted">
-                    {e.current_hash ? `${e.current_hash.slice(0, 10)}…` : "—"}
-                  </td>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Timestamp</th>
+                  <th>Decision</th>
+                  <th>Confidence</th>
+                  <th>Hash</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {chain.entries.map((e) => (
+                  <tr key={e.event_id}>
+                    <td className="mono">{e.event_id ?? "—"}</td>
+                    <td>
+                      {e.timestamp ? new Date(e.timestamp).toLocaleString() : "—"}
+                    </td>
+                    <td>{e.decision ?? "—"}</td>
+                    <td>
+                      {e.confidence != null
+                        ? `${(e.confidence * 100).toFixed(0)}%`
+                        : "—"}
+                    </td>
+                    <td className="mono small muted">
+                      {e.current_hash ? `${e.current_hash.slice(0, 10)}…` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <p className="muted small">
             {chainMeta.error || "No ledger entries for this unit yet."}

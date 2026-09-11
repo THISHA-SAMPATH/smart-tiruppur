@@ -153,11 +153,13 @@ function LoginForm() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            padding: "24px 44px",
+            padding: "16px 20px",
             width: "100%",
             position: "relative",
             zIndex: 30,
             boxSizing: "border-box",
+            flexWrap: "wrap",
+            gap: "12px",
           }}
         >
           {/* Top Left Brand Title & Tagline */}
@@ -176,7 +178,7 @@ function LoginForm() {
             <div
               style={{
                 fontWeight: 700,
-                fontSize: "16px",
+                fontSize: "15px",
                 color: "#18181b",
                 letterSpacing: "-0.02em",
                 display: "flex",
@@ -199,37 +201,20 @@ function LoginForm() {
                 SMART CITY
               </span>
             </div>
-            <span style={{ fontSize: "11.5px", color: "#71717a", fontWeight: 400 }}>
+            <span style={{ fontSize: "11px", color: "#71717a", fontWeight: 400 }}>
               Noyyal River Basin Environmental Intelligence
             </span>
           </Link>
-
-          {/* Perfectly Centered Professional Logo (No Water Icon) */}
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
-              fontFamily: "'Fraunces', Georgia, serif",
-              fontWeight: 600,
-              fontSize: "22px",
-              color: "#18181b",
-              letterSpacing: "-0.03em",
-              pointerEvents: "none",
-            }}
-          >
-            NoyyalSense
-          </div>
 
           {/* Top Right About Link */}
           <Link
             href="/about"
             style={{
-              fontSize: "13.5px",
+              fontSize: "13px",
               color: "#18181b",
               textDecoration: "none",
               fontWeight: 600,
-              padding: "8px 18px",
+              padding: "6px 14px",
               borderRadius: "999px",
               border: "1px solid #e4e4e7",
               background: "#ffffff",
@@ -241,6 +226,7 @@ function LoginForm() {
               position: "relative",
               zIndex: 30,
               cursor: "pointer",
+              marginLeft: "auto",
             }}
           >
             <span>About</span>
@@ -254,7 +240,7 @@ function LoginForm() {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            padding: "20px 16px 60px",
+            padding: "16px 14px 40px",
             flex: 1,
           }}
         >
@@ -266,7 +252,7 @@ function LoginForm() {
             border: "1px solid rgba(0, 0, 0, 0.06)",
             width: "100%",
             maxWidth: "410px",
-            padding: "36px 32px 32px",
+            padding: "28px 20px 24px",
             boxSizing: "border-box",
           }}
         >

@@ -306,7 +306,7 @@ export default function AdminUsersPage() {
           <p className="muted">No user accounts found matching your query.</p>
         </div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <div className="table-container">
           <table>
             <thead>
               <tr>

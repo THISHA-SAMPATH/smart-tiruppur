@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -7,6 +8,12 @@ import { useAuth } from "@/components/AuthProvider";
 export default function Nav() {
   const pathname = usePathname();
   const { user, logout, loading } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile drawer when pathname changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   if (pathname === "/login") return null;
 
@@ -47,6 +54,86 @@ export default function Nav() {
     }
   };
 
+  const navLinks = !loading && user ? (
+    <>
+      <Link href="/map" className={isActive("/map") ? "active nav-link-item" : "nav-link-item"}>
+        City Map
+      </Link>
+
+      {user.role === "ADMIN" && (
+        <>
+          <Link href="/admin" className={isActive("/admin") && pathname === "/admin" ? "active nav-link-item" : "nav-link-item"}>
+            Dashboard
+          </Link>
+          <Link href="/admin/users" className={isActive("/admin/users") ? "active nav-link-item" : "nav-link-item"}>
+            Users
+          </Link>
+          <Link href="/monitoring" className={isActive("/monitoring") ? "active nav-link-item" : "nav-link-item"}>
+            Discharge
+          </Link>
+          <Link href="/groundwater" className={isActive("/groundwater") ? "active nav-link-item" : "nav-link-item"}>
+            Groundwater
+          </Link>
+          <Link href="/evidence" className={isActive("/evidence") ? "active nav-link-item" : "nav-link-item"}>
+            Evidence
+          </Link>
+        </>
+      )}
+
+      {user.role === "REGULATOR" && (
+        <>
+          <Link href="/regulator" className={isActive("/regulator") ? "active nav-link-item" : "nav-link-item"}>
+            Dashboard
+          </Link>
+          <Link href="/monitoring" className={isActive("/monitoring") ? "active nav-link-item" : "nav-link-item"}>
+            Discharge
+          </Link>
+          <Link href="/groundwater" className={isActive("/groundwater") ? "active nav-link-item" : "nav-link-item"}>
+            Groundwater
+          </Link>
+          <Link href="/evidence" className={isActive("/evidence") ? "active nav-link-item" : "nav-link-item"}>
+            Evidence
+          </Link>
+        </>
+      )}
+
+      {user.role === "INDUSTRY" && (
+        <>
+          <Link href="/industry" className={isActive("/industry") ? "active nav-link-item" : "nav-link-item"}>
+            My Dashboard
+          </Link>
+          {user.industryUnitId && (
+            <Link
+              href={`/units/${user.industryUnitId}`}
+              className={isActive(`/units/${user.industryUnitId}`) ? "active nav-link-item" : "nav-link-item"}
+            >
+              My Facility ({user.industryUnitId})
+            </Link>
+          )}
+        </>
+      )}
+
+      {user.role === "GROUNDWATER_OFFICER" && (
+        <>
+          <Link href="/groundwater" className={isActive("/groundwater") ? "active nav-link-item" : "nav-link-item"}>
+            FIRKA Assessment
+          </Link>
+        </>
+      )}
+
+      {user.role === "CITIZEN" && (
+        <>
+          <Link href="/citizen" className={isActive("/citizen") ? "active nav-link-item" : "nav-link-item"}>
+            Public Overview
+          </Link>
+          <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
+            Verify DPP
+          </Link>
+        </>
+      )}
+    </>
+  ) : null;
+
   return (
     <nav className="topnav">
       <div style={{ display: "flex", alignItems: "baseline", gap: "16px" }}>
@@ -55,86 +142,9 @@ export default function Nav() {
         </Link>
       </div>
 
-      <div className="links" style={{ alignItems: "center" }}>
-        {!loading && user && (
-          <>
-            <Link href="/map" className={isActive("/map") ? "active" : ""}>
-              City Map
-            </Link>
-
-            {user.role === "ADMIN" && (
-              <>
-                <Link href="/admin" className={isActive("/admin") && pathname === "/admin" ? "active" : ""}>
-                  Dashboard
-                </Link>
-                <Link href="/admin/users" className={isActive("/admin/users") ? "active" : ""}>
-                  Users
-                </Link>
-                <Link href="/monitoring" className={isActive("/monitoring") ? "active" : ""}>
-                  Discharge
-                </Link>
-                <Link href="/groundwater" className={isActive("/groundwater") ? "active" : ""}>
-                  Groundwater
-                </Link>
-                <Link href="/evidence" className={isActive("/evidence") ? "active" : ""}>
-                  Evidence
-                </Link>
-              </>
-            )}
-
-            {user.role === "REGULATOR" && (
-              <>
-                <Link href="/regulator" className={isActive("/regulator") ? "active" : ""}>
-                  Dashboard
-                </Link>
-                <Link href="/monitoring" className={isActive("/monitoring") ? "active" : ""}>
-                  Discharge
-                </Link>
-                <Link href="/groundwater" className={isActive("/groundwater") ? "active" : ""}>
-                  Groundwater
-                </Link>
-                <Link href="/evidence" className={isActive("/evidence") ? "active" : ""}>
-                  Evidence
-                </Link>
-              </>
-            )}
-
-            {user.role === "INDUSTRY" && (
-              <>
-                <Link href="/industry" className={isActive("/industry") ? "active" : ""}>
-                  My Dashboard
-                </Link>
-                {user.industryUnitId && (
-                  <Link
-                    href={`/units/${user.industryUnitId}`}
-                    className={isActive(`/units/${user.industryUnitId}`) ? "active" : ""}
-                  >
-                    My Facility ({user.industryUnitId})
-                  </Link>
-                )}
-              </>
-            )}
-
-            {user.role === "GROUNDWATER_OFFICER" && (
-              <>
-                <Link href="/groundwater" className={isActive("/groundwater") ? "active" : ""}>
-                  FIRKA Assessment
-                </Link>
-              </>
-            )}
-
-            {user.role === "CITIZEN" && (
-              <>
-                <Link href="/citizen" className={isActive("/citizen") ? "active" : ""}>
-                  Public Overview
-                </Link>
-                <Link href="/verify" className={isActive("/verify") ? "active" : ""}>
-                  Verify DPP
-                </Link>
-              </>
-            )}
-          </>
-        )}
+      {/* Desktop Links */}
+      <div className="links links-desktop" style={{ alignItems: "center" }}>
+        {navLinks}
 
         {!loading && !user && pathname !== "/login" && (
           <Link href="/login" className="btn btn-ghost" style={{ padding: "4px 12px", fontSize: "13px" }}>
@@ -177,6 +187,67 @@ export default function Nav() {
           </div>
         )}
       </div>
+
+      {/* Mobile Hamburger Button */}
+      <button
+        type="button"
+        className="nav-hamburger"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        aria-label="Toggle navigation menu"
+        aria-expanded={mobileMenuOpen}
+      >
+        {mobileMenuOpen ? "✕" : "☰"}
+      </button>
+
+      {/* Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div className="nav-mobile-drawer">
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {navLinks}
+
+            {!loading && !user && pathname !== "/login" && (
+              <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid var(--hairline)" }}>
+                <Link href="/login" className="btn btn-ghost" style={{ width: "100%", justifyContent: "center" }}>
+                  Sign In
+                </Link>
+              </div>
+            )}
+
+            {!loading && user && (
+              <div className="nav-user-panel">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span className="small muted">
+                    Logged in as <strong>{user.name}</strong>
+                  </span>
+                  <span className={`badge ${getRoleBadgeClass(user.role)}`} style={{ fontSize: "11px", padding: "2px 8px" }}>
+                    <span className="badge-dot" />
+                    {formatRoleLabel(user.role)}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    void logout();
+                  }}
+                  className="btn btn-ghost"
+                  style={{
+                    width: "100%",
+                    justifyContent: "center",
+                    padding: "8px 12px",
+                    fontSize: "13px",
+                    color: "var(--madder)",
+                    borderColor: "var(--madder)",
+                    marginTop: "6px",
+                  }}
+                >
+                  Sign Out of Account
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
