@@ -139,6 +139,13 @@ export default async function RegulatorDashboardPage() {
             <p className="small muted">Review CGWB baseline figures and evaluate extraction scenario simulations for each Tiruppur FIRKA.</p>
             <span className="module-link" style={{ marginTop: "12px", display: "inline-block" }}>Evaluate FIRKAs →</span>
           </Link>
+
+          <Link href="/simulator" className="card" style={{ textDecoration: "none", color: "inherit", border: "1px solid var(--teal)" }}>
+            <span className="card-index">[ WORKSPACE 04 ]</span>
+            <h3 style={{ fontSize: "20px", margin: "6px 0" }}>Visual GIS Simulator 🎨</h3>
+            <p className="small muted">Interactive spatial advection-dispersion modeling, live outfall valves, and automated Section 33A enforcement triggers.</p>
+            <span className="module-link" style={{ marginTop: "12px", display: "inline-block", color: "var(--teal)" }}>Launch Simulator →</span>
+          </Link>
         </div>
       </section>
 

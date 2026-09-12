@@ -117,6 +117,13 @@ export default async function AdminDashboardPage() {
             <p className="small muted">Inspect environment parameters, backend service endpoints, and database connection status.</p>
             <span className="module-link" style={{ marginTop: "12px", display: "inline-block" }}>System settings →</span>
           </Link>
+
+          <Link href="/simulator" className="card" style={{ textDecoration: "none", color: "inherit", border: "1px solid var(--teal)" }}>
+            <span className="card-index">[ ADMIN 06 ]</span>
+            <h3 style={{ fontSize: "20px", margin: "6px 0" }}>Visual GIS Simulator 🎨</h3>
+            <p className="small muted">Interactive spatial advection-dispersion river modeling, solenoid outfall valves, and live hydrograph controls.</p>
+            <span className="module-link" style={{ marginTop: "12px", display: "inline-block", color: "var(--teal)" }}>Open GIS Simulator →</span>
+          </Link>
         </div>
       </section>
     </div>

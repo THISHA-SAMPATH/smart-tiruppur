@@ -36,14 +36,14 @@ export default async function CitizenDashboardPage() {
           </p>
         </div>
 
-        <div className="card">
-          <span className="card-index">[ VERIFICATION ]</span>
-          <h3 style={{ fontSize: "20px", margin: "8px 0" }}>Garment Digital Passport (DPP)</h3>
+        <div className="card" style={{ border: "1px solid var(--teal)" }}>
+          <span className="card-index">[ REAL-TIME SIMULATION ]</span>
+          <h3 style={{ fontSize: "20px", margin: "8px 0" }}>Visual River Simulator 🎨</h3>
           <p className="small muted">
-            Every garment batch carries a cryptographic QR code verifying its textile dyeing facility compliance, water recycling percentage, and energy baseline.
+            Interactive Noyyal River GIS simulation. Model industrial outfalls, monsoon flow dilution, and calculate borewell contamination safety buffers.
           </p>
-          <Link href="/verify" className="module-link" style={{ marginTop: "12px", display: "inline-block" }}>
-            Scan & verify garment QR →
+          <Link href="/simulator" className="module-link" style={{ marginTop: "12px", display: "inline-block", color: "var(--teal)" }}>
+            Open Interactive Simulator →
           </Link>
         </div>
       </section>
