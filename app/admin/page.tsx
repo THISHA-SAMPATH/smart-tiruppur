@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
+import TnpcbReportButton from "@/components/TnpcbReportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -33,9 +34,12 @@ export default async function AdminDashboardPage() {
             Welcome, {currentUser?.name}. Complete platform overview, system controls, and access management.
           </p>
         </div>
-        <Link href="/admin/users" className="btn">
-          Manage Users ({userCount}) →
-        </Link>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <TnpcbReportButton />
+          <Link href="/admin/users" className="btn-ghost" style={{ border: "1px solid var(--hairline)" }}>
+            Manage Users ({userCount}) →
+          </Link>
+        </div>
       </header>
 
       {/* Summary Stat Cards */}

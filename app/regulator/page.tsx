@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
 import RegulatorCitizenReportsSection from "@/components/RegulatorCitizenReportsSection";
 import CetpCapacitySimulator from "@/components/CetpCapacitySimulator";
+import TnpcbReportButton from "@/components/TnpcbReportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +32,12 @@ export default async function RegulatorDashboardPage() {
             Welcome, {currentUser?.name}. Real-time industrial discharge telemetry, attribution inference, evidence chain of custody, and groundwater risk oversight.
           </p>
         </div>
-        <Link href="/monitoring" className="btn">
-          Open Live Discharge Operations →
-        </Link>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <TnpcbReportButton />
+          <Link href="/monitoring" className="btn-ghost" style={{ border: "1px solid var(--hairline)" }}>
+            Open Live Discharge Operations →
+          </Link>
+        </div>
       </header>
 
       {/* Metric Cards */}

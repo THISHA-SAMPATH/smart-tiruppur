@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { getUnit, getUnitDpp, getUnitLedger } from "@/lib/api";
 import { resolveLedgerUrl } from "@/lib/config";
 import StaleBanner from "@/components/StaleBanner";
+import ZldMembraneHealthCard from "@/components/ZldMembraneHealthCard";
+import WaterRecyclingRoiCard from "@/components/WaterRecyclingRoiCard";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +40,12 @@ export default async function IndustryDashboardPage() {
       {unitRes.stale && (
         <StaleBanner serviceName="Ledger service" fetchedAt={unitRes.fetchedAt} error={unitRes.error} />
       )}
+
+      {/* Worker & Technician ZLD Membrane Maintenance Tool */}
+      <ZldMembraneHealthCard />
+
+      {/* Industry Manager Financial ROI & Rupee Savings Calculator */}
+      <WaterRecyclingRoiCard />
 
       {/* Facility Overview Card */}
       <section className="card" style={{ marginBottom: "28px" }}>
