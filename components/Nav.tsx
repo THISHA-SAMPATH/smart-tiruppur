@@ -138,6 +138,9 @@ export default function Nav() {
           <Link href="/citizen" className={isActive("/citizen") ? "active nav-link-item" : "nav-link-item"}>
             Public Overview
           </Link>
+          <Link href="/simulator" className={isActive("/simulator") ? "active nav-link-item" : "nav-link-item"}>
+            Visual Simulator 🎨
+          </Link>
           <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
             Verify DPP
           </Link>
