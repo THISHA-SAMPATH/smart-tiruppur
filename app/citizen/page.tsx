@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-
 import CitizenReportSection from "@/components/CitizenReportSection";
+import CitizenWorkspaceClient from "@/components/CitizenWorkspaceClient";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +22,9 @@ export default async function CitizenDashboardPage() {
           Verify Product Passport ↗
         </Link>
       </header>
+
+      {/* Daily Citizen Adoption Suite (Water Score, Eco-Discounts, WhatsApp Alerts) */}
+      <CitizenWorkspaceClient />
 
       {/* Intro Cards */}
       <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "18px", marginBottom: "32px" }}>
@@ -50,3 +53,4 @@ export default async function CitizenDashboardPage() {
     </div>
   );
 }
+
