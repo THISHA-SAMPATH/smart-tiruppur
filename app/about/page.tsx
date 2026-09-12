@@ -361,6 +361,88 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Academic & Professor Demonstration Section */}
+      <section
+        style={{
+          background: "#ffffff",
+          borderTop: "1px solid #e5e0d3",
+          borderBottom: "1px solid #e5e0d3",
+          padding: "64px 24px",
+        }}
+      >
+        <div style={{ maxWidth: "1080px", margin: "0 auto" }}>
+          <div
+            style={{
+              background: "#f6f3ea",
+              border: "1.5px solid #3e6b63",
+              borderRadius: "16px",
+              padding: "36px",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "1.5px",
+                color: "#3e6b63",
+                textTransform: "uppercase",
+              }}
+            >
+              🎓 ACADEMIC EVALUATION & PROFESSOR DEMONSTRATION
+            </span>
+            <h2
+              style={{
+                font: "500 30px 'Fraunces', serif",
+                color: "#17251e",
+                margin: "8px 0 14px",
+              }}
+            >
+              Standalone Physics River & Sensor CLI Simulator
+            </h2>
+            <p style={{ fontSize: "15px", lineHeight: 1.65, color: "#4b5850", marginBottom: "20px" }}>
+              Demonstrate 1D Advection-Dispersion mass transport physics, downstream chemical plume arrival times, and real-time Bayesian probability calculations directly in the terminal for academic evaluation.
+            </p>
+
+            <div
+              style={{
+                background: "#18181b",
+                color: "#22c55e",
+                padding: "16px 20px",
+                borderRadius: "8px",
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: "13.5px",
+                marginBottom: "20px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              }}
+            >
+              <span style={{ color: "#71717a" }}># Run interactive CLI simulator in repository terminal:</span>
+              <br />
+              <span style={{ color: "#818cf8", fontWeight: 700 }}>$</span> node scripts/live-sensor-physics-simulator.js
+            </div>
+
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+              <a
+                href="https://github.com/THISHA-SAMPATH/smart-tiruppur/blob/main/SIMULATION_GUIDE.md"
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  background: "#1f2a24",
+                  color: "#ffffff",
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  fontWeight: 600,
+                  fontSize: "13.5px",
+                }}
+              >
+                📄 View Academic Transport Math Blueprint (SIMULATION_GUIDE.md) ↗
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer CTA */}
       <footer
         style={{
