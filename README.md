@@ -89,7 +89,11 @@ flowchart TD
 ### 2. 📜 Cryptographic Green Ledger & Digital Product Passports (DPP)
 - **Tamper-Evident Evidence Log**: Every sensor reading, attribution decision, and regulator action is written to an immutable, SHA-256 hash-chained ledger.
 - **Digital Product Passport (DPP)**: Generates verifiable compliance passports for textile batches produced in Tiruppur.
-- **Public QR Verification**: Global brands and buyers can scan product QR codes at `/verify` to inspect the complete environmental audit trail.
+- **Public & European Buyer Verification (`/verify`)**:
+  - 🌍 **Multi-Language Support**: Instant translation across English (EN), German (DE), French (FR), Italian (IT), and Spanish (ES).
+  - 📷 **Live Camera QR Code Scanner**: Direct scanning of physical garment hangtag QR codes.
+  - 📄 **Exportable PDF Compliance Certificate**: Print-ready EU customs audit certificate with SHA-256 hash seals, ZLD water recycling metrics, and REACH/OEKO-TEX standards.
+  - 🧵 **5-Stage Garment Batch Lifecycle**: Visual supply chain provenance tracking from Yarn Sourcing $\rightarrow$ ZLD Dyeing $\rightarrow$ Water Sensor Verification $\rightarrow$ Green Ledger Minting $\rightarrow$ EU Export Clearance.
 
 ### 3. 🌐 CGWB FIRKA Groundwater Assessment
 - **Administrative Zone Risk Classification**: Evaluates groundwater draft vs. natural recharge across Tiruppur's 6 administrative FIRKAs (*Avinashi, Tiruppur North, Tiruppur South, Palladam, Kangeyam, Dharapuram*).

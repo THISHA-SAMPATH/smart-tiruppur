@@ -77,6 +77,9 @@ export default function Nav() {
           <Link href="/evidence" className={isActive("/evidence") ? "active nav-link-item" : "nav-link-item"}>
             Evidence
           </Link>
+          <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
+            Verify DPP
+          </Link>
         </>
       )}
 
@@ -94,6 +97,9 @@ export default function Nav() {
           <Link href="/evidence" className={isActive("/evidence") ? "active nav-link-item" : "nav-link-item"}>
             Evidence
           </Link>
+          <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
+            Verify DPP
+          </Link>
         </>
       )}
 
@@ -110,6 +116,9 @@ export default function Nav() {
               My Facility ({user.industryUnitId})
             </Link>
           )}
+          <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
+            Verify DPP
+          </Link>
         </>
       )}
 
@@ -117,6 +126,9 @@ export default function Nav() {
         <>
           <Link href="/groundwater" className={isActive("/groundwater") ? "active nav-link-item" : "nav-link-item"}>
             FIRKA Assessment
+          </Link>
+          <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
+            Verify DPP
           </Link>
         </>
       )}
