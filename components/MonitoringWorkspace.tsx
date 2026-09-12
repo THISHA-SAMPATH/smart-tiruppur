@@ -6,6 +6,7 @@ import type { ContractEvent, LedgerUnit, SensorReading } from "@/lib/types";
 import SensorTrends from "@/components/SensorTrends";
 import StaleBanner, { ErrorBanner } from "@/components/StaleBanner";
 import UnitCard from "@/components/UnitCard";
+import MonsoonRainSimulator from "@/components/MonsoonRainSimulator";
 
 export default function MonitoringWorkspace() {
   const [units, setUnits] = useState<LedgerUnit[]>([]);
@@ -68,6 +69,9 @@ export default function MonitoringWorkspace() {
           {running ? "Running inference…" : "Run simulated discharge"}
         </button>
       </header>
+
+      {/* Hydrological Rain & Runoff Dilution Simulator */}
+      <MonsoonRainSimulator />
 
       {runError && <ErrorBanner message={runError} />}
 

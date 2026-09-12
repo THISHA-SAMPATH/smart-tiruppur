@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
 import RegulatorCitizenReportsSection from "@/components/RegulatorCitizenReportsSection";
+import CetpCapacitySimulator from "@/components/CetpCapacitySimulator";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,9 @@ export default async function RegulatorDashboardPage() {
           <p className="small muted" style={{ margin: "4px 0 0" }}>Groundwater assessment areas</p>
         </div>
       </section>
+
+      {/* CETP Hydraulic Capacity & Peak Strain Simulator */}
+      <CetpCapacitySimulator />
 
       {/* Flagged Incidents Overview */}
       <section className="workspace-section" style={{ marginBottom: "32px" }}>
