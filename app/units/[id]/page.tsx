@@ -7,10 +7,27 @@ import { getUnit, getUnitDpp, getUnitLedger } from "@/lib/api";
 import { resolveLedgerUrl } from "@/lib/config";
 import type { DppResponse, LedgerUnit, UnitLedgerResponse } from "@/lib/types";
 import StaleBanner from "@/components/StaleBanner";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function UnitDetailPage() {
   const params = useParams<{ id: string }>();
   const unitId = params.id;
+  const { user } = useAuth();
+
+  const getBackLink = () => {
+    switch (user?.role) {
+      case "INDUSTRY":
+        return { href: "/industry", label: "← Back to Industry Workspace" };
+      case "REGULATOR":
+        return { href: "/regulator", label: "← Back to Regulator Workbench" };
+      case "ADMIN":
+        return { href: "/admin", label: "← Back to Admin Dashboard" };
+      default:
+        return { href: "/dashboard", label: "← Back to Dashboard" };
+    }
+  };
+
+  const backLink = getBackLink();
 
   const [unit, setUnit] = useState<LedgerUnit | null>(null);
   const [unitMeta, setUnitMeta] = useState({
@@ -52,7 +69,7 @@ export default function UnitDetailPage() {
   return (
     <div>
       <p className="small muted" style={{ marginBottom: 4 }}>
-        <Link href="/">← Regulator dashboard</Link>
+        <Link href={backLink.href}>{backLink.label}</Link>
       </p>
       <h2 style={{ fontSize: 24, marginBottom: 4 }}>{unit?.name ?? unitId}</h2>
       <p className="mono small muted" style={{ marginBottom: 20 }}>

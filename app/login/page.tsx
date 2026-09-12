@@ -4,12 +4,14 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import backdropImg from "@/public/noyyal_green_landscape_backdrop.jpg";
+import { useAuth } from "@/components/AuthProvider";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
+  const { user: currentUser, logout } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -256,30 +258,120 @@ function LoginForm() {
             boxSizing: "border-box",
           }}
         >
-          {/* Card Title & Subtitle */}
-          <div style={{ textAlign: "center", marginBottom: "24px" }}>
-            <h1
-              style={{
-                fontSize: "25px",
-                fontFamily: "'Fraunces', Georgia, serif",
-                fontWeight: 500,
-                color: "#18181b",
-                margin: "0 0 6px",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Log in to NoyyalSense
-            </h1>
-            <p
-              style={{
-                fontSize: "13.5px",
-                color: "#71717a",
-                margin: 0,
-              }}
-            >
-              Sign in to your role-based workspace
-            </p>
-          </div>
+          {currentUser ? (
+            <div style={{ textAlign: "center", padding: "10px 4px" }}>
+              <div
+                style={{
+                  display: "inline-block",
+                  padding: "4px 12px",
+                  borderRadius: "999px",
+                  background: "#dcfce7",
+                  color: "#15803d",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  marginBottom: "16px",
+                }}
+              >
+                ✓ Active Session Detected
+              </div>
+
+              <h2
+                style={{
+                  fontSize: "22px",
+                  fontFamily: "'Fraunces', Georgia, serif",
+                  fontWeight: 500,
+                  margin: "0 0 6px",
+                  color: "#18181b",
+                }}
+              >
+                Welcome back, {currentUser.name}
+              </h2>
+              <p
+                style={{
+                  fontSize: "13.5px",
+                  color: "#71717a",
+                  margin: "0 0 24px",
+                }}
+              >
+                Signed in as <strong style={{ color: "#18181b" }}>{currentUser.email}</strong> ({currentUser.role})
+              </p>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const target =
+                    currentUser.role === "ADMIN"
+                      ? "/admin"
+                      : currentUser.role === "REGULATOR"
+                      ? "/regulator"
+                      : currentUser.role === "INDUSTRY"
+                      ? "/industry"
+                      : currentUser.role === "GROUNDWATER_OFFICER"
+                      ? "/groundwater"
+                      : "/citizen";
+                  router.push(target);
+                }}
+                style={{
+                  width: "100%",
+                  height: "46px",
+                  borderRadius: "12px",
+                  border: "none",
+                  background: "linear-gradient(135deg, #18181b 0%, #27272a 100%)",
+                  color: "#ffffff",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 14px rgba(0, 0, 0, 0.15)",
+                  transition: "all 0.15s ease",
+                  marginBottom: "12px",
+                }}
+              >
+                Continue to {currentUser.role} Workspace →
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void logout()}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#71717a",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  padding: "8px",
+                  textDecoration: "underline",
+                }}
+              >
+                Sign in as a different account
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Card Title & Subtitle */}
+              <div style={{ textAlign: "center", marginBottom: "24px" }}>
+                <h1
+                  style={{
+                    fontSize: "25px",
+                    fontFamily: "'Fraunces', Georgia, serif",
+                    fontWeight: 500,
+                    color: "#18181b",
+                    margin: "0 0 6px",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  Log in to NoyyalSense
+                </h1>
+                <p
+                  style={{
+                    fontSize: "13.5px",
+                    color: "#71717a",
+                    margin: 0,
+                  }}
+                >
+                  Sign in to your role-based workspace
+                </p>
+              </div>
 
           {/* Quick Role Selection Pills */}
           <div style={{ marginBottom: "20px" }}>
@@ -585,6 +677,8 @@ function LoginForm() {
               Sign up
             </a>
           </p>
+          </>
+          )}
         </div>
       </main>
     </div>
