@@ -13,21 +13,22 @@ const GisRiverPhysicsMap = dynamic(
     loading: () => (
       <div
         style={{
-          height: "540px",
+          height: "560px",
           width: "100%",
-          borderRadius: "12px",
-          background: "#0f172a",
+          borderRadius: "16px",
+          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: "12px",
+          gap: "14px",
           color: "#94a3b8",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <span className="pulse" style={{ width: "24px", height: "24px", borderColor: "#3b82f6" }} />
-        <p style={{ margin: 0, fontSize: "14px", fontWeight: 600 }}>
-          Initializing Tiruppur Noyyal Reach GIS Map Engine...
+        <span className="pulse" style={{ width: "28px", height: "28px", borderColor: "#38bdf8" }} />
+        <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, letterSpacing: "0.02em" }}>
+          Initializing Tiruppur Noyyal GIS Spatial Physics Engine...
         </p>
       </div>
     ),
@@ -59,6 +60,7 @@ export default function VisualRiverCanvasSimulator() {
   const [effluentFlowM3d, setEffluentFlowM3d] = useState(380); // m3/day
   const [rawEffluentEc, setRawEffluentEc] = useState(8500); // uS/cm
   const [dispersionDx, setDispersionDx] = useState(2.5); // m2/s
+  const [citizenDistanceKm, setCitizenDistanceKm] = useState(1.2);
 
   // Live Telemetry Readouts
   const [st1Ec, setSt1Ec] = useState(1420); // Upstream Mangalam
@@ -129,13 +131,12 @@ export default function VisualRiverCanvasSimulator() {
       const base1 = 1400 + Math.sin(Date.now() / 3000) * 25;
 
       // Mass Balance Mixed EC at Industrial Discharge Zone
-      // EC_mix = (Q_river * EC_river + Q_eff * EC_eff) / (Q_river + Q_eff)
       let calculatedSt2 = base1;
       if (activeBypassesCount > 0) {
         calculatedSt2 =
           (qRiver * base1 + qEffM3s * rawEffluentEc) / (qRiver + qEffM3s);
 
-        // Add dispersion smoothing factorDx
+        // Add dispersion smoothing factor Dx
         calculatedSt2 = calculatedSt2 * (1 + (1 / dispersionDx) * 0.05);
       }
 
@@ -190,18 +191,16 @@ export default function VisualRiverCanvasSimulator() {
   };
 
   return (
-    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "20px" }}>
-      {/* Top Header Card */}
+    <div style={{ maxWidth: "1440px", margin: "0 auto", padding: "20px 24px" }}>
+      {/* Top Glassmorphic Command Center Header */}
       <div
-        className="card"
+        className="scada-glass-card"
         style={{
-          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-          color: "#ffffff",
-          padding: "24px",
-          borderRadius: "16px",
+          padding: "24px 28px",
           marginBottom: "20px",
-          border: "1px solid rgba(255,255,255,0.1)",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+          border: "1px solid rgba(56, 189, 248, 0.3)",
+          boxShadow: "0 12px 35px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)",
         }}
       >
         <div
@@ -214,70 +213,88 @@ export default function VisualRiverCanvasSimulator() {
           }}
         >
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
               <span
                 style={{
-                  background: "#3b82f6",
-                  color: "white",
-                  padding: "3px 10px",
+                  background: "linear-gradient(90deg, #0284c7 0%, #38bdf8 100%)",
+                  color: "#0f172a",
+                  padding: "3px 12px",
                   borderRadius: "20px",
                   fontSize: "11px",
-                  fontWeight: 800,
-                  letterSpacing: "0.05em",
+                  fontWeight: 900,
+                  letterSpacing: "0.06em",
+                  boxShadow: "0 0 12px rgba(56, 189, 248, 0.5)",
                 }}
               >
-                HYDRO-CHEMICAL SCADA V3.0
+                HYDRO-CHEMICAL SCADA COMMAND CENTER
               </span>
-              <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                Tiruppur Noyyal Reach (Mangalam → Kasipalayam → Orathapalayam)
+              <span
+                className={st2Ec > 3000 ? "scada-badge-alarm" : "scada-badge-ok"}
+                style={{ padding: "3px 10px", borderRadius: "12px", fontSize: "11px" }}
+              >
+                {st2Ec > 3000 ? "🔴 CRITICAL OVERRUN ALARM" : "🟢 STREAM STABLE"}
               </span>
             </div>
             <h1
               style={{
-                fontSize: "24px",
+                fontSize: "26px",
                 fontFamily: "var(--font-serif)",
                 margin: "0 0 6px",
                 color: "#ffffff",
+                letterSpacing: "-0.01em",
               }}
             >
-              Noyyal Hydro-Chemical Advection & Enforcement Simulator
+              Tiruppur Noyyal Reach Hydrodynamic Physics Simulator
             </h1>
-            <p style={{ margin: 0, fontSize: "13px", color: "#cbd5e1", maxWidth: "800px" }}>
-              Authentic spatial GIS physics simulation of industrial textile effluent mixing, chemical transport,
-              and automated TNPCB regulatory enforcement workflows.
+            <p style={{ margin: 0, fontSize: "13px", color: "#cbd5e1", maxWidth: "840px", lineHeight: "1.5" }}>
+              Spatial GIS transport simulation powered by 1D Advection-Dispersion equations, mass-balance dilution modeling,
+              and real-time TNPCB Section 33A enforcement triggers.
             </p>
           </div>
 
-          {/* Role Context Selector */}
-          <div style={{ display: "flex", gap: "6px", background: "rgba(255,255,255,0.08)", padding: "4px", borderRadius: "10px" }}>
+          {/* SCADA Role Mode Picker */}
+          <div
+            style={{
+              display: "flex",
+              gap: "6px",
+              background: "rgba(15, 23, 42, 0.6)",
+              padding: "5px",
+              borderRadius: "12px",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+            }}
+          >
             <button
               type="button"
               onClick={() => setRoleMode("REGULATOR")}
               style={{
-                background: roleMode === "REGULATOR" ? "#3b82f6" : "transparent",
-                color: "white",
+                background: roleMode === "REGULATOR" ? "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)" : "transparent",
+                color: roleMode === "REGULATOR" ? "#ffffff" : "#94a3b8",
                 border: "none",
-                borderRadius: "6px",
-                padding: "6px 12px",
+                borderRadius: "8px",
+                padding: "8px 14px",
                 fontSize: "12px",
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: "pointer",
+                boxShadow: roleMode === "REGULATOR" ? "0 4px 14px rgba(2, 132, 199, 0.4)" : "none",
+                transition: "all 0.2s ease",
               }}
             >
-              🏛️ Regulator View
+              🏛️ Regulator
             </button>
             <button
               type="button"
               onClick={() => setRoleMode("INDUSTRY")}
               style={{
-                background: roleMode === "INDUSTRY" ? "#3b82f6" : "transparent",
-                color: "white",
+                background: roleMode === "INDUSTRY" ? "linear-gradient(135deg, #059669 0%, #047857 100%)" : "transparent",
+                color: roleMode === "INDUSTRY" ? "#ffffff" : "#94a3b8",
                 border: "none",
-                borderRadius: "6px",
-                padding: "6px 12px",
+                borderRadius: "8px",
+                padding: "8px 14px",
                 fontSize: "12px",
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: "pointer",
+                boxShadow: roleMode === "INDUSTRY" ? "0 4px 14px rgba(5, 150, 105, 0.4)" : "none",
+                transition: "all 0.2s ease",
               }}
             >
               🏭 CETP Operator
@@ -286,64 +303,69 @@ export default function VisualRiverCanvasSimulator() {
               type="button"
               onClick={() => setRoleMode("CITIZEN")}
               style={{
-                background: roleMode === "CITIZEN" ? "#3b82f6" : "transparent",
-                color: "white",
+                background: roleMode === "CITIZEN" ? "linear-gradient(135deg, #d97706 0%, #b45309 100%)" : "transparent",
+                color: roleMode === "CITIZEN" ? "#ffffff" : "#94a3b8",
                 border: "none",
-                borderRadius: "6px",
-                padding: "6px 12px",
+                borderRadius: "8px",
+                padding: "8px 14px",
                 fontSize: "12px",
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: "pointer",
+                boxShadow: roleMode === "CITIZEN" ? "0 4px 14px rgba(217, 119, 6, 0.4)" : "none",
+                transition: "all 0.2s ease",
               }}
             >
-              🏡 Citizen View
+              🏡 Citizen Risk
             </button>
             <button
               type="button"
               onClick={() => setRoleMode("ACADEMIC")}
               style={{
-                background: roleMode === "ACADEMIC" ? "#3b82f6" : "transparent",
-                color: "white",
+                background: roleMode === "ACADEMIC" ? "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)" : "transparent",
+                color: roleMode === "ACADEMIC" ? "#ffffff" : "#94a3b8",
                 border: "none",
-                borderRadius: "6px",
-                padding: "6px 12px",
+                borderRadius: "8px",
+                padding: "8px 14px",
                 fontSize: "12px",
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: "pointer",
+                boxShadow: roleMode === "ACADEMIC" ? "0 4px 14px rgba(124, 58, 237, 0.4)" : "none",
+                transition: "all 0.2s ease",
               }}
             >
-              🎓 Academic / Math
+              🎓 Academic Math
             </button>
           </div>
         </div>
 
-        {/* Preset Scenarios Quick Bar */}
+        {/* Preset Scenario Selector Buttons */}
         <div
           style={{
-            marginTop: "16px",
+            marginTop: "18px",
             paddingTop: "14px",
-            borderTop: "1px solid rgba(255,255,255,0.1)",
+            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
             display: "flex",
             alignItems: "center",
             gap: "10px",
             flexWrap: "wrap",
           }}
         >
-          <span style={{ fontSize: "11px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>
-            Quick Scenario Presets:
+          <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Scenario Presets:
           </span>
           <button
             type="button"
-            className="btn"
             style={{
-              background: "#ef4444",
+              background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
               color: "white",
               fontSize: "12px",
-              padding: "4px 12px",
-              borderRadius: "6px",
+              padding: "6px 14px",
+              borderRadius: "8px",
               border: "none",
               cursor: "pointer",
-              fontWeight: 600,
+              fontWeight: 700,
+              boxShadow: "0 4px 12px rgba(220, 38, 38, 0.35)",
+              transition: "transform 0.15s ease",
             }}
             onClick={() => applyPreset("BYPASS")}
           >
@@ -351,16 +373,16 @@ export default function VisualRiverCanvasSimulator() {
           </button>
           <button
             type="button"
-            className="btn"
             style={{
-              background: "#0284c7",
+              background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
               color: "white",
               fontSize: "12px",
-              padding: "4px 12px",
-              borderRadius: "6px",
+              padding: "6px 14px",
+              borderRadius: "8px",
               border: "none",
               cursor: "pointer",
-              fontWeight: 600,
+              fontWeight: 700,
+              boxShadow: "0 4px 12px rgba(2, 132, 199, 0.35)",
             }}
             onClick={() => applyPreset("MONSOON")}
           >
@@ -368,16 +390,16 @@ export default function VisualRiverCanvasSimulator() {
           </button>
           <button
             type="button"
-            className="btn"
             style={{
-              background: "#d97706",
+              background: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
               color: "white",
               fontSize: "12px",
-              padding: "4px 12px",
-              borderRadius: "6px",
+              padding: "6px 14px",
+              borderRadius: "8px",
               border: "none",
               cursor: "pointer",
-              fontWeight: 600,
+              fontWeight: 700,
+              boxShadow: "0 4px 12px rgba(217, 119, 6, 0.35)",
             }}
             onClick={() => applyPreset("BREACH")}
           >
@@ -385,16 +407,16 @@ export default function VisualRiverCanvasSimulator() {
           </button>
           <button
             type="button"
-            className="btn"
             style={{
-              background: "#10b981",
+              background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
               color: "white",
               fontSize: "12px",
-              padding: "4px 12px",
-              borderRadius: "6px",
+              padding: "6px 14px",
+              borderRadius: "8px",
               border: "none",
               cursor: "pointer",
-              fontWeight: 600,
+              fontWeight: 700,
+              boxShadow: "0 4px 12px rgba(5, 150, 105, 0.35)",
             }}
             onClick={() => applyPreset("COMPLIANT")}
           >
@@ -406,52 +428,48 @@ export default function VisualRiverCanvasSimulator() {
             onClick={() => setShowMathModal(!showMathModal)}
             style={{
               marginLeft: "auto",
-              background: "rgba(255,255,255,0.12)",
-              color: "#ffffff",
-              border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: "6px",
-              padding: "4px 10px",
-              fontSize: "11px",
-              fontWeight: 600,
+              background: "rgba(255, 255, 255, 0.1)",
+              color: "#38bdf8",
+              border: "1px solid rgba(56, 189, 248, 0.3)",
+              borderRadius: "8px",
+              padding: "6px 12px",
+              fontSize: "12px",
+              fontWeight: 700,
               cursor: "pointer",
             }}
           >
-            {showMathModal ? "Hide Math Equations" : "📐 View Physics Model Formulas"}
+            {showMathModal ? "Hide Physics Equations" : "📐 View Differential Equations"}
           </button>
         </div>
       </div>
 
-      {/* Physics Math Formula Drawer */}
+      {/* Physics Math Drawer Modal */}
       {showMathModal && (
         <div
+          className="scada-glass-card"
           style={{
-            background: "#1e293b",
-            color: "#f8fafc",
-            padding: "16px 20px",
-            borderRadius: "12px",
+            padding: "20px 24px",
             marginBottom: "20px",
-            border: "1px solid #334155",
-            fontSize: "13px",
-            lineHeight: "1.6",
+            border: "1px solid rgba(56, 189, 248, 0.3)",
           }}
         >
-          <h3 style={{ margin: "0 0 8px", color: "#38bdf8", fontSize: "16px" }}>
-            📐 Hydro-Chemical Physics Transport Equations
+          <h3 style={{ margin: "0 0 12px", color: "#38bdf8", fontSize: "16px", fontWeight: 700 }}>
+            📐 Hydrodynamic Transport Physics & Mass Balance Model
           </h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
             <div>
-              <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#cbd5e1" }}>
-                1. Mass-Balance In-Stream EC Mixing Equation:
+              <p style={{ margin: "0 0 6px", fontWeight: 700, color: "#cbd5e1", fontSize: "13px" }}>
+                1. Mass-Balance Instantaneous In-Stream Mixing:
               </p>
-              <code style={{ background: "#0f172a", padding: "6px 12px", borderRadius: "6px", display: "block", color: "#4ade80" }}>
+              <code style={{ background: "#0f172a", padding: "8px 12px", borderRadius: "8px", display: "block", color: "#4ade80", border: "1px solid #1e293b", fontSize: "12px" }}>
                 EC_mixed = (Q_river * EC_river + Q_effluent * EC_effluent) / (Q_river + Q_effluent)
               </code>
             </div>
             <div>
-              <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#cbd5e1" }}>
-                2. 1D Longitudinal Advection-Dispersion Differential Equation:
+              <p style={{ margin: "0 0 6px", fontWeight: 700, color: "#cbd5e1", fontSize: "13px" }}>
+                2. 1D Longitudinal Advection-Dispersion Differential Model:
               </p>
-              <code style={{ background: "#0f172a", padding: "6px 12px", borderRadius: "6px", display: "block", color: "#fbbf24" }}>
+              <code style={{ background: "#0f172a", padding: "8px 12px", borderRadius: "8px", display: "block", color: "#fbbf24", border: "1px solid #1e293b", fontSize: "12px" }}>
                 ∂C/∂t = - u (∂C/∂x) + D_x (∂²C/∂x²)
               </code>
             </div>
@@ -460,35 +478,37 @@ export default function VisualRiverCanvasSimulator() {
       )}
 
       {/* Main Split Grid: 60% Left GIS Map / 40% Right SCADA Console */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 440px", gap: "20px" }}>
-        {/* Left Side: Real GIS Map */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 460px", gap: "20px" }}>
+        {/* Left Side: Real GIS Map Container */}
         <div
-          className="card"
+          className="scada-glass-card"
           style={{
-            height: "680px",
+            height: "700px",
             position: "relative",
-            borderRadius: "16px",
             overflow: "hidden",
-            border: "1px solid var(--hairline)",
             display: "flex",
             flexDirection: "column",
           }}
         >
           <div
             style={{
-              padding: "10px 16px",
-              background: "#0f172a",
+              padding: "12px 18px",
+              background: "rgba(15, 23, 42, 0.95)",
               color: "#94a3b8",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
               fontSize: "12px",
-              fontWeight: 600,
+              fontWeight: 700,
+              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
             }}
           >
-            <span>🌐 TIRUPPUR NOYYAL GIS REACH MAP · LIVE PLUME CANVAS</span>
-            <span style={{ color: st2Ec > 3000 ? "#ef4444" : "#10b981" }}>
-              {st2Ec > 3000 ? "⚠️ SEVERE CONTAMINATION PLUME" : "✅ NORMAL RIVER FLOW"}
+            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#38bdf8", boxShadow: "0 0 8px #38bdf8" }} />
+              TIRUPPUR NOYYAL SPATIAL GIS REACH · 10 WAYPOINTS
+            </span>
+            <span style={{ color: st2Ec > 3000 ? "#ef4444" : "#10b981", fontWeight: 800 }}>
+              {st2Ec > 3000 ? "⚠️ SEVERE DISCHARGE OVERRUN" : "✅ STREAM HEALTH COMPLIANT"}
             </span>
           </div>
 
@@ -502,170 +522,193 @@ export default function VisualRiverCanvasSimulator() {
               unit012Active={unit012Bypass}
               onToggleUnit007={() => {
                 setUnit007Bypass(!unit007Bypass);
-                addLog(`Toggled Arulpuram Dyers Bypass Valve -> ${!unit007Bypass ? "ACTIVE" : "CLOSED"}`);
+                addLog(`Toggled Arulpuram Dyers Solenoid Valve -> ${!unit007Bypass ? "ACTIVE BYPASS" : "CLOSED"}`);
               }}
               onToggleUnit001={() => {
                 setUnit001Bypass(!unit001Bypass);
-                addLog(`Toggled Kasipalayam Zone Bypass Valve -> ${!unit001Bypass ? "ACTIVE" : "CLOSED"}`);
+                addLog(`Toggled Kasipalayam Zone Solenoid Valve -> ${!unit001Bypass ? "ACTIVE BYPASS" : "CLOSED"}`);
               }}
               onToggleUnit012={() => {
                 setUnit012Bypass(!unit012Bypass);
-                addLog(`Toggled Mangalam Hub Bypass Valve -> ${!unit012Bypass ? "ACTIVE" : "CLOSED"}`);
+                addLog(`Toggled Mangalam Hub Solenoid Valve -> ${!unit012Bypass ? "ACTIVE BYPASS" : "CLOSED"}`);
               }}
               riverFlowM3s={riverFlowM3s}
               roleMode={roleMode}
             />
           </div>
 
-          {/* Bottom Live Activity Feed Overlay */}
+          {/* Terminal Console Logs at Bottom */}
           <div
             style={{
-              background: "#0f172a",
-              padding: "10px 14px",
-              borderTop: "1px solid #1e293b",
-              maxHeight: "110px",
+              background: "#090d16",
+              padding: "12px 16px",
+              borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+              maxHeight: "120px",
               overflowY: "auto",
-              fontFamily: "monospace",
+              fontFamily: "'IBM Plex Mono', monospace",
               fontSize: "11px",
               color: "#cbd5e1",
             }}
           >
-            <div style={{ fontWeight: 700, color: "#94a3b8", marginBottom: "4px" }}>
-              SYSTEM ENFORCEMENT & SCADA LOGS:
+            <div style={{ fontWeight: 800, color: "#38bdf8", marginBottom: "6px", fontSize: "10px", letterSpacing: "0.05em" }}>
+              SCADA TERMINAL STREAM AUDIT TRAIL:
             </div>
             {enforcementLogs.length === 0 ? (
-              <div style={{ color: "#64748b" }}>System normal. No bypass events logged.</div>
+              <div style={{ color: "#475569" }}>System operating within baseline constraints. No bypass events logged.</div>
             ) : (
               enforcementLogs.map((log, idx) => (
-                <div key={idx} style={{ marginBottom: "2px" }}>
-                  {log}
+                <div key={idx} style={{ marginBottom: "3px", lineHeight: "1.4" }}>
+                  <span style={{ color: "#38bdf8" }}>▶</span> {log}
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* Right Side: SCADA Telemetry & Physics Controls */}
+        {/* Right Side SCADA Telemetry Panel */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Station Readouts Card */}
-          <div className="card" style={{ padding: "16px", borderRadius: "14px" }}>
-            <h3 style={{ fontSize: "14px", margin: "0 0 12px", color: "var(--ink-soft)" }}>
-              📡 LIVE TNPCB STATION TELEMETRY GAUGES
+          <div className="scada-glass-card" style={{ padding: "18px" }}>
+            <h3 style={{ fontSize: "13px", margin: "0 0 14px", color: "#94a3b8", fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              📡 LIVE TNPCB STATION TELEMETRY
             </h3>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
               {/* Station 1 */}
               <div
                 style={{
-                  background: "#f8fafc",
-                  padding: "10px",
-                  borderRadius: "8px",
-                  border: "1px solid #e2e8f0",
+                  background: "rgba(15, 23, 42, 0.6)",
+                  padding: "12px 10px",
+                  borderRadius: "10px",
+                  border: "1px solid rgba(255,255,255,0.08)",
                   textAlign: "center",
                 }}
               >
-                <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>ST-01 Mangalam</div>
-                <div style={{ fontSize: "18px", fontWeight: 800, color: "#0284c7" }}>
-                  {st1Ec} <span style={{ fontSize: "10px" }}>µS</span>
+                <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: 700 }}>ST-01 Mangalam</div>
+                <div style={{ fontSize: "20px", fontWeight: 900, color: "#38bdf8", margin: "4px 0" }}>
+                  {st1Ec} <span style={{ fontSize: "10px", fontWeight: 600 }}>µS</span>
                 </div>
-                <div style={{ fontSize: "9px", color: "#059669" }}>Upstream Entry</div>
+                <div style={{ fontSize: "9px", color: "#10b981", fontWeight: 700 }}>Upstream Entry</div>
               </div>
 
               {/* Station 2 */}
               <div
                 style={{
-                  background: st2Ec > 3000 ? "#fef2f2" : "#f8fafc",
-                  padding: "10px",
-                  borderRadius: "8px",
-                  border: st2Ec > 3000 ? "2px solid #ef4444" : "1px solid #e2e8f0",
+                  background: st2Ec > 3000 ? "rgba(239, 68, 68, 0.15)" : "rgba(15, 23, 42, 0.6)",
+                  padding: "12px 10px",
+                  borderRadius: "10px",
+                  border: st2Ec > 3000 ? "2px solid #ef4444" : "1px solid rgba(255,255,255,0.08)",
                   textAlign: "center",
+                  boxShadow: st2Ec > 3000 ? "0 0 15px rgba(239, 68, 68, 0.3)" : "none",
                 }}
               >
-                <div style={{ fontSize: "10px", color: st2Ec > 3000 ? "#b91c1c" : "#64748b", fontWeight: 700 }}>
+                <div style={{ fontSize: "10px", color: st2Ec > 3000 ? "#fca5a5" : "#94a3b8", fontWeight: 700 }}>
                   ST-02 Kasipalayam
                 </div>
-                <div style={{ fontSize: "18px", fontWeight: 800, color: st2Ec > 3000 ? "#dc2626" : "#0284c7" }}>
-                  {st2Ec} <span style={{ fontSize: "10px" }}>µS</span>
+                <div style={{ fontSize: "20px", fontWeight: 900, color: st2Ec > 3000 ? "#ef4444" : "#38bdf8", margin: "4px 0" }}>
+                  {st2Ec} <span style={{ fontSize: "10px", fontWeight: 600 }}>µS</span>
                 </div>
-                <div style={{ fontSize: "9px", color: st2Ec > 3000 ? "#b91c1c" : "#059669", fontWeight: 700 }}>
-                  {st2Ec > 3000 ? "⚠️ HIGH VIOLATION" : "Urban Exit"}
+                <div style={{ fontSize: "9px", color: st2Ec > 3000 ? "#f87171" : "#10b981", fontWeight: 800 }}>
+                  {st2Ec > 3000 ? "⚠️ OVERRUN" : "Urban Exit"}
                 </div>
               </div>
 
               {/* Station 3 */}
               <div
                 style={{
-                  background: "#f8fafc",
-                  padding: "10px",
-                  borderRadius: "8px",
-                  border: "1px solid #e2e8f0",
+                  background: "rgba(15, 23, 42, 0.6)",
+                  padding: "12px 10px",
+                  borderRadius: "10px",
+                  border: "1px solid rgba(255,255,255,0.08)",
                   textAlign: "center",
                 }}
               >
-                <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>ST-03 Orathapalayam</div>
-                <div style={{ fontSize: "18px", fontWeight: 800, color: "#475569" }}>
-                  {st3Ec} <span style={{ fontSize: "10px" }}>µS</span>
+                <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: 700 }}>ST-03 Reservoir</div>
+                <div style={{ fontSize: "20px", fontWeight: 900, color: "#c084fc", margin: "4px 0" }}>
+                  {st3Ec} <span style={{ fontSize: "10px", fontWeight: 600 }}>µS</span>
                 </div>
-                <div style={{ fontSize: "9px", color: "#64748b" }}>Dam Reservoir</div>
+                <div style={{ fontSize: "9px", color: "#94a3b8" }}>Orathapalayam Dam</div>
               </div>
             </div>
           </div>
 
           {/* Hydrograph Live SVG Time-Series Chart */}
-          <div className="card" style={{ padding: "16px", borderRadius: "14px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <h3 style={{ fontSize: "13px", margin: 0, color: "var(--ink-soft)" }}>
-                📈 REAL-TIME ELECTRICAL CONDUCTIVITY (EC) HYDROGRAPH
+          <div className="scada-glass-card" style={{ padding: "18px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+              <h3 style={{ fontSize: "12px", margin: 0, color: "#94a3b8", fontWeight: 800, letterSpacing: "0.04em" }}>
+                📈 ELECTRICAL CONDUCTIVITY (EC) TIME-SERIES
               </h3>
-              <span style={{ fontSize: "10px", color: "#64748b" }}>Norm: 2,100 µS/cm</span>
+              <span style={{ fontSize: "10px", color: "#ef4444", fontWeight: 700 }}>Max Norm: 2,100 µS/cm</span>
             </div>
 
-            <div style={{ height: "130px", width: "100%", position: "relative", background: "#0f172a", borderRadius: "8px", padding: "8px" }}>
-              <svg width="100%" height="100%" viewBox="0 0 380 110" preserveAspectRatio="none">
-                {/* TNPCB Threshold Line */}
-                <line x1="0" y1="70" x2="380" y2="70" stroke="#ef4444" strokeDasharray="4,4" strokeWidth="1.5" />
-                <text x="310" y="66" fill="#ef4444" fontSize="8" fontWeight="bold">TNPCB 2100 µS Limit</text>
+            <div style={{ height: "140px", width: "100%", position: "relative", background: "#090d16", borderRadius: "10px", padding: "10px", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <svg width="100%" height="100%" viewBox="0 0 380 120" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="st2Glow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
 
-                {/* Plot ST1 (Blue), ST2 (Red/Orange), ST3 (Purple) */}
+                {/* Grid Lines */}
+                <line x1="0" y1="30" x2="380" y2="30" stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+                <line x1="0" y1="60" x2="380" y2="60" stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+                <line x1="0" y1="90" x2="380" y2="90" stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+
+                {/* TNPCB Legal Standard Threshold Line */}
+                <line x1="0" y1="75" x2="380" y2="75" stroke="#ef4444" strokeDasharray="4,4" strokeWidth="1.5" />
+
                 {history.length > 1 && (
                   <>
-                    {/* ST1 Line */}
+                    {/* ST-02 Area Fill */}
+                    <polygon
+                      fill="url(#st2Glow)"
+                      points={`0,120 ${history
+                        .map((pt, i) => {
+                          const x = (i / (history.length - 1)) * 380;
+                          const y = 110 - (pt.st2 / 9500) * 100;
+                          return `${x},${y}`;
+                        })
+                        .join(" ")} 380,120`}
+                    />
+
+                    {/* ST1 Polyline */}
                     <polyline
                       fill="none"
-                      stroke="#3b82f6"
+                      stroke="#38bdf8"
                       strokeWidth="2"
                       points={history
                         .map((pt, i) => {
                           const x = (i / (history.length - 1)) * 380;
-                          const y = 100 - (pt.st1 / 9000) * 90;
+                          const y = 110 - (pt.st1 / 9500) * 100;
                           return `${x},${y}`;
                         })
                         .join(" ")}
                     />
 
-                    {/* ST2 Line */}
+                    {/* ST2 Polyline */}
                     <polyline
                       fill="none"
                       stroke={st2Ec > 3000 ? "#ef4444" : "#10b981"}
-                      strokeWidth="2.5"
+                      strokeWidth="3"
                       points={history
                         .map((pt, i) => {
                           const x = (i / (history.length - 1)) * 380;
-                          const y = 100 - (pt.st2 / 9000) * 90;
+                          const y = 110 - (pt.st2 / 9500) * 100;
                           return `${x},${y}`;
                         })
                         .join(" ")}
                     />
 
-                    {/* ST3 Line */}
+                    {/* ST3 Polyline */}
                     <polyline
                       fill="none"
-                      stroke="#a855f7"
+                      stroke="#c084fc"
                       strokeWidth="2"
                       points={history
                         .map((pt, i) => {
                           const x = (i / (history.length - 1)) * 380;
-                          const y = 100 - (pt.st3 / 9000) * 90;
+                          const y = 110 - (pt.st3 / 9500) * 100;
                           return `${x},${y}`;
                         })
                         .join(" ")}
@@ -674,118 +717,136 @@ export default function VisualRiverCanvasSimulator() {
                 )}
               </svg>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", marginTop: "6px", color: "#64748b" }}>
-              <span style={{ color: "#3b82f6", fontWeight: 700 }}>■ ST-01 Entry</span>
-              <span style={{ color: st2Ec > 3000 ? "#ef4444" : "#10b981", fontWeight: 700 }}>■ ST-02 Urban Exit</span>
-              <span style={{ color: "#a855f7", fontWeight: 700 }}>■ ST-03 Dam Outflow</span>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", marginTop: "8px", color: "#94a3b8" }}>
+              <span style={{ color: "#38bdf8", fontWeight: 700 }}>■ ST-01 Entry</span>
+              <span style={{ color: st2Ec > 3000 ? "#ef4444" : "#10b981", fontWeight: 800 }}>■ ST-02 Urban Exit</span>
+              <span style={{ color: "#c084fc", fontWeight: 700 }}>■ ST-03 Dam Outflow</span>
             </div>
           </div>
 
           {/* Hydrodynamic Controls Box */}
-          <div className="card" style={{ padding: "16px", borderRadius: "14px" }}>
-            <h3 style={{ fontSize: "13px", margin: "0 0 12px", color: "var(--ink-soft)" }}>
-              🎛️ HYDRODYNAMIC PHYSICS PARAMETER SLIDERS
+          <div className="scada-glass-card" style={{ padding: "18px" }}>
+            <h3 style={{ fontSize: "12px", margin: "0 0 14px", color: "#94a3b8", fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              🎛️ HYDRODYNAMIC PARAMETER SLIDERS
             </h3>
 
-            <div style={{ display: "grid", gap: "10px" }}>
+            <div style={{ display: "grid", gap: "14px" }}>
               {/* River Flow Rate */}
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "3px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px", color: "#cbd5e1" }}>
                   <span>River Flow Rate (Q_river):</span>
-                  <strong>{riverFlowM3s.toFixed(1)} m³/s</strong>
+                  <strong style={{ color: "#38bdf8" }}>{riverFlowM3s.toFixed(1)} m³/s</strong>
                 </div>
                 <input
                   type="range"
                   min="0.5"
                   max="80.0"
                   step="0.5"
+                  className="scada-range-input"
                   value={riverFlowM3s}
                   onChange={(e) => setRiverFlowM3s(parseFloat(e.target.value))}
-                  style={{ width: "100%", accentColor: "#3b82f6" }}
                 />
               </div>
 
               {/* Effluent Discharge */}
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "3px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px", color: "#cbd5e1" }}>
                   <span>Dyeing Outfall Flow (Q_effluent):</span>
-                  <strong>{effluentFlowM3d} m³/day</strong>
+                  <strong style={{ color: "#ef4444" }}>{effluentFlowM3d} m³/day</strong>
                 </div>
                 <input
                   type="range"
                   min="0"
                   max="800"
                   step="20"
+                  className="scada-range-input"
                   value={effluentFlowM3d}
                   onChange={(e) => setEffluentFlowM3d(parseInt(e.target.value))}
-                  style={{ width: "100%", accentColor: "#ef4444" }}
                 />
               </div>
 
               {/* Effluent EC */}
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "3px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px", color: "#cbd5e1" }}>
                   <span>Effluent Raw Salinity (EC_effluent):</span>
-                  <strong>{rawEffluentEc} µS/cm</strong>
+                  <strong style={{ color: "#f59e0b" }}>{rawEffluentEc} µS/cm</strong>
                 </div>
                 <input
                   type="range"
                   min="1500"
                   max="14000"
                   step="250"
+                  className="scada-range-input"
                   value={rawEffluentEc}
                   onChange={(e) => setRawEffluentEc(parseInt(e.target.value))}
-                  style={{ width: "100%", accentColor: "#d97706" }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Role-Specific Dynamic Action Card */}
+          {/* Role-Specific Action Center Card */}
           <div
-            className="card"
+            className="scada-glass-card"
             style={{
-              padding: "16px",
-              borderRadius: "14px",
-              background: roleMode === "REGULATOR" ? "#eff6ff" : roleMode === "INDUSTRY" ? "#f0fdf4" : "#fefce8",
-              border: "1px solid var(--hairline)",
+              padding: "18px",
+              border: roleMode === "REGULATOR" ? "1px solid rgba(239, 68, 68, 0.4)" : "1px solid rgba(56, 189, 248, 0.3)",
             }}
           >
-            <h3 style={{ fontSize: "13px", margin: "0 0 8px", color: "var(--ink)" }}>
+            <h3 style={{ fontSize: "13px", margin: "0 0 10px", color: "#ffffff", fontWeight: 800 }}>
               {roleMode === "REGULATOR"
-                ? "🏛️ REGULATOR ENFORCEMENT ACTIONS"
+                ? "🏛️ REGULATOR LEGAL ENFORCEMENT WORKFLOW"
                 : roleMode === "INDUSTRY"
                 ? "🏭 CETP INDUSTRIAL OVERRIDE"
-                : "🏡 CITIZEN SAFETY ADVISORY"}
+                : roleMode === "CITIZEN"
+                ? "🏡 BOREWELL CONTAMINATION RISK CALCULATOR"
+                : "🎓 ACADEMIC DIFFERENTIAL MODEL PARAMETERS"}
             </h3>
 
             {roleMode === "REGULATOR" && (
               <div>
-                <p style={{ fontSize: "12px", margin: "0 0 10px", color: "#334155" }}>
-                  Automated Water Act Section 33A emergency notice triggers on EC &gt; 3,500 µS/cm.
+                <p style={{ fontSize: "12px", margin: "0 0 12px", color: "#cbd5e1", lineHeight: "1.4" }}>
+                  Automated Water Act Section 33A emergency power disconnection notice triggers on EC &gt; 3,500 µS/cm.
                 </p>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{ flex: 1, fontSize: "12px", background: tnpcbNoticeIssued ? "#059669" : "#dc2626" }}
-                    onClick={handleIssueNotice}
-                  >
-                    {tnpcbNoticeIssued ? "✓ Section 33A Notice Dispatched" : "🚨 Issue Section 33A Closure Notice"}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  style={{
+                    width: "100%",
+                    fontSize: "12px",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: tnpcbNoticeIssued ? "linear-gradient(135deg, #059669 0%, #047857 100%)" : "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+                    color: "white",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    boxShadow: tnpcbNoticeIssued ? "0 4px 14px rgba(5, 150, 105, 0.4)" : "0 4px 14px rgba(220, 38, 38, 0.4)",
+                  }}
+                  onClick={handleIssueNotice}
+                >
+                  {tnpcbNoticeIssued ? "✓ Section 33A Order Dispatched to TANGEDCO" : "🚨 Issue Section 33A Emergency Closure Order"}
+                </button>
               </div>
             )}
 
             {roleMode === "INDUSTRY" && (
               <div>
-                <p style={{ fontSize: "12px", margin: "0 0 10px", color: "#334155" }}>
-                  Active ZLD RO Recovery: 94.2%. Emergency secondary evaporator available.
+                <p style={{ fontSize: "12px", margin: "0 0 12px", color: "#cbd5e1" }}>
+                  Active ZLD RO Recovery Rate: <strong>94.2%</strong> | Salt Recovery Economics: <strong>₹14.50 / m³</strong>
                 </p>
                 <button
                   type="button"
-                  className="btn btn-primary"
-                  style={{ width: "100%", fontSize: "12px", background: "#059669" }}
+                  style={{
+                    width: "100%",
+                    fontSize: "12px",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                    color: "white",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    boxShadow: "0 4px 14px rgba(5, 150, 105, 0.4)",
+                  }}
                   onClick={handleEmergencyZldFix}
                 >
                   ⚡ Engage Emergency Secondary RO Evaporator (Zero Bypass)
@@ -795,24 +856,44 @@ export default function VisualRiverCanvasSimulator() {
 
             {roleMode === "CITIZEN" && (
               <div>
-                <p style={{ fontSize: "12px", margin: "0 0 8px", color: "#334155" }}>
-                  Neighborhood Groundwater Safety Status within 2 km of Kasipalayam Reach:
-                </p>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "6px", color: "#cbd5e1" }}>
+                  <span>Distance to Nearest Industrial Outfall:</span>
+                  <strong style={{ color: "#38bdf8" }}>{citizenDistanceKm.toFixed(1)} km</strong>
+                </div>
+                <input
+                  type="range"
+                  min="0.3"
+                  max="5.0"
+                  step="0.1"
+                  className="scada-range-input"
+                  value={citizenDistanceKm}
+                  onChange={(e) => setCitizenDistanceKm(parseFloat(e.target.value))}
+                  style={{ marginBottom: "12px" }}
+                />
                 <div
                   style={{
-                    padding: "8px",
-                    borderRadius: "6px",
-                    background: st2Ec > 3000 ? "#fee2e2" : "#dcfce7",
-                    color: st2Ec > 3000 ? "#991b1b" : "#166534",
-                    fontWeight: 700,
+                    padding: "10px",
+                    borderRadius: "8px",
+                    background: citizenDistanceKm < 1.5 && st2Ec > 3000 ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)",
+                    border: citizenDistanceKm < 1.5 && st2Ec > 3000 ? "1px solid #ef4444" : "1px solid #10b981",
+                    color: citizenDistanceKm < 1.5 && st2Ec > 3000 ? "#fca5a5" : "#6ee7b7",
+                    fontWeight: 800,
                     fontSize: "12px",
                     textAlign: "center",
                   }}
                 >
-                  {st2Ec > 3000
+                  {citizenDistanceKm < 1.5 && st2Ec > 3000
                     ? "⚠️ CAUTION: Borewell extraction within 1.5 km restricted due to high salinity plume!"
-                    : "✅ SAFE: Groundwater quality normal."}
+                    : "✅ SAFE: Drinking water well quality within safe threshold."}
                 </div>
+              </div>
+            )}
+
+            {roleMode === "ACADEMIC" && (
+              <div>
+                <p style={{ fontSize: "12px", margin: 0, color: "#cbd5e1", lineHeight: "1.5" }}>
+                  Longitudinal Dispersion Coefficient ($D_x$ = {dispersionDx} $m^2/s$). Solves second-order partial differential transport equations for solute travel time along 10 GIS river waypoints.
+                </p>
               </div>
             )}
           </div>

@@ -685,3 +685,89 @@ th {
     text-align: center;
   }
 }
+
+/* ==========================================================================
+   SCADA HIGH-TECH VISUALIZER STYLES & ANIMATIONS
+   ========================================================================== */
+@keyframes scada-pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes scada-pulse-green {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes scada-glow-cyan {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.6)); }
+  50% { filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.95)); }
+}
+
+@keyframes scada-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.scada-glass-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.94) 0%, rgba(30, 41, 59, 0.92) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scada-glass-card:hover {
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.scada-badge-alarm {
+  animation: scada-pulse-red 1.8s infinite;
+  background: rgba(239, 68, 68, 0.25);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  font-weight: 700;
+}
+
+.scada-badge-ok {
+  animation: scada-pulse-green 2.2s infinite;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid #10b981;
+  color: #6ee7b7;
+  font-weight: 700;
+}
+
+.scada-range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #334155;
+  outline: none;
+  transition: background 0.2s ease;
+}
+
+.scada-range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #38bdf8;
+  border: 2px solid #0f172a;
+  cursor: pointer;
+  box-shadow: 0 0 12px #38bdf8;
+  transition: all 0.2s ease;
+}
+
+.scada-range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 18px #38bdf8, 0 0 28px #0284c7;
+}
+
