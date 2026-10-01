@@ -12,7 +12,7 @@ import { getGlobalEvents, getUnitLedger, getUnitDpp } from "@/lib/api";
 import type { ContractEvent, LedgerEntry, DppResponse } from "@/lib/types";
 
 export default function Terrain3DPage() {
-  const [lighting, setLighting] = useState<LightingPreset>("night");
+  const [lighting, setLighting] = useState<LightingPreset>("day");
   const [viewPreset, setViewPreset] = useState<CameraViewPreset>("overview");
   const [autoRotate, setAutoRotate] = useState(false);
   const [livePolling, setLivePolling] = useState(true);
@@ -27,7 +27,6 @@ export default function Terrain3DPage() {
   // Live Event Stream
   const [recentEvents, setRecentEvents] = useState<ContractEvent[]>([]);
 
-  // Initial load of global events
   useEffect(() => {
     void (async () => {
       const res = await getGlobalEvents();
@@ -37,7 +36,6 @@ export default function Terrain3DPage() {
     })();
   }, []);
 
-  // Fetch node history when a node is selected in 3D scene
   useEffect(() => {
     if (!selectedNode) {
       setNodeLedger([]);
@@ -67,9 +65,9 @@ export default function Terrain3DPage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#090d16",
-        color: "#f8fafc",
-        fontFamily: "var(--font-sans, system-ui, sans-serif)",
+        background: "var(--paper, #eee9dc)",
+        color: "var(--ink, #1f2a24)",
+        fontFamily: "IBM Plex Sans, sans-serif",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -79,13 +77,12 @@ export default function Terrain3DPage() {
 
       {/* Main Container */}
       <main style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
-        {/* Top Control Toolbar & Title */}
+        {/* Top Clean Header */}
         <header
           style={{
             padding: "16px 24px",
-            background: "rgba(15, 23, 42, 0.95)",
-            backdropFilter: "blur(12px)",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+            background: "var(--paper-raised, #f6f3ea)",
+            borderBottom: "1px solid var(--hairline, #d8d0bc)",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -98,39 +95,42 @@ export default function Terrain3DPage() {
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span
                 style={{
-                  background: "linear-gradient(135deg, #0284c7, #38bdf8)",
+                  background: "#2563eb",
                   color: "white",
-                  fontSize: "11px",
-                  fontWeight: 800,
+                  fontSize: "10.5px",
+                  fontWeight: 700,
                   padding: "3px 8px",
                   borderRadius: "4px",
-                  letterSpacing: "0.08em",
+                  letterSpacing: "0.06em",
                 }}
               >
                 REAL-TIME 3D DIGITAL TWIN
               </span>
-              <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "white" }}>
+              <h1 style={{ margin: 0, fontSize: "22px", fontFamily: "Fraunces, serif", color: "var(--ink, #1f2a24)" }}>
                 Smart Tiruppur Monitoring Grid
               </h1>
             </div>
-            <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#94a3b8" }}>
+            <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--ink-soft, #4b5850)" }}>
               Geospatial DEM elevation terrain · Noyyal River flow telemetry · Neural Bayesian inference & Blockchain ledger
             </p>
           </div>
 
-          {/* Quick Action Navigation Buttons */}
+          {/* Navigation Action Buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             <Link
               href="/regulator"
-              className="btn"
               style={{
-                background: "rgba(255, 255, 255, 0.08)",
-                color: "#e2e8f0",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-                fontSize: "12.5px",
+                background: "var(--paper, #eee9dc)",
+                color: "var(--ink, #1f2a24)",
+                border: "1px solid var(--hairline, #d8d0bc)",
+                fontSize: "13px",
+                fontWeight: 600,
                 padding: "6px 14px",
-                borderRadius: "6px",
+                borderRadius: "var(--radius-md, 6px)",
                 textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
               }}
             >
               ← Regulator Dashboard
@@ -138,15 +138,19 @@ export default function Terrain3DPage() {
 
             <Link
               href="/simulator"
-              className="btn"
               style={{
-                background: "rgba(14, 165, 233, 0.15)",
-                color: "#38bdf8",
-                border: "1px solid rgba(14, 165, 233, 0.3)",
-                fontSize: "12.5px",
+                background: "linear-gradient(135deg, #0284c7 0%, #2563eb 100%)",
+                color: "white",
+                border: "none",
+                fontSize: "13px",
+                fontWeight: 600,
                 padding: "6px 14px",
-                borderRadius: "6px",
+                borderRadius: "var(--radius-md, 6px)",
                 textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                boxShadow: "0 2px 8px rgba(37, 99, 235, 0.2)",
               }}
             >
               Interactive Simulator 🎨
@@ -154,24 +158,26 @@ export default function Terrain3DPage() {
           </div>
         </header>
 
-        {/* 3D Viewport Controls & Lighting Toolbar */}
+        {/* 3D Toolbar & Camera View Controls */}
         <div
           style={{
             padding: "10px 24px",
-            background: "#0f172a",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "#ffffff",
+            borderBottom: "1px solid var(--hairline, #d8d0bc)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             flexWrap: "wrap",
             gap: "12px",
-            fontSize: "12px",
+            fontSize: "12.5px",
             zIndex: 15,
           }}
         >
           {/* Camera View Presets */}
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-            <span style={{ color: "#64748b", fontWeight: 600, marginRight: "4px" }}>CAMERA:</span>
+            <span style={{ color: "var(--ink-soft, #4b5850)", fontWeight: 700, fontSize: "11px", letterSpacing: "0.05em", marginRight: "4px" }}>
+              CAMERA:
+            </span>
             {[
               { id: "overview", label: "Overview 🌐" },
               { id: "datacenter", label: "AI Data Center 🧠" },
@@ -184,15 +190,15 @@ export default function Terrain3DPage() {
                 type="button"
                 onClick={() => setViewPreset(preset.id as CameraViewPreset)}
                 style={{
-                  background: viewPreset === preset.id ? "#0284c7" : "rgba(255, 255, 255, 0.05)",
-                  color: viewPreset === preset.id ? "white" : "#cbd5e1",
+                  background: viewPreset === preset.id ? "#2563eb" : "var(--paper-raised, #f6f3ea)",
+                  color: viewPreset === preset.id ? "white" : "var(--ink, #1f2a24)",
                   border: "1px solid",
-                  borderColor: viewPreset === preset.id ? "#38bdf8" : "rgba(255, 255, 255, 0.1)",
-                  padding: "4px 10px",
-                  borderRadius: "5px",
+                  borderColor: viewPreset === preset.id ? "#2563eb" : "var(--hairline, #d8d0bc)",
+                  padding: "4px 12px",
+                  borderRadius: "var(--radius-sm, 4px)",
                   cursor: "pointer",
-                  fontSize: "11.5px",
-                  fontWeight: 500,
+                  fontSize: "12px",
+                  fontWeight: 600,
                   transition: "all 0.15s ease",
                 }}
               >
@@ -201,29 +207,31 @@ export default function Terrain3DPage() {
             ))}
           </div>
 
-          {/* Lighting & Options Controls */}
-          <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
-            {/* Lighting Mode Selector */}
+          {/* Lighting & Options */}
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ color: "#64748b", fontWeight: 600, marginRight: "4px" }}>LIGHTING:</span>
+              <span style={{ color: "var(--ink-soft, #4b5850)", fontWeight: 700, fontSize: "11px", letterSpacing: "0.05em", marginRight: "4px" }}>
+                LIGHTING:
+              </span>
               {[
-                { id: "day", label: "Day ☀️" },
-                { id: "dusk", label: "Dusk 🌅" },
-                { id: "night", label: "Cyberpunk 🌙" },
+                { id: "day", label: "Daylight ☀️" },
+                { id: "dusk", label: "Sunset 🌅" },
+                { id: "night", label: "Soft Atmosphere ⛅" },
               ].map((mode) => (
                 <button
                   key={mode.id}
                   type="button"
                   onClick={() => setLighting(mode.id as LightingPreset)}
                   style={{
-                    background: lighting === mode.id ? "#334155" : "transparent",
-                    color: lighting === mode.id ? "#38bdf8" : "#94a3b8",
+                    background: lighting === mode.id ? "#ffffff" : "transparent",
+                    color: lighting === mode.id ? "#2563eb" : "var(--ink-soft, #4b5850)",
                     border: "1px solid",
-                    borderColor: lighting === mode.id ? "#38bdf8" : "transparent",
+                    borderColor: lighting === mode.id ? "#2563eb" : "transparent",
                     padding: "3px 8px",
                     borderRadius: "4px",
                     cursor: "pointer",
-                    fontSize: "11px",
+                    fontSize: "11.5px",
+                    fontWeight: lighting === mode.id ? 600 : 500,
                   }}
                 >
                   {mode.label}
@@ -231,31 +239,29 @@ export default function Terrain3DPage() {
               ))}
             </div>
 
-            {/* Orbit Auto-Rotate Toggle */}
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "#cbd5e1" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "var(--ink, #1f2a24)", fontWeight: 500 }}>
               <input
                 type="checkbox"
                 checked={autoRotate}
                 onChange={(e) => setAutoRotate(e.target.checked)}
-                style={{ accentColor: "#0284c7" }}
+                style={{ accentColor: "#2563eb" }}
               />
               Orbit Rotate
             </label>
 
-            {/* Live Polling Toggle */}
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "#cbd5e1" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "var(--ink, #1f2a24)", fontWeight: 500 }}>
               <input
                 type="checkbox"
                 checked={livePolling}
                 onChange={(e) => setLivePolling(e.target.checked)}
-                style={{ accentColor: "#10b981" }}
+                style={{ accentColor: "#16a34a" }}
               />
               Live Polling (4s)
             </label>
           </div>
         </div>
 
-        {/* Main 3D Canvas Area with Side Inspector Drawer */}
+        {/* 3D Canvas Area */}
         <div style={{ flex: 1, height: "calc(100vh - 180px)", position: "relative" }}>
           <Terrain3DViewer
             lighting={lighting}
@@ -268,7 +274,7 @@ export default function Terrain3DPage() {
             onTourEnd={() => setTourActive(false)}
           />
 
-          {/* SIDE INSPECTOR PANEL (Click-to-Trace Interaction) */}
+          {/* INSPECTOR SIDE PANEL (CLEAN WHITE CARD) */}
           {selectedNode && (
             <div
               style={{
@@ -279,13 +285,12 @@ export default function Terrain3DPage() {
                 maxHeight: "calc(100% - 40px)",
                 overflowY: "auto",
                 zIndex: 30,
-                background: "rgba(15, 23, 42, 0.94)",
-                backdropFilter: "blur(16px)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-                borderRadius: "14px",
-                boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6)",
+                background: "#ffffff",
+                border: "1px solid var(--hairline, #d8d0bc)",
+                borderRadius: "var(--radius-md, 6px)",
+                boxShadow: "0 12px 32px rgba(31, 42, 36, 0.12)",
                 padding: "20px",
-                color: "#f8fafc",
+                color: "var(--ink, #1f2a24)",
                 animation: "fadeIn 0.2s ease-out",
               }}
             >
@@ -297,13 +302,13 @@ export default function Terrain3DPage() {
                       fontSize: "10px",
                       fontWeight: 700,
                       letterSpacing: "0.08em",
-                      color: "#38bdf8",
+                      color: "#2563eb",
                       textTransform: "uppercase",
                     }}
                   >
                     {selectedNode.type} DETAILS
                   </span>
-                  <h3 style={{ margin: "2px 0 0", fontSize: "16px", color: "white", fontFamily: "Fraunces, serif" }}>
+                  <h3 style={{ margin: "2px 0 0", fontSize: "17px", color: "var(--ink, #1f2a24)", fontFamily: "Fraunces, serif" }}>
                     {selectedNode.name}
                   </h3>
                 </div>
@@ -312,11 +317,11 @@ export default function Terrain3DPage() {
                   type="button"
                   onClick={() => setSelectedNode(null)}
                   style={{
-                    background: "rgba(255, 255, 255, 0.1)",
-                    border: "none",
-                    color: "#94a3b8",
-                    width: "26px",
-                    height: "26px",
+                    background: "var(--paper-raised, #f6f3ea)",
+                    border: "1px solid var(--hairline, #d8d0bc)",
+                    color: "var(--ink-soft, #4b5850)",
+                    width: "28px",
+                    height: "28px",
                     borderRadius: "50%",
                     cursor: "pointer",
                     fontWeight: "bold",
@@ -328,69 +333,69 @@ export default function Terrain3DPage() {
               </div>
 
               {/* Node Metadata Badges */}
-              <div style={{ display: "grid", gap: "8px", fontSize: "12.5px", marginBottom: "16px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "6px" }}>
-                  <span style={{ color: "#94a3b8" }}>Node ID:</span>
-                  <span style={{ fontFamily: "monospace", color: "#38bdf8" }}>{selectedNode.id}</span>
+              <div style={{ display: "grid", gap: "8px", fontSize: "13px", marginBottom: "16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--hairline, #d8d0bc)", paddingBottom: "6px" }}>
+                  <span style={{ color: "var(--ink-soft, #4b5850)" }}>Node ID:</span>
+                  <span style={{ fontFamily: "IBM Plex Mono, monospace", color: "#2563eb", fontWeight: 600 }}>{selectedNode.id}</span>
                 </div>
 
                 {selectedNode.designation && (
-                  <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "6px" }}>
-                    <span style={{ color: "#94a3b8" }}>Designation:</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--hairline, #d8d0bc)", paddingBottom: "6px" }}>
+                    <span style={{ color: "var(--ink-soft, #4b5850)" }}>Designation:</span>
                     <span>{selectedNode.designation}</span>
                   </div>
                 )}
 
                 {selectedNode.latitude && (
-                  <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "6px" }}>
-                    <span style={{ color: "#94a3b8" }}>GPS Coordinates:</span>
-                    <span style={{ fontFamily: "monospace" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--hairline, #d8d0bc)", paddingBottom: "6px" }}>
+                    <span style={{ color: "var(--ink-soft, #4b5850)" }}>GPS Coordinates:</span>
+                    <span style={{ fontFamily: "IBM Plex Mono, monospace" }}>
                       {selectedNode.latitude.toFixed(4)}, {selectedNode.longitude?.toFixed(4)}
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Sensor Telemetry Parameters if Sensor Node */}
+              {/* Sensor Readouts */}
               {selectedNode.type === "sensor" && selectedNode.raw && (
                 <div
                   style={{
-                    background: "rgba(2, 132, 199, 0.12)",
-                    border: "1px solid rgba(2, 132, 199, 0.3)",
-                    borderRadius: "8px",
+                    background: "#eff6ff",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: "6px",
                     padding: "12px",
                     marginBottom: "16px",
                   }}
                 >
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#38bdf8", marginBottom: "8px" }}>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#1e40af", marginBottom: "8px" }}>
                     LIVE SENSOR TELEMETRY READINGS
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "12px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px" }}>
                     <div>
-                      <div style={{ color: "#94a3b8", fontSize: "10.5px" }}>pH Value</div>
-                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#38bdf8" }}>{selectedNode.raw.ph}</div>
+                      <div style={{ color: "#475569", fontSize: "11px" }}>pH Value</div>
+                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#1e3a8a" }}>{selectedNode.raw.ph}</div>
                     </div>
                     <div>
-                      <div style={{ color: "#94a3b8", fontSize: "10.5px" }}>Conductivity (EC)</div>
-                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#38bdf8" }}>{selectedNode.raw.ec} µS/cm</div>
+                      <div style={{ color: "#475569", fontSize: "11px" }}>Conductivity (EC)</div>
+                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#1e3a8a" }}>{selectedNode.raw.ec} µS/cm</div>
                     </div>
                     <div>
-                      <div style={{ color: "#94a3b8", fontSize: "10.5px" }}>Turbidity</div>
-                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#38bdf8" }}>{selectedNode.raw.turbidity} NTU</div>
+                      <div style={{ color: "#475569", fontSize: "11px" }}>Turbidity</div>
+                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#1e3a8a" }}>{selectedNode.raw.turbidity} NTU</div>
                     </div>
                     <div>
-                      <div style={{ color: "#94a3b8", fontSize: "10.5px" }}>Status</div>
-                      <div style={{ fontSize: "13px", fontWeight: 700, color: "#10b981" }}>ONLINE</div>
+                      <div style={{ color: "#475569", fontSize: "11px" }}>Status</div>
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: "#16a34a" }}>ONLINE</div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Industrial Unit DPP & Ledger Section */}
+              {/* Unit DPP & Ledger Section */}
               {selectedNode.type === "unit" && (
                 <>
                   {loadingDetails ? (
-                    <div style={{ padding: "16px", textAlign: "center", color: "#94a3b8", fontSize: "12px" }}>
+                    <div style={{ padding: "16px", textAlign: "center", color: "var(--ink-soft)", fontSize: "12.5px" }}>
                       Fetching Ledger & DPP Proofs...
                     </div>
                   ) : (
@@ -398,20 +403,20 @@ export default function Terrain3DPage() {
                       {nodeDpp && (
                         <div
                           style={{
-                            background: "rgba(16, 185, 129, 0.1)",
-                            border: "1px solid rgba(16, 185, 129, 0.3)",
-                            borderRadius: "8px",
+                            background: "#f0fdf4",
+                            border: "1px solid #bbf7d0",
+                            borderRadius: "6px",
                             padding: "12px",
                             marginBottom: "16px",
                           }}
                         >
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#34d399", marginBottom: "6px" }}>
+                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#166534", marginBottom: "6px" }}>
                             DIGITAL PRODUCT PASSPORT (DPP)
                           </div>
-                          <div style={{ fontSize: "12px", marginBottom: "6px" }}>
+                          <div style={{ fontSize: "12.5px", marginBottom: "6px", color: "var(--ink)" }}>
                             <strong>Compliance Summary:</strong> {nodeDpp.compliance_summary}
                           </div>
-                          <div style={{ fontSize: "12px" }}>
+                          <div style={{ fontSize: "12.5px", color: "var(--ink)" }}>
                             <strong>Water Reuse:</strong> {nodeDpp.reuse_and_energy?.reuse_percentage}%
                           </div>
                           <Link
@@ -419,8 +424,9 @@ export default function Terrain3DPage() {
                             style={{
                               display: "inline-block",
                               marginTop: "8px",
-                              fontSize: "11.5px",
-                              color: "#38bdf8",
+                              fontSize: "12px",
+                              color: "#2563eb",
+                              fontWeight: 600,
                               textDecoration: "underline",
                             }}
                           >
@@ -431,11 +437,11 @@ export default function Terrain3DPage() {
 
                       {/* Event History Chain */}
                       <div>
-                        <div style={{ fontSize: "11px", fontWeight: 700, color: "#94a3b8", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--ink-soft, #4b5850)", marginBottom: "8px" }}>
                           LEDGER EVENT HISTORY ({nodeLedger.length})
                         </div>
                         {nodeLedger.length === 0 ? (
-                          <div style={{ fontSize: "12px", color: "#64748b", fontStyle: "italic" }}>
+                          <div style={{ fontSize: "12.5px", color: "var(--ink-soft)", fontStyle: "italic" }}>
                             No events recorded for this facility yet.
                           </div>
                         ) : (
@@ -444,22 +450,22 @@ export default function Terrain3DPage() {
                               <div
                                 key={entry.event_id || idx}
                                 style={{
-                                  background: "rgba(255, 255, 255, 0.04)",
-                                  padding: "8px",
-                                  borderRadius: "6px",
+                                  background: "var(--paper-raised, #f6f3ea)",
+                                  padding: "8px 10px",
+                                  borderRadius: "4px",
                                   borderLeft: `3px solid ${
-                                    entry.decision === "investigate" ? "#ef4444" : "#10b981"
+                                    entry.decision === "investigate" ? "var(--madder, #9c3b22)" : "#16a34a"
                                   }`,
-                                  fontSize: "11px",
+                                  fontSize: "11.5px",
                                 }}
                               >
                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                                  <span style={{ fontWeight: 700, color: entry.decision === "investigate" ? "#f87171" : "#34d399" }}>
+                                  <span style={{ fontWeight: 700, color: entry.decision === "investigate" ? "var(--madder, #9c3b22)" : "#16a34a" }}>
                                     {entry.decision?.toUpperCase()}
                                   </span>
-                                  <span style={{ color: "#64748b" }}>{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                                  <span style={{ color: "var(--ink-soft)" }}>{new Date(entry.timestamp).toLocaleTimeString()}</span>
                                 </div>
-                                <div style={{ color: "#94a3b8", fontFamily: "monospace", fontSize: "10px" }}>
+                                <div style={{ color: "var(--ink-soft)", fontFamily: "IBM Plex Mono, monospace", fontSize: "10px" }}>
                                   Hash: {entry.current_hash?.substring(0, 16)}...
                                 </div>
                               </div>
@@ -475,12 +481,12 @@ export default function Terrain3DPage() {
           )}
         </div>
 
-        {/* Bottom Real-Time Event Stream Bar */}
+        {/* Clean Footer Live Event Stream Bar */}
         <footer
           style={{
             padding: "12px 24px",
-            background: "#0f172a",
-            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+            background: "var(--paper-raised, #f6f3ea)",
+            borderTop: "1px solid var(--hairline, #d8d0bc)",
             display: "flex",
             alignItems: "center",
             gap: "16px",
@@ -488,35 +494,36 @@ export default function Terrain3DPage() {
             zIndex: 15,
           }}
         >
-          <div style={{ whiteSpace: "nowrap", fontSize: "11px", fontWeight: 700, color: "#38bdf8", letterSpacing: "0.05em" }}>
+          <div style={{ whiteSpace: "nowrap", fontSize: "11px", fontWeight: 700, color: "#2563eb", letterSpacing: "0.05em" }}>
             LIVE EVENT STREAM:
           </div>
 
           {recentEvents.length === 0 ? (
-            <div style={{ fontSize: "12px", color: "#64748b" }}>Connecting to live ledger feed...</div>
+            <div style={{ fontSize: "12px", color: "var(--ink-soft)" }}>Connecting to live ledger feed...</div>
           ) : (
             <div style={{ display: "flex", gap: "12px", flex: 1, overflowX: "auto" }}>
               {recentEvents.map((ev, idx) => (
                 <div
                   key={ev.event_id + idx}
                   style={{
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    background: "#ffffff",
+                    border: "1px solid var(--hairline, #d8d0bc)",
                     borderRadius: "6px",
                     padding: "6px 12px",
                     minWidth: "220px",
-                    fontSize: "11px",
+                    fontSize: "11.5px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     gap: "10px",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 600, color: ev.decision === "investigate" ? "#f87171" : "#34d399" }}>
+                    <div style={{ fontWeight: 600, color: ev.decision === "investigate" ? "var(--madder, #9c3b22)" : "#16a34a" }}>
                       {ev.decision?.toUpperCase()}: {ev.most_likely_source || "Network"}
                     </div>
-                    <div style={{ color: "#64748b", fontSize: "10px" }}>
+                    <div style={{ color: "var(--ink-soft)", fontSize: "10.5px" }}>
                       {new Date(ev.timestamp).toLocaleTimeString()} · Conf: {Math.round(ev.confidence * 100)}%
                     </div>
                   </div>
@@ -525,7 +532,7 @@ export default function Terrain3DPage() {
                       width: "8px",
                       height: "8px",
                       borderRadius: "50%",
-                      background: ev.decision === "investigate" ? "#ef4444" : "#10b981",
+                      background: ev.decision === "investigate" ? "var(--madder, #9c3b22)" : "#16a34a",
                     }}
                   />
                 </div>

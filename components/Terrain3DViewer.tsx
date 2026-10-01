@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getGlobalEvents, getUnits, getUnitLedger, simulateInferenceEvent } from "@/lib/api";
-import type { ContractEvent, LedgerUnit, LedgerEntry } from "@/lib/types";
+import type { ContractEvent, LedgerEntry, DppResponse } from "@/lib/types";
 
 export type LightingPreset = "day" | "dusk" | "night";
 export type CameraViewPreset = "overview" | "datacenter" | "river" | "industrial" | "ledger";
@@ -39,7 +39,6 @@ interface Terrain3DViewerProps {
 // 3D SCENE CONSTANTS & PHYSICAL LOCATIONS FOR TIRUPPUR MONITORING NETWORK
 // ---------------------------------------------------------------------------
 
-// Real River Monitoring Stations along Noyyal River
 const SENSOR_NODES = [
   {
     id: "tnpcb_noyyal_001",
@@ -79,11 +78,9 @@ const SENSOR_NODES = [
   },
 ];
 
-// Central AI Inference Data Center & Ledger Anchor
 const DATA_CENTER_POS = new THREE.Vector3(0, 4.8, 0);
 const LEDGER_ANCHOR_POS = new THREE.Vector3(-18, 4.0, 14);
 
-// 12 Industrial Units in Tiruppur textile belt mapped to 3D terrain coordinates
 const INDUSTRIAL_UNITS_CONFIG: Array<{
   unit_id: string;
   name: string;
@@ -120,21 +117,19 @@ export default function Terrain3DViewer({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
 
-  // Mesh registries for interaction & animation
   const interactiveObjectsRef = useRef<THREE.Object3D[]>([]);
   const unitBeaconsRef = useRef<Map<string, THREE.Mesh>>(new Map());
   const sensorNodesRef = useRef<Map<string, THREE.Mesh>>(new Map());
-  const pulseBeamsRef = useRef<Array<{ mesh: THREE.Line | THREE.Points; progress: number; speed: number; onComplete?: () => void }>>([]);
+  const pulseBeamsRef = useRef<Array<{ mesh: THREE.Line; progress: number; speed: number; onComplete?: () => void }>>([]);
   const waterMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
   const dirLightRef = useRef<THREE.DirectionalLight | null>(null);
   const hemiLightRef = useRef<THREE.HemisphereLight | null>(null);
 
   const [activeEvents, setActiveEvents] = useState<ContractEvent[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [hoveredNodeName, setHoveredNodeName] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
-  // PROCEDURAL TERRAIN & RIVER MESH GENERATION
+  // ELEGANT LIGHT-MODE PROCEDURAL TERRAIN MESH
   // ---------------------------------------------------------------------------
 
   const createTerrainMesh = (scene: THREE.Scene) => {
@@ -149,18 +144,13 @@ export default function Terrain3DViewer({
       const x = posAttr.getX(i);
       const z = posAttr.getZ(i);
 
-      // Calculate distance to Noyyal River winding curve
-      // River curve equation: z_river = -0.2 * x + 4 * sin(x * 0.04)
       const riverZ = -0.2 * x + 5 * Math.sin(x * 0.04);
       const distToRiver = Math.abs(z - riverZ);
 
-      // Height calculation: Valley depression along riverbed, gentle hills elsewhere
       let height = 0;
       if (distToRiver < 12) {
-        // River trench
         height = -1.2 * Math.cos((distToRiver / 12) * (Math.PI / 2));
       } else {
-        // Surrounding hills & Tiruppur urban basin
         const hill1 = Math.sin(x * 0.03) * Math.cos(z * 0.03) * 3.5;
         const hill2 = Math.sin(x * 0.08 + z * 0.05) * 1.5;
         height = Math.max(0.2, hill1 + hill2 + 1.2);
@@ -170,24 +160,24 @@ export default function Terrain3DViewer({
     }
     geometry.computeVertexNormals();
 
-    // Procedural terrain texture canvas
+    // Procedural terrain texture canvas - Clean light editorial colors
     const canvas = document.createElement("canvas");
     canvas.width = 1024;
     canvas.height = 1024;
     const ctx = canvas.getContext("2d")!;
 
-    // Base topographic fill
+    // Soft paper-green landscape gradient
     const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
-    grad.addColorStop(0, "#1c2b23"); // Lush West Mangalam
-    grad.addColorStop(0.4, "#24332a"); // Urban Tiruppur basin
-    grad.addColorStop(0.8, "#2d3d32"); // East Reservoir catchment
-    grad.addColorStop(1, "#18241d");
+    grad.addColorStop(0, "#e8f5e9"); // Lush West Mangalam light green
+    grad.addColorStop(0.4, "#f1f8e9"); // Urban basin
+    grad.addColorStop(0.8, "#e0f2f1"); // East catchment
+    grad.addColorStop(1, "#e8eaf6");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Digital twin grid overlay
-    ctx.strokeStyle = "rgba(45, 212, 191, 0.08)";
-    ctx.lineWidth = 1.5;
+    // Subtle grid lines
+    ctx.strokeStyle = "rgba(71, 85, 105, 0.06)";
+    ctx.lineWidth = 1;
     const step = 32;
     for (let i = 0; i <= 1024; i += step) {
       ctx.beginPath();
@@ -201,9 +191,9 @@ export default function Terrain3DViewer({
       ctx.stroke();
     }
 
-    // River bed contour stroke on texture
-    ctx.strokeStyle = "rgba(2, 132, 199, 0.4)";
-    ctx.lineWidth = 24;
+    // River bed sandy contour stroke
+    ctx.strokeStyle = "rgba(186, 230, 253, 0.6)";
+    ctx.lineWidth = 26;
     ctx.beginPath();
     for (let px = 0; px <= 1024; px += 10) {
       const worldX = (px / 1024) * 220 - 110;
@@ -220,9 +210,8 @@ export default function Terrain3DViewer({
 
     const material = new THREE.MeshStandardMaterial({
       map: texture,
-      roughness: 0.85,
-      metalness: 0.15,
-      flatShading: false,
+      roughness: 0.7,
+      metalness: 0.1,
     });
 
     const terrainMesh = new THREE.Mesh(geometry, material);
@@ -232,26 +221,26 @@ export default function Terrain3DViewer({
   };
 
   // ---------------------------------------------------------------------------
-  // NOYYAL RIVER WATER MESH
+  // VIBRANT NOYYAL RIVER WATER MESH
   // ---------------------------------------------------------------------------
 
   const createNoyyalRiverMesh = (scene: THREE.Scene) => {
     const points: THREE.Vector3[] = [];
     for (let x = -100; x <= 100; x += 4) {
       const z = -0.2 * x + 5 * Math.sin(x * 0.04);
-      points.push(new THREE.Vector3(x, -0.4, z));
+      points.push(new THREE.Vector3(x, -0.3, z));
     }
     const curve = new THREE.CatmullRomCurve3(points);
     const tubeGeo = new THREE.TubeGeometry(curve, 100, 2.8, 8, false);
 
     const waterMat = new THREE.MeshStandardMaterial({
       color: 0x0284c7,
-      roughness: 0.1,
-      metalness: 0.8,
+      roughness: 0.15,
+      metalness: 0.6,
       transparent: true,
-      opacity: 0.82,
+      opacity: 0.88,
       emissive: 0x0369a1,
-      emissiveIntensity: 0.25,
+      emissiveIntensity: 0.2,
     });
     waterMaterialRef.current = waterMat;
 
@@ -261,34 +250,32 @@ export default function Terrain3DViewer({
   };
 
   // ---------------------------------------------------------------------------
-  // BUILDINGS & INFRASTRUCTURE MODELS
+  // BUILDINGS & INFRASTRUCTURE MODELS (ELEGANT CIVIC STYLE)
   // ---------------------------------------------------------------------------
 
   const createInfrastructureModels = (scene: THREE.Scene) => {
     interactiveObjectsRef.current = [];
 
-    // 1. DATA CENTER MODEL (NoyyalSense AI Core)
+    // 1. DATA CENTER MODEL (Clean White & Slate Tower)
     const dcGroup = new THREE.Group();
     dcGroup.position.copy(DATA_CENTER_POS);
 
-    // Base pedestal
     const baseGeo = new THREE.CylinderGeometry(4.5, 5.5, 1.2, 8);
-    const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.2 });
     const baseMesh = new THREE.Mesh(baseGeo, baseMat);
     dcGroup.add(baseMesh);
 
-    // Glass tower core
     const towerGeo = new THREE.OctahedronGeometry(2.8, 2);
     const towerMat = new THREE.MeshPhysicalMaterial({
-      color: 0x0ea5e9,
-      transmission: 0.85,
-      opacity: 0.9,
+      color: 0x0284c7,
+      transmission: 0.8,
+      opacity: 0.95,
       transparent: true,
       roughness: 0.1,
       ior: 1.5,
       thickness: 1.2,
       emissive: 0x0284c7,
-      emissiveIntensity: 0.6,
+      emissiveIntensity: 0.5,
     });
     const towerMesh = new THREE.Mesh(towerGeo, towerMat);
     towerMesh.position.y = 2.5;
@@ -296,9 +283,8 @@ export default function Terrain3DViewer({
     dcGroup.add(towerMesh);
     interactiveObjectsRef.current.push(towerMesh);
 
-    // Rotating holographic ring
     const ringGeo = new THREE.TorusGeometry(3.6, 0.12, 16, 64);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true });
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, wireframe: true });
     const ringMesh = new THREE.Mesh(ringGeo, ringMat);
     ringMesh.rotation.x = Math.PI / 2;
     ringMesh.position.y = 2.5;
@@ -307,22 +293,21 @@ export default function Terrain3DViewer({
 
     scene.add(dcGroup);
 
-    // 2. BLOCKCHAIN LEDGER ANCHOR MODEL
+    // 2. BLOCKCHAIN LEDGER ANCHOR MODEL (Gold & Titanium)
     const ledgerGroup = new THREE.Group();
     ledgerGroup.position.copy(LEDGER_ANCHOR_POS);
 
     const pedGeo = new THREE.BoxGeometry(4.0, 1.0, 4.0);
-    const pedMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.2 });
+    const pedMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 });
     const pedMesh = new THREE.Mesh(pedGeo, pedMat);
     ledgerGroup.add(pedMesh);
 
-    // Cryptographic Cube
     const cubeGeo = new THREE.BoxGeometry(2.2, 2.2, 2.2);
     const cubeMat = new THREE.MeshStandardMaterial({
-      color: 0xeab308,
-      metalness: 0.95,
-      roughness: 0.1,
-      emissive: 0xca8a04,
+      color: 0xd97706,
+      metalness: 0.9,
+      roughness: 0.2,
+      emissive: 0xb45309,
       emissiveIntensity: 0.4,
     });
     const cubeMesh = new THREE.Mesh(cubeGeo, cubeMat);
@@ -333,25 +318,22 @@ export default function Terrain3DViewer({
 
     scene.add(ledgerGroup);
 
-    // 3. RIVER SENSOR STATIONS
+    // 3. RIVER SENSOR STATIONS (Solar Blue Buoys)
     SENSOR_NODES.forEach((s) => {
       const sGroup = new THREE.Group();
       sGroup.position.copy(s.pos);
 
-      // Buoy base
       const buoyGeo = new THREE.CylinderGeometry(1.2, 1.5, 1.2, 12);
-      const buoyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.6, roughness: 0.3 });
+      const buoyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.5, roughness: 0.3 });
       const buoyMesh = new THREE.Mesh(buoyGeo, buoyMat);
       sGroup.add(buoyMesh);
 
-      // Solar telemetry mast
       const mastGeo = new THREE.CylinderGeometry(0.15, 0.15, 2.4, 8);
-      const mastMat = new THREE.MeshStandardMaterial({ color: 0x64748b });
+      const mastMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
       const mastMesh = new THREE.Mesh(mastGeo, mastMat);
       mastMesh.position.y = 1.6;
       sGroup.add(mastMesh);
 
-      // Pulsing status beacon sphere
       const beaconGeo = new THREE.SphereGeometry(0.6, 16, 16);
       const beaconMat = new THREE.MeshStandardMaterial({
         color: s.color,
@@ -368,38 +350,38 @@ export default function Terrain3DViewer({
       scene.add(sGroup);
     });
 
-    // 4. INDUSTRIAL UNITS (12 UNITS)
+    // 4. INDUSTRIAL UNITS (Clean White Architectural Buildings)
     INDUSTRIAL_UNITS_CONFIG.forEach((u) => {
       const uGroup = new THREE.Group();
       uGroup.position.copy(u.pos);
 
-      // Factory main block
+      // Clean main facility body
       const facGeo = new THREE.BoxGeometry(3.2, 2.0, 3.2);
-      const facMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.4, roughness: 0.6 });
+      const facMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.1, roughness: 0.4 });
       const facMesh = new THREE.Mesh(facGeo, facMat);
       facMesh.position.y = 1.0;
       uGroup.add(facMesh);
 
-      // ZLD Membrane Recycling Cylinder
+      // ZLD Membrane Cylinder (Teal)
       const tankGeo = new THREE.CylinderGeometry(0.8, 0.8, 2.4, 12);
-      const tankMat = new THREE.MeshStandardMaterial({ color: 0x0d9488, metalness: 0.7, roughness: 0.2 });
+      const tankMat = new THREE.MeshStandardMaterial({ color: 0x3e6b63, metalness: 0.6, roughness: 0.3 });
       const tankMesh = new THREE.Mesh(tankGeo, tankMat);
       tankMesh.position.set(1.4, 1.2, 1.4);
       uGroup.add(tankMesh);
 
-      // Status Beacon Spire
+      // Spire
       const spireGeo = new THREE.CylinderGeometry(0.2, 0.2, 3.2, 8);
-      const spireMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8 });
+      const spireMat = new THREE.MeshStandardMaterial({ color: 0x64748b });
       const spireMesh = new THREE.Mesh(spireGeo, spireMat);
       spireMesh.position.y = 2.4;
       uGroup.add(spireMesh);
 
-      // Beacon Tip Sphere (Color changes dynamically with live decision)
-      const beaconGeo = new THREE.SphereGeometry(0.5, 16, 16);
+      // Status Beacon Tip Sphere (Default Emerald Green)
+      const beaconGeo = new THREE.SphereGeometry(0.55, 16, 16);
       const beaconMat = new THREE.MeshStandardMaterial({
-        color: 0x10b981, // Default Normal Emerald Green
-        emissive: 0x10b981,
-        emissiveIntensity: 0.7,
+        color: 0x16a34a,
+        emissive: 0x16a34a,
+        emissiveIntensity: 0.8,
       });
       const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
       beaconMesh.position.y = 4.2;
@@ -425,11 +407,10 @@ export default function Terrain3DViewer({
   ) => {
     if (!sceneRef.current) return;
 
-    // Bezier curve arc
     const midPoint = new THREE.Vector3()
       .addVectors(fromPos, toPos)
       .multiplyScalar(0.5);
-    midPoint.y += 8.0; // Arch height in 3D sky
+    midPoint.y += 8.0;
 
     const curve = new THREE.QuadraticBezierCurve3(fromPos, midPoint, toPos);
     const points = curve.getPoints(40);
@@ -455,7 +436,7 @@ export default function Terrain3DViewer({
   };
 
   // ---------------------------------------------------------------------------
-  // LIVE EVENT TRIGGER HANDLER
+  // LIVE EVENT SIMULATION HANDLER
   // ---------------------------------------------------------------------------
 
   const handleSimulateEvent = async () => {
@@ -466,27 +447,21 @@ export default function Terrain3DViewer({
         setActiveEvents((prev) => [ev, ...prev.slice(0, 9)]);
         if (onEventTriggered) onEventTriggered(ev);
 
-        // Determine source station and target unit
-        const sourceSensor = SENSOR_NODES[1]; // Urban exit node
+        const sourceSensor = SENSOR_NODES[1];
         const targetUnitId = ev.most_likely_source || "unit_001";
         const targetUnit = INDUSTRIAL_UNITS_CONFIG.find((u) => u.unit_id === targetUnitId) || INDUSTRIAL_UNITS_CONFIG[0];
 
-        const pulseColor = ev.decision === "investigate" ? 0xef4444 : ev.decision === "abstain" ? 0xf59e0b : 0x10b981;
+        const pulseColor = ev.decision === "investigate" ? 0xdc2626 : ev.decision === "abstain" ? 0xd97706 : 0x16a34a;
 
-        // Stage 1: Pulse from Sensor to Data Center
-        triggerPulseAnimation(sourceSensor.pos, DATA_CENTER_POS, 0x38bdf8, () => {
-          // Stage 2: Data Center to Ledger Anchor
-          triggerPulseAnimation(DATA_CENTER_POS, LEDGER_ANCHOR_POS, 0xeab308, () => {
-            // Stage 3: Data Center to Target Unit
+        triggerPulseAnimation(sourceSensor.pos, DATA_CENTER_POS, 0x0284c7, () => {
+          triggerPulseAnimation(DATA_CENTER_POS, LEDGER_ANCHOR_POS, 0xd97706, () => {
             triggerPulseAnimation(DATA_CENTER_POS, targetUnit.pos, pulseColor, () => {
-              // Update target unit beacon color
               const beaconMesh = unitBeaconsRef.current.get(targetUnitId);
               if (beaconMesh) {
                 const mat = beaconMesh.material as THREE.MeshStandardMaterial;
                 mat.color.setHex(pulseColor);
                 mat.emissive.setHex(pulseColor);
               }
-              // Tint river color temporarily if flagged
               if (ev.decision === "investigate" && waterMaterialRef.current) {
                 waterMaterialRef.current.color.setHex(0xd97706);
                 setTimeout(() => {
@@ -503,7 +478,7 @@ export default function Terrain3DViewer({
   };
 
   // ---------------------------------------------------------------------------
-  // INITIALIZE THREE.JS SCENE, LIGHTING, CAMERA & CONTROLS
+  // INITIALIZE THREE.JS SCENE (CLEAN DAYLIGHT DEFAULT)
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -511,17 +486,17 @@ export default function Terrain3DViewer({
     const width = containerRef.current.clientWidth;
     const height = containerRef.current.clientHeight;
 
-    // 1. Scene
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.fog = new THREE.FogExp2(0x090d16, 0.006);
 
-    // 2. Camera
+    // Clean daylight sky background (#f1f5f9)
+    scene.background = new THREE.Color(0xf1f5f9);
+    scene.fog = new THREE.FogExp2(0xf1f5f9, 0.003);
+
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.5, 1000);
     camera.position.set(0, 65, 110);
     cameraRef.current = camera;
 
-    // 3. Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -532,25 +507,24 @@ export default function Terrain3DViewer({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 4. Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2 - 0.04; // Don't clip below ground
+    controls.maxPolarAngle = Math.PI / 2 - 0.04;
     controls.minDistance = 15;
     controls.maxDistance = 250;
     controlsRef.current = controls;
 
-    // 5. Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // Bright daylight illumination
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     scene.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0x38bdf8, 0x1e293b, 0.5);
+    const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0xf1f5f9, 0.6);
     hemiLight.position.set(0, 50, 0);
     scene.add(hemiLight);
     hemiLightRef.current = hemiLight;
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
     dirLight.position.set(60, 80, 40);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
@@ -560,12 +534,10 @@ export default function Terrain3DViewer({
     scene.add(dirLight);
     dirLightRef.current = dirLight;
 
-    // Build scene objects
     createTerrainMesh(scene);
     createNoyyalRiverMesh(scene);
     createInfrastructureModels(scene);
 
-    // Raycaster for click interactivity
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -632,7 +604,6 @@ export default function Terrain3DViewer({
     const domElem = renderer.domElement;
     domElem.addEventListener("click", handlePointerClick);
 
-    // Animation Loop
     let animationFrameId: number;
     let clock = new THREE.Clock();
 
@@ -640,20 +611,16 @@ export default function Terrain3DViewer({
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Rotate data center ring
       const dcRing = scene.getObjectByName("datacenter_ring");
       if (dcRing) dcRing.rotation.z = elapsedTime * 0.5;
 
-      // Rotate ledger cube
       const ledgerCube = scene.getObjectByName("node_ledger");
       if (ledgerCube) ledgerCube.rotation.y = elapsedTime * 0.4;
 
-      // Pulse sensor beacons
       sensorNodesRef.current.forEach((mesh) => {
         mesh.scale.setScalar(1 + Math.sin(elapsedTime * 4) * 0.08);
       });
 
-      // Animate pulse line beams
       for (let i = pulseBeamsRef.current.length - 1; i >= 0; i--) {
         const item = pulseBeamsRef.current[i];
         item.progress += item.speed;
@@ -670,7 +637,6 @@ export default function Terrain3DViewer({
 
     animate();
 
-    // Handle Resize
     const handleResize = () => {
       if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
       const w = containerRef.current.clientWidth;
@@ -690,31 +656,30 @@ export default function Terrain3DViewer({
   }, []);
 
   // ---------------------------------------------------------------------------
-  // UPDATE LIGHTING PRESETS
+  // UPDATE LIGHTING PRESETS (DAYTIME DEFAULT)
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
     if (!sceneRef.current || !dirLightRef.current || !hemiLightRef.current) return;
 
     if (lighting === "day") {
-      sceneRef.current.background = new THREE.Color(0xdbeafe);
-      sceneRef.current.fog = new THREE.FogExp2(0xdbeafe, 0.003);
+      sceneRef.current.background = new THREE.Color(0xf1f5f9);
+      sceneRef.current.fog = new THREE.FogExp2(0xf1f5f9, 0.003);
       dirLightRef.current.intensity = 1.4;
       dirLightRef.current.color.setHex(0xffffff);
       hemiLightRef.current.intensity = 0.6;
     } else if (lighting === "dusk") {
-      sceneRef.current.background = new THREE.Color(0x311b22);
-      sceneRef.current.fog = new THREE.FogExp2(0x311b22, 0.005);
-      dirLightRef.current.intensity = 1.0;
+      sceneRef.current.background = new THREE.Color(0xfdf2f8);
+      sceneRef.current.fog = new THREE.FogExp2(0xfdf2f8, 0.004);
+      dirLightRef.current.intensity = 1.1;
       dirLightRef.current.color.setHex(0xf97316);
-      hemiLightRef.current.intensity = 0.4;
+      hemiLightRef.current.intensity = 0.5;
     } else {
-      // Night Cyberpunk
-      sceneRef.current.background = new THREE.Color(0x090d16);
-      sceneRef.current.fog = new THREE.FogExp2(0x090d16, 0.007);
-      dirLightRef.current.intensity = 0.5;
-      dirLightRef.current.color.setHex(0x38bdf8);
-      hemiLightRef.current.intensity = 0.3;
+      sceneRef.current.background = new THREE.Color(0xe2e8f0);
+      sceneRef.current.fog = new THREE.FogExp2(0xe2e8f0, 0.004);
+      dirLightRef.current.intensity = 1.0;
+      dirLightRef.current.color.setHex(0x0284c7);
+      hemiLightRef.current.intensity = 0.5;
     }
   }, [lighting]);
 
@@ -752,17 +717,12 @@ export default function Terrain3DViewer({
     ctrl.update();
   }, [viewPreset]);
 
-  // Auto rotate controls update
   useEffect(() => {
     if (controlsRef.current) {
       controlsRef.current.autoRotate = autoRotate;
       controlsRef.current.autoRotateSpeed = 1.2;
     }
   }, [autoRotate]);
-
-  // ---------------------------------------------------------------------------
-  // LIVE POLLING LOOP FOR LEDGER EVENTS
-  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     if (!livePolling) return;
@@ -772,7 +732,6 @@ export default function Terrain3DViewer({
         const latest = res.data[0];
         setActiveEvents((prev) => {
           if (prev[0]?.event_id !== latest.event_id) {
-            // Trigger visual pulse for new live event!
             handleSimulateEvent();
             return [latest, ...prev.slice(0, 9)];
           }
@@ -784,88 +743,87 @@ export default function Terrain3DViewer({
   }, [livePolling]);
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
-      {/* WebGL Canvas Container */}
+    <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", background: "#f1f5f9" }}>
       <div ref={containerRef} style={{ width: "100%", height: "100%", cursor: "grab" }} />
 
-      {/* Floating Action Bar inside 3D Canvas */}
+      {/* Elegant Action Button */}
       <div
         style={{
           position: "absolute",
-          bottom: "20px",
+          bottom: "24px",
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 10,
-          background: "rgba(15, 23, 42, 0.85)",
+          background: "rgba(255, 255, 255, 0.95)",
           backdropFilter: "blur(12px)",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
+          border: "1px solid var(--hairline, #d8d0bc)",
           borderRadius: "30px",
-          padding: "8px 18px",
+          padding: "8px 20px",
           display: "flex",
           alignItems: "center",
-          gap: "12px",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.4)",
+          gap: "14px",
+          boxShadow: "0 8px 24px rgba(31, 42, 36, 0.1)",
         }}
       >
         <button
           type="button"
           onClick={handleSimulateEvent}
-          className="btn"
           style={{
             background: "linear-gradient(135deg, #0284c7 0%, #2563eb 100%)",
             color: "white",
             border: "none",
             borderRadius: "20px",
-            padding: "6px 16px",
-            fontSize: "12px",
+            padding: "8px 18px",
+            fontSize: "12.5px",
             fontWeight: 600,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             gap: "6px",
-            boxShadow: "0 4px 14px rgba(2, 132, 199, 0.4)",
+            boxShadow: "0 3px 10px rgba(2, 132, 199, 0.3)",
           }}
         >
           <span>⚡</span> Trigger Live Data Pulse
         </button>
 
-        <div style={{ height: "20px", width: "1px", background: "rgba(255, 255, 255, 0.2)" }} />
+        <div style={{ height: "18px", width: "1px", background: "#cbd5e1" }} />
 
-        <div style={{ color: "#94a3b8", fontSize: "11px", display: "flex", alignItems: "center", gap: "6px" }}>
+        <div style={{ color: "var(--ink-soft, #4b5850)", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
           <span
             style={{
               width: "8px",
               height: "8px",
               borderRadius: "50%",
-              background: livePolling ? "#10b981" : "#f59e0b",
-              boxShadow: livePolling ? "0 0 8px #10b981" : "none",
+              background: livePolling ? "#16a34a" : "#d97706",
+              boxShadow: livePolling ? "0 0 6px #16a34a" : "none",
             }}
           />
           {livePolling ? "Live Ledger Synced" : "Polling Paused"}
         </div>
       </div>
 
-      {/* Floating Canvas Quick Legend */}
+      {/* Floating Light Map Legend */}
       <div
         style={{
           position: "absolute",
           top: "16px",
           left: "16px",
           zIndex: 10,
-          background: "rgba(15, 23, 42, 0.85)",
+          background: "rgba(255, 255, 255, 0.95)",
           backdropFilter: "blur(12px)",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
-          borderRadius: "10px",
+          border: "1px solid var(--hairline, #d8d0bc)",
+          borderRadius: "8px",
           padding: "10px 14px",
-          color: "white",
-          fontSize: "11px",
+          color: "var(--ink, #1f2a24)",
+          fontSize: "11.5px",
           maxWidth: "240px",
+          boxShadow: "0 4px 14px rgba(0, 0, 0, 0.06)",
         }}
       >
-        <div style={{ fontWeight: 700, letterSpacing: "0.05em", color: "#38bdf8", marginBottom: "6px" }}>
+        <div style={{ fontWeight: 700, letterSpacing: "0.05em", color: "#1e3a8a", marginBottom: "6px", fontSize: "10.5px" }}>
           3D NETWORK LEGEND
         </div>
-        <div style={{ display: "grid", gap: "4px" }}>
+        <div style={{ display: "grid", gap: "5px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#0284c7" }} />
             <span>Noyyal Sensor Station</span>
@@ -875,11 +833,11 @@ export default function Terrain3DViewer({
             <span>NoyyalSense AI Core</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#eab308" }} />
+            <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#d97706" }} />
             <span>Ledger Proof Anchor</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#10b981" }} />
+            <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#16a34a" }} />
             <span>Industrial Facility (12 Units)</span>
           </div>
         </div>
