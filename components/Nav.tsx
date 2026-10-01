@@ -59,6 +59,9 @@ export default function Nav() {
       <Link href="/map" className={isActive("/map") ? "active nav-link-item" : "nav-link-item"}>
         City Map
       </Link>
+      <Link href="/terrain" className={isActive("/terrain") ? "active nav-link-item" : "nav-link-item"}>
+        3D Digital Twin 🌐
+      </Link>
 
       {user.role === "ADMIN" && (
         <>

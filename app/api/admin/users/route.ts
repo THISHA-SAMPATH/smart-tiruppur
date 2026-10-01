@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, Role } from "@/lib/db";
+import { db, Role, User } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { hashPassword } from "@/lib/password";
 
@@ -14,7 +14,10 @@ export async function GET() {
 
   const users = await db.user.findMany();
 
-  const sanitizedUsers = users.map(({ passwordHash: _, ...rest }) => rest);
+  const sanitizedUsers = users.map((u: User) => {
+    const { passwordHash, ...rest } = u;
+    return rest;
+  });
 
   return NextResponse.json({ users: sanitizedUsers });
 }
@@ -72,7 +75,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const { passwordHash: _, ...sanitizedNewUser } = newUser;
+    const { passwordHash: unusedHash, ...sanitizedNewUser } = newUser;
 
     return NextResponse.json({ success: true, user: sanitizedNewUser }, { status: 201 });
   } catch (error) {

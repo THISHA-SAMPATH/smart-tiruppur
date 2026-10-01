@@ -34,6 +34,9 @@ export default async function RegulatorDashboardPage() {
         </div>
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           <TnpcbReportButton />
+          <Link href="/terrain" className="btn btn-primary" style={{ background: "linear-gradient(135deg, #0284c7 0%, #2563eb 100%)", border: "none" }}>
+            View Live Network in 3D 🌐 →
+          </Link>
           <Link href="/monitoring" className="btn-ghost" style={{ border: "1px solid var(--hairline)" }}>
             Open Live Discharge Operations →
           </Link>
