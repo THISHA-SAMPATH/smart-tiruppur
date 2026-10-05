@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import Nav from "@/components/Nav";
 import Terrain3DViewer, {
   LightingPreset,
   CameraViewPreset,
@@ -64,25 +63,23 @@ export default function Terrain3DPage() {
   return (
     <div
       style={{
-        minHeight: "100vh",
-        background: "var(--paper, #eee9dc)",
-        color: "var(--ink, #1f2a24)",
-        fontFamily: "IBM Plex Sans, sans-serif",
+        minHeight: "calc(100vh - 65px)",
+        background: "#0f172a",
+        color: "#f8fafc",
+        fontFamily: "'Inter', system-ui, sans-serif",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      <Nav />
-
       {/* Main Container */}
       <main style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
         {/* Top Clean Header */}
         <header
           style={{
             padding: "16px 24px",
-            background: "var(--paper-raised, #f6f3ea)",
-            borderBottom: "1px solid var(--hairline, #d8d0bc)",
+            background: "#1e293b",
+            borderBottom: "1px solid #334155",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -95,22 +92,23 @@ export default function Terrain3DPage() {
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span
                 style={{
-                  background: "#2563eb",
+                  background: "linear-gradient(135deg, #0d9488 0%, #2563eb 100%)",
                   color: "white",
                   fontSize: "10.5px",
                   fontWeight: 700,
-                  padding: "3px 8px",
-                  borderRadius: "4px",
+                  padding: "3px 10px",
+                  borderRadius: "999px",
                   letterSpacing: "0.06em",
+                  boxShadow: "0 2px 8px rgba(37, 99, 235, 0.3)",
                 }}
               >
                 REAL-TIME 3D DIGITAL TWIN
               </span>
-              <h1 style={{ margin: 0, fontSize: "22px", fontFamily: "Fraunces, serif", color: "var(--ink, #1f2a24)" }}>
+              <h1 style={{ margin: 0, fontSize: "20px", color: "#ffffff", fontWeight: 700 }}>
                 Smart Tiruppur Monitoring Grid
               </h1>
             </div>
-            <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--ink-soft, #4b5850)" }}>
+            <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#94a3b8" }}>
               Geospatial DEM elevation terrain · Noyyal River flow telemetry · Neural Bayesian inference & Blockchain ledger
             </p>
           </div>
@@ -120,17 +118,18 @@ export default function Terrain3DPage() {
             <Link
               href="/regulator"
               style={{
-                background: "var(--paper, #eee9dc)",
-                color: "var(--ink, #1f2a24)",
-                border: "1px solid var(--hairline, #d8d0bc)",
+                background: "#0f172a",
+                color: "#f8fafc",
+                border: "1px solid #334155",
                 fontSize: "13px",
                 fontWeight: 600,
-                padding: "6px 14px",
-                borderRadius: "var(--radius-md, 6px)",
+                padding: "7px 16px",
+                borderRadius: "8px",
                 textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
+                transition: "all 0.15s ease",
               }}
             >
               ← Regulator Dashboard
@@ -139,18 +138,18 @@ export default function Terrain3DPage() {
             <Link
               href="/simulator"
               style={{
-                background: "linear-gradient(135deg, #0284c7 0%, #2563eb 100%)",
+                background: "linear-gradient(135deg, #0d9488 0%, #2563eb 100%)",
                 color: "white",
                 border: "none",
                 fontSize: "13px",
                 fontWeight: 600,
-                padding: "6px 14px",
-                borderRadius: "var(--radius-md, 6px)",
+                padding: "7px 16px",
+                borderRadius: "8px",
                 textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
-                boxShadow: "0 2px 8px rgba(37, 99, 235, 0.2)",
+                boxShadow: "0 4px 14px rgba(37, 99, 235, 0.3)",
               }}
             >
               Interactive Simulator 🎨
@@ -162,8 +161,8 @@ export default function Terrain3DPage() {
         <div
           style={{
             padding: "10px 24px",
-            background: "#ffffff",
-            borderBottom: "1px solid var(--hairline, #d8d0bc)",
+            background: "#0f172a",
+            borderBottom: "1px solid #1e293b",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -175,7 +174,7 @@ export default function Terrain3DPage() {
         >
           {/* Camera View Presets */}
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-            <span style={{ color: "var(--ink-soft, #4b5850)", fontWeight: 700, fontSize: "11px", letterSpacing: "0.05em", marginRight: "4px" }}>
+            <span style={{ color: "#64748b", fontWeight: 700, fontSize: "11px", letterSpacing: "0.05em", marginRight: "4px" }}>
               CAMERA:
             </span>
             {[
@@ -190,16 +189,17 @@ export default function Terrain3DPage() {
                 type="button"
                 onClick={() => setViewPreset(preset.id as CameraViewPreset)}
                 style={{
-                  background: viewPreset === preset.id ? "#2563eb" : "var(--paper-raised, #f6f3ea)",
-                  color: viewPreset === preset.id ? "white" : "var(--ink, #1f2a24)",
+                  background: viewPreset === preset.id ? "#2563eb" : "#1e293b",
+                  color: viewPreset === preset.id ? "white" : "#cbd5e1",
                   border: "1px solid",
-                  borderColor: viewPreset === preset.id ? "#2563eb" : "var(--hairline, #d8d0bc)",
-                  padding: "4px 12px",
-                  borderRadius: "var(--radius-sm, 4px)",
+                  borderColor: viewPreset === preset.id ? "#3b82f6" : "#334155",
+                  padding: "5px 14px",
+                  borderRadius: "6px",
                   cursor: "pointer",
                   fontSize: "12px",
                   fontWeight: 600,
                   transition: "all 0.15s ease",
+                  boxShadow: viewPreset === preset.id ? "0 2px 8px rgba(37, 99, 235, 0.4)" : "none",
                 }}
               >
                 {preset.label}
@@ -210,7 +210,7 @@ export default function Terrain3DPage() {
           {/* Lighting & Options */}
           <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ color: "var(--ink-soft, #4b5850)", fontWeight: 700, fontSize: "11px", letterSpacing: "0.05em", marginRight: "4px" }}>
+              <span style={{ color: "#64748b", fontWeight: 700, fontSize: "11px", letterSpacing: "0.05em", marginRight: "4px" }}>
                 LIGHTING:
               </span>
               {[
@@ -223,14 +223,14 @@ export default function Terrain3DPage() {
                   type="button"
                   onClick={() => setLighting(mode.id as LightingPreset)}
                   style={{
-                    background: lighting === mode.id ? "#ffffff" : "transparent",
-                    color: lighting === mode.id ? "#2563eb" : "var(--ink-soft, #4b5850)",
+                    background: lighting === mode.id ? "#1e293b" : "transparent",
+                    color: lighting === mode.id ? "#38bdf8" : "#94a3b8",
                     border: "1px solid",
-                    borderColor: lighting === mode.id ? "#2563eb" : "transparent",
-                    padding: "3px 8px",
-                    borderRadius: "4px",
+                    borderColor: lighting === mode.id ? "#0284c7" : "transparent",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
                     cursor: "pointer",
-                    fontSize: "11.5px",
+                    fontSize: "12px",
                     fontWeight: lighting === mode.id ? 600 : 500,
                   }}
                 >
@@ -239,7 +239,7 @@ export default function Terrain3DPage() {
               ))}
             </div>
 
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "var(--ink, #1f2a24)", fontWeight: 500 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "#cbd5e1", fontWeight: 500 }}>
               <input
                 type="checkbox"
                 checked={autoRotate}
@@ -249,12 +249,12 @@ export default function Terrain3DPage() {
               Orbit Rotate
             </label>
 
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "var(--ink, #1f2a24)", fontWeight: 500 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "#38bdf8", fontWeight: 600 }}>
               <input
                 type="checkbox"
                 checked={livePolling}
                 onChange={(e) => setLivePolling(e.target.checked)}
-                style={{ accentColor: "#16a34a" }}
+                style={{ accentColor: "#0284c7" }}
               />
               Live Polling (4s)
             </label>

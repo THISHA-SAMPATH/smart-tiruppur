@@ -8,74 +8,10 @@ export default function AboutPage() {
       style={{
         minHeight: "100vh",
         background: "#faf9f5",
-        fontFamily: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         color: "#1f2a24",
       }}
     >
-      {/* Top Header Navigation */}
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "24px 44px",
-          borderBottom: "1px solid #e5e0d3",
-          background: "#f6f3ea",
-        }}
-      >
-        <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span
-              style={{
-                width: "28px",
-                height: "28px",
-                borderRadius: "50%",
-                background: "#3e6b63",
-                color: "#ffffff",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "14px",
-              }}
-            >
-              💧
-            </span>
-            <span style={{ font: "600 22px 'Fraunces', serif", letterSpacing: "-0.03em" }}>
-              NoyyalSense<span style={{ fontSize: "14px", color: "#3e6b63", marginLeft: "4px" }}>TN</span>
-            </span>
-          </div>
-        </Link>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <Link
-            href="/map"
-            style={{ fontSize: "14px", color: "#4b5850", textDecoration: "none", fontWeight: 500 }}
-          >
-            City Map
-          </Link>
-          <Link
-            href="/verify"
-            style={{ fontSize: "14px", color: "#4b5850", textDecoration: "none", fontWeight: 500 }}
-          >
-            Verify DPP
-          </Link>
-          <Link
-            href="/login"
-            style={{
-              fontSize: "13.5px",
-              color: "#ffffff",
-              background: "#1f2a24",
-              textDecoration: "none",
-              fontWeight: 600,
-              padding: "8px 18px",
-              borderRadius: "999px",
-            }}
-          >
-            Sign In Portal →
-          </Link>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section
         style={{
