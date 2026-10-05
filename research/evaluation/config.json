@@ -1,0 +1,16 @@
+{
+  "experiment_id": "exp_smart_tiruppur_v1",
+  "dataset_version": "Tiruppur-GeoEnv-v2.1",
+  "model_version": "STERI-MultiSource-v1.4",
+  "random_seed": 42,
+  "timestamp": "2026-10-05T20:32:00Z",
+  "data_splits": {
+    "train_ratio": 0.70,
+    "val_ratio": 0.15,
+    "test_ratio": 0.15,
+    "spatial_folds": ["kasipalayam", "angeripalayam", "tiruppur_south", "tiruppur_north", "arulpuram", "mangalam"]
+  },
+  "metrics": ["MAE", "RMSE", "R2", "Accuracy", "Precision", "Recall", "F1", "ROC_AUC"],
+  "missing_data_thresholds": [0.10, 0.25, 0.50],
+  "sensor_failure_ratios": [0.0, 0.20, 0.40, 0.60]
+}

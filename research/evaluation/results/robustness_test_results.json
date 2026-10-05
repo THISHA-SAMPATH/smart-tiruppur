@@ -1,0 +1,59 @@
+{
+  "experiment_id": "exp_smart_tiruppur_v1",
+  "dataset_version": "Tiruppur-GeoEnv-v2.1",
+  "model_version": "STERI-MultiSource-v1.4",
+  "random_seed": 42,
+  "timestamp": "2026-10-05T20:32:00Z",
+  "missing_data_robustness": {
+    "0% Missing Data (Complete Baseline)": {
+      "MAE": 0.054,
+      "RMSE": 0.072,
+      "Accuracy": 0.938,
+      "F1": 0.935
+    },
+    "10% Missing Data Threshold": {
+      "MAE": 0.062,
+      "RMSE": 0.081,
+      "Accuracy": 0.925,
+      "F1": 0.92
+    },
+    "25% Missing Data Threshold": {
+      "MAE": 0.078,
+      "RMSE": 0.102,
+      "Accuracy": 0.898,
+      "F1": 0.892
+    },
+    "50% Missing Data Threshold": {
+      "MAE": 0.114,
+      "RMSE": 0.148,
+      "Accuracy": 0.824,
+      "F1": 0.816
+    }
+  },
+  "sensor_failure_robustness": {
+    "0% Sensor Failure": {
+      "MAE": 0.054,
+      "RMSE": 0.072,
+      "Accuracy": 0.938,
+      "F1": 0.935
+    },
+    "20% Sensor Failure (Partial Offline)": {
+      "MAE": 0.068,
+      "RMSE": 0.089,
+      "Accuracy": 0.914,
+      "F1": 0.908
+    },
+    "40% Sensor Failure (Moderate Outage)": {
+      "MAE": 0.089,
+      "RMSE": 0.116,
+      "Accuracy": 0.872,
+      "F1": 0.865
+    },
+    "60% Sensor Failure (Severe Network Failure)": {
+      "MAE": 0.132,
+      "RMSE": 0.174,
+      "Accuracy": 0.785,
+      "F1": 0.774
+    }
+  }
+}

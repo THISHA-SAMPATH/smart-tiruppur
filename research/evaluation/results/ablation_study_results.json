@@ -1,0 +1,51 @@
+{
+  "experiment_id": "exp_smart_tiruppur_v1",
+  "dataset_version": "Tiruppur-GeoEnv-v2.1",
+  "model_version": "STERI-MultiSource-v1.4",
+  "random_seed": 42,
+  "timestamp": "2026-10-05T20:32:00Z",
+  "ablation_experiments": {
+    "Full STERI Multi-Source Model": {
+      "MAE": 0.054,
+      "RMSE": 0.072,
+      "R2": 0.942,
+      "Accuracy": 0.938,
+      "F1": 0.935
+    },
+    "w/o Terrain Elevation & Slope": {
+      "MAE": 0.108,
+      "RMSE": 0.142,
+      "R2": 0.815,
+      "Accuracy": 0.842,
+      "F1": 0.838
+    },
+    "w/o Monsoon Rainfall Scenario": {
+      "MAE": 0.095,
+      "RMSE": 0.124,
+      "R2": 0.852,
+      "Accuracy": 0.875,
+      "F1": 0.868
+    },
+    "w/o Industrial Facility Data": {
+      "MAE": 0.112,
+      "RMSE": 0.155,
+      "R2": 0.798,
+      "Accuracy": 0.82,
+      "F1": 0.812
+    },
+    "w/o Citizen Complaints": {
+      "MAE": 0.072,
+      "RMSE": 0.094,
+      "R2": 0.91,
+      "Accuracy": 0.912,
+      "F1": 0.908
+    },
+    "w/o Groundwater Piezometer Draft": {
+      "MAE": 0.088,
+      "RMSE": 0.118,
+      "R2": 0.874,
+      "Accuracy": 0.885,
+      "F1": 0.88
+    }
+  }
+}

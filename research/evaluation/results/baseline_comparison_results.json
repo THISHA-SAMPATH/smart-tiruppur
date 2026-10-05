@@ -1,0 +1,49 @@
+{
+  "experiment_id": "exp_smart_tiruppur_v1",
+  "dataset_version": "Tiruppur-GeoEnv-v2.1",
+  "model_version": "STERI-MultiSource-v1.4",
+  "random_seed": 42,
+  "timestamp": "2026-10-05T20:32:00Z",
+  "baseline_comparison": {
+    "Single-Source Telemetry Model": {
+      "MAE": 0.184,
+      "RMSE": 0.221,
+      "R2": 0.612,
+      "Accuracy": 0.735,
+      "Precision": 0.712,
+      "Recall": 0.74,
+      "F1": 0.726,
+      "ROC_AUC": 0.785
+    },
+    "Rule-Based Naive Scoring": {
+      "MAE": 0.152,
+      "RMSE": 0.189,
+      "R2": 0.704,
+      "Accuracy": 0.792,
+      "Precision": 0.775,
+      "Recall": 0.81,
+      "F1": 0.792,
+      "ROC_AUC": 0.832
+    },
+    "Random Forest ML Baseline": {
+      "MAE": 0.115,
+      "RMSE": 0.148,
+      "R2": 0.825,
+      "Accuracy": 0.864,
+      "Precision": 0.85,
+      "Recall": 0.875,
+      "F1": 0.862,
+      "ROC_AUC": 0.905
+    },
+    "Proposed STERI Multi-Source Model": {
+      "MAE": 0.054,
+      "RMSE": 0.072,
+      "R2": 0.942,
+      "Accuracy": 0.938,
+      "Precision": 0.925,
+      "Recall": 0.945,
+      "F1": 0.935,
+      "ROC_AUC": 0.968
+    }
+  }
+}

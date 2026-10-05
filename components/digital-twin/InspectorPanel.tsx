@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import type { SelectedNodeInfo } from "../Terrain3DViewer";
+import DataProvenanceCard from "@/components/provenance/DataProvenanceCard";
 
 interface InspectorPanelProps {
   selectedNode: SelectedNodeInfo | null;
@@ -283,6 +284,9 @@ export default function InspectorPanel({
             </Link>
           </>
         )}
+
+        {/* UNIFIED DATA PROVENANCE & UNCERTAINTY CARD */}
+        <DataProvenanceCard objectId={selectedNode.id} objectType={selectedNode.type} />
       </div>
     </div>
   );
