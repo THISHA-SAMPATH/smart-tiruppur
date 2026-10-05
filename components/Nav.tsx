@@ -56,111 +56,49 @@ export default function Nav() {
 
   const navLinks = !loading && user ? (
     <>
-      <Link href="/map" className={isActive("/map") ? "active nav-link-item" : "nav-link-item"}>
-        City Map
-      </Link>
       <Link href="/terrain" className={isActive("/terrain") ? "active nav-link-item" : "nav-link-item"}>
-        3D Digital Twin 🌐
+        Digital Twin 🌐
+      </Link>
+      <Link href="/map" className={isActive("/map") ? "active nav-link-item" : "nav-link-item"}>
+        2D GIS Map 🗺️
+      </Link>
+      <Link href="/monitoring" className={isActive("/monitoring") ? "active nav-link-item" : "nav-link-item"}>
+        Environment 🌊
+      </Link>
+      <Link href="/groundwater" className={isActive("/groundwater") ? "active nav-link-item" : "nav-link-item"}>
+        Groundwater 💧
       </Link>
 
       {user.role === "ADMIN" && (
-        <>
-          <Link href="/admin" className={isActive("/admin") && pathname === "/admin" ? "active nav-link-item" : "nav-link-item"}>
-            Dashboard
-          </Link>
-          <Link href="/admin/users" className={isActive("/admin/users") ? "active nav-link-item" : "nav-link-item"}>
-            Users
-          </Link>
-          <Link href="/monitoring" className={isActive("/monitoring") ? "active nav-link-item" : "nav-link-item"}>
-            Discharge
-          </Link>
-          <Link href="/groundwater" className={isActive("/groundwater") ? "active nav-link-item" : "nav-link-item"}>
-            Groundwater
-          </Link>
-          <Link href="/evidence" className={isActive("/evidence") ? "active nav-link-item" : "nav-link-item"}>
-            Evidence
-          </Link>
-          <Link href="/simulator" className={isActive("/simulator") ? "active nav-link-item" : "nav-link-item"}>
-            Simulator 🎨
-          </Link>
-          <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
-            Verify DPP
-          </Link>
-        </>
+        <Link href="/admin" className={isActive("/admin") && pathname === "/admin" ? "active nav-link-item" : "nav-link-item"}>
+          Industries 🏭
+        </Link>
       )}
 
       {user.role === "REGULATOR" && (
-        <>
-          <Link href="/regulator" className={isActive("/regulator") ? "active nav-link-item" : "nav-link-item"}>
-            Dashboard
-          </Link>
-          <Link href="/monitoring" className={isActive("/monitoring") ? "active nav-link-item" : "nav-link-item"}>
-            Discharge
-          </Link>
-          <Link href="/groundwater" className={isActive("/groundwater") ? "active nav-link-item" : "nav-link-item"}>
-            Groundwater
-          </Link>
-          <Link href="/evidence" className={isActive("/evidence") ? "active nav-link-item" : "nav-link-item"}>
-            Evidence
-          </Link>
-          <Link href="/simulator" className={isActive("/simulator") ? "active nav-link-item" : "nav-link-item"}>
-            Simulator 🎨
-          </Link>
-          <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
-            Verify DPP
-          </Link>
-        </>
+        <Link href="/regulator" className={isActive("/regulator") ? "active nav-link-item" : "nav-link-item"}>
+          Regulator Hub 🏭
+        </Link>
       )}
 
       {user.role === "INDUSTRY" && (
-        <>
-          <Link href="/industry" className={isActive("/industry") ? "active nav-link-item" : "nav-link-item"}>
-            My Dashboard
-          </Link>
-          {user.industryUnitId && (
-            <Link
-              href={`/units/${user.industryUnitId}`}
-              className={isActive(`/units/${user.industryUnitId}`) ? "active nav-link-item" : "nav-link-item"}
-            >
-              My Facility ({user.industryUnitId})
-            </Link>
-          )}
-          <Link href="/simulator" className={isActive("/simulator") ? "active nav-link-item" : "nav-link-item"}>
-            Simulator 🎨
-          </Link>
-          <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
-            Verify DPP
-          </Link>
-        </>
-      )}
-
-      {user.role === "GROUNDWATER_OFFICER" && (
-        <>
-          <Link href="/groundwater" className={isActive("/groundwater") ? "active nav-link-item" : "nav-link-item"}>
-            FIRKA Assessment
-          </Link>
-          <Link href="/simulator" className={isActive("/simulator") ? "active nav-link-item" : "nav-link-item"}>
-            Simulator 🎨
-          </Link>
-          <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
-            Verify DPP
-          </Link>
-        </>
+        <Link href="/industry" className={isActive("/industry") ? "active nav-link-item" : "nav-link-item"}>
+          My Facility 🏭
+        </Link>
       )}
 
       {user.role === "CITIZEN" && (
-        <>
-          <Link href="/citizen" className={isActive("/citizen") ? "active nav-link-item" : "nav-link-item"}>
-            Public Overview
-          </Link>
-          <Link href="/simulator" className={isActive("/simulator") ? "active nav-link-item" : "nav-link-item"}>
-            Simulator 🎨
-          </Link>
-          <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
-            Verify DPP
-          </Link>
-        </>
+        <Link href="/citizen" className={isActive("/citizen") ? "active nav-link-item" : "nav-link-item"}>
+          Citizen Portal 👥
+        </Link>
       )}
+
+      <Link href="/evidence" className={isActive("/evidence") ? "active nav-link-item" : "nav-link-item"}>
+        Incidents 📜
+      </Link>
+      <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
+        Verify DPP 🛡️
+      </Link>
     </>
   ) : null;
 

@@ -1,15 +1,17 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { getGlobalEvents, getUnits } from "@/lib/api";
-import type { ContractEvent, LedgerEntry, LedgerUnit } from "@/lib/types";
+import { getUnits } from "@/lib/api";
+import type { LedgerUnit } from "@/lib/types";
 
 export type LightingPreset = "day" | "dusk" | "night";
+export type UserRoleOverlay = "REGULATOR" | "GROUNDWATER_OFFICER" | "INDUSTRY" | "CITIZEN" | "ADMIN";
 
 export interface LayerToggles {
   terrain: boolean;
+  contours: boolean;
   river: boolean;
   units: boolean;
   sensors: boolean;
@@ -23,7 +25,7 @@ export type UnitStatusType = "COMPLIANT" | "WARNING" | "INVESTIGATE" | "OFFLINE"
 export interface SelectedNodeInfo {
   id: string;
   name: string;
-  type: "sensor" | "unit" | "groundwater";
+  type: "sensor" | "unit" | "groundwater" | "terrain";
   designation?: string;
   status?: UnitStatusType | string;
   statusSymbol?: string;
@@ -32,6 +34,9 @@ export interface SelectedNodeInfo {
   flowRate?: number;
   latitude?: number;
   longitude?: number;
+  elevationMeters?: number;
+  firkaName?: string;
+  drainageBasin?: string;
   ph?: number;
   ec?: number;
   turbidity?: number;
@@ -45,14 +50,15 @@ interface Terrain3DViewerProps {
   lighting: LightingPreset;
   autoRotate: boolean;
   floodIntensity?: number; // 0 to 1
+  role?: UserRoleOverlay;
   layers: LayerToggles;
+  focusPosition?: { x: number; y: number; z: number } | null;
   onSelectNode: (node: SelectedNodeInfo | null) => void;
-  tourActive?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // GEOREFERENCE SYSTEM FOR TIRUPPUR DISTRICT
-// Center coordinate: 11.1085° N, 77.3411° E
+// Center: 11.1085° N, 77.3411° E
 // ---------------------------------------------------------------------------
 export const TIRUPPUR_CENTER_LAT = 11.1085;
 export const TIRUPPUR_CENTER_LON = 77.3411;
@@ -75,6 +81,11 @@ export function sampleTiruppurElevation(lat: number, lon: number): number {
   return Math.max(0.1, (elevMeters - 288) * 0.16);
 }
 
+export function sampleRealElevationMeters(lat: number, lon: number): number {
+  const elev3D = sampleTiruppurElevation(lat, lon);
+  return Math.round(288 + elev3D / 0.16);
+}
+
 export function geoTo3D(lat: number, lon: number, elevOffset: number = 0): THREE.Vector3 {
   const x = (lon - TIRUPPUR_CENTER_LON) * METERS_PER_DEG_LON * WORLD_SCALE;
   const z = -(lat - TIRUPPUR_CENTER_LAT) * METERS_PER_DEG_LAT * WORLD_SCALE;
@@ -82,43 +93,19 @@ export function geoTo3D(lat: number, lon: number, elevOffset: number = 0): THREE
   return new THREE.Vector3(x, y, z);
 }
 
+export function vector3DToGeo(x: number, z: number): { lat: number; lon: number } {
+  const lon = TIRUPPUR_CENTER_LON + x / (METERS_PER_DEG_LON * WORLD_SCALE);
+  const lat = TIRUPPUR_CENTER_LAT - z / (METERS_PER_DEG_LAT * WORLD_SCALE);
+  return { lat, lon };
+}
+
 // ---------------------------------------------------------------------------
-// SENSORS & UNITS GEO DATA WITH ACCESSIBLE STATUS SYMBOLS
+// GEOREFERENCED DATA NODES
 // ---------------------------------------------------------------------------
 const SENSOR_NODES_GEO = [
-  {
-    id: "tnpcb_noyyal_001",
-    name: "Mangalam Telemetry Station",
-    designation: "Upstream Entry Monitoring Station",
-    lat: 11.10651,
-    lon: 77.26001,
-    ph: 7.4,
-    ec: 1420,
-    turbidity: 18,
-    flow: 142,
-  },
-  {
-    id: "tnpcb_noyyal_002",
-    name: "Kasipalayam Bridge Telemetry",
-    designation: "Urban/Industrial Exit Station",
-    lat: 11.11975,
-    lon: 77.39716,
-    ph: 6.8,
-    ec: 2850,
-    turbidity: 45,
-    flow: 128,
-  },
-  {
-    id: "tnpcb_noyyal_003",
-    name: "Orathapalayam Reservoir Exit",
-    designation: "Downstream Reservoir Station",
-    lat: 11.11084,
-    lon: 77.53981,
-    ph: 7.8,
-    ec: 3100,
-    turbidity: 62,
-    flow: 95,
-  },
+  { id: "tnpcb_noyyal_001", name: "Mangalam Telemetry Station", designation: "Upstream Entry Station", lat: 11.10651, lon: 77.26001, ph: 7.4, ec: 1420, turbidity: 18, flow: 142 },
+  { id: "tnpcb_noyyal_002", name: "Kasipalayam Bridge Telemetry", designation: "Urban/Industrial Exit Station", lat: 11.11975, lon: 77.39716, ph: 6.8, ec: 2850, turbidity: 45, flow: 128 },
+  { id: "tnpcb_noyyal_003", name: "Orathapalayam Reservoir Exit", designation: "Downstream Reservoir Station", lat: 11.11084, lon: 77.53981, ph: 7.8, ec: 3100, turbidity: 62, flow: 95 },
 ];
 
 const INDUSTRIAL_UNITS_GEO = [
@@ -150,6 +137,7 @@ export default function Terrain3DViewer({
   autoRotate,
   floodIntensity = 0,
   layers,
+  focusPosition,
   onSelectNode,
 }: Terrain3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -158,24 +146,37 @@ export default function Terrain3DViewer({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
 
-  // Group Refs for Dynamic Layer Toggles
+  // Layer Groups
   const terrainGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const contourGroupRef = useRef<THREE.Group>(new THREE.Group());
   const riverGroupRef = useRef<THREE.Group>(new THREE.Group());
   const unitsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const sensorsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const groundwaterGroupRef = useRef<THREE.Group>(new THREE.Group());
   const floodMeshRef = useRef<THREE.Mesh | null>(null);
   const pollutionPlumeGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const riverFlowArrowsGroupRef = useRef<THREE.Group>(new THREE.Group());
 
   const interactiveObjectsRef = useRef<THREE.Object3D[]>([]);
-  const unitBeaconsRef = useRef<Map<string, THREE.Mesh>>(new Map());
-  const dirLightRef = useRef<THREE.DirectionalLight | null>(null);
-  const hemiLightRef = useRef<THREE.HemisphereLight | null>(null);
+  const terrainMeshRef = useRef<THREE.Mesh | null>(null);
   const riverCurveRef = useRef<THREE.CatmullRomCurve3 | null>(null);
 
-  // Layer Visibility Updates
+  // Lerp Camera Animation Target
+  const targetCamPosRef = useRef<THREE.Vector3 | null>(null);
+  const targetLookAtRef = useRef<THREE.Vector3 | null>(null);
+
+  // Smooth Camera Fly-To when focusPosition changes (Fix #19)
+  useEffect(() => {
+    if (focusPosition && cameraRef.current && controlsRef.current) {
+      targetCamPosRef.current = new THREE.Vector3(focusPosition.x + 12, focusPosition.y + 14, focusPosition.z + 16);
+      targetLookAtRef.current = new THREE.Vector3(focusPosition.x, focusPosition.y, focusPosition.z);
+    }
+  }, [focusPosition]);
+
+  // Layer Visibility
   useEffect(() => {
     terrainGroupRef.current.visible = layers.terrain;
+    contourGroupRef.current.visible = layers.contours;
     riverGroupRef.current.visible = layers.river;
     unitsGroupRef.current.visible = layers.units;
     sensorsGroupRef.current.visible = layers.sensors;
@@ -184,15 +185,14 @@ export default function Terrain3DViewer({
     pollutionPlumeGroupRef.current.visible = layers.pollution;
   }, [layers]);
 
-  // Dynamic Flood Water Level Updates
+  // Flood Intensity Level
   useEffect(() => {
     if (floodMeshRef.current) {
-      const baseHeight = 0.6;
-      floodMeshRef.current.position.y = baseHeight + floodIntensity * 2.2;
+      floodMeshRef.current.position.y = 0.6 + floodIntensity * 2.2;
     }
   }, [floodIntensity]);
 
-  // Main Scene Setup
+  // Scene Setup
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
@@ -204,9 +204,10 @@ export default function Terrain3DViewer({
     scene.fog = new THREE.FogExp2(0x0f172a, 0.008);
     sceneRef.current = scene;
 
-    // Add Layer Groups
     scene.add(terrainGroupRef.current);
+    scene.add(contourGroupRef.current);
     scene.add(riverGroupRef.current);
+    scene.add(riverFlowArrowsGroupRef.current);
     scene.add(unitsGroupRef.current);
     scene.add(sensorsGroupRef.current);
     scene.add(groundwaterGroupRef.current);
@@ -220,7 +221,6 @@ export default function Terrain3DViewer({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     while (container.firstChild) container.removeChild(container.firstChild);
     container.appendChild(renderer.domElement);
@@ -230,8 +230,6 @@ export default function Terrain3DViewer({
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.maxPolarAngle = Math.PI / 2 - 0.05;
-    controls.minDistance = 10;
-    controls.maxDistance = 180;
     controls.target.set(0, 2, 0);
     controlsRef.current = controls;
 
@@ -239,15 +237,13 @@ export default function Terrain3DViewer({
     const hemiLight = new THREE.HemisphereLight(0x38bdf8, 0x0f172a, 0.9);
     hemiLight.position.set(0, 50, 0);
     scene.add(hemiLight);
-    hemiLightRef.current = hemiLight;
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
     dirLight.position.set(30, 60, 40);
     dirLight.castShadow = true;
     scene.add(dirLight);
-    dirLightRef.current = dirLight;
 
-    // 1. DEM Terrain Mesh
+    // 1. DEM Terrain Geometry
     const terrainWidth = 140;
     const terrainDepth = 140;
     const terrainSegs = 120;
@@ -264,35 +260,22 @@ export default function Terrain3DViewer({
     }
     geometry.computeVertexNormals();
 
-    const terrainMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      roughness: 0.85,
-      metalness: 0.15,
-    });
+    const terrainMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85, metalness: 0.15 });
     const terrainMesh = new THREE.Mesh(geometry, terrainMat);
     terrainMesh.receiveShadow = true;
     terrainGroupRef.current.add(terrainMesh);
+    terrainMeshRef.current = terrainMesh;
+    interactiveObjectsRef.current.push(terrainMesh);
 
-    const gridHelper = new THREE.GridHelper(140, 70, 0x0d9488, 0x334155);
-    gridHelper.position.y = 0.05;
-    terrainGroupRef.current.add(gridHelper);
-
-    // 2. Monsoon Flood Mesh Plane
-    const floodGeo = new THREE.PlaneGeometry(140, 140);
-    floodGeo.rotateX(-Math.PI / 2);
-    const floodMat = new THREE.MeshStandardMaterial({
-      color: 0x0284c7,
-      transparent: true,
-      opacity: 0.45,
-      roughness: 0.1,
+    // 2. GIS Contour Line Rings (Fix #22)
+    const contourLevels = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+    contourLevels.forEach((level) => {
+      const contourGrid = new THREE.GridHelper(140, 35, 0x0d9488, 0x1e293b);
+      contourGrid.position.y = level;
+      contourGroupRef.current.add(contourGrid);
     });
-    const floodMesh = new THREE.Mesh(floodGeo, floodMat);
-    floodMesh.position.y = 0.6;
-    floodMesh.visible = layers.floodRisk;
-    scene.add(floodMesh);
-    floodMeshRef.current = floodMesh;
 
-    // 3. Noyyal River Path & Plume Particles
+    // 3. Noyyal River Geometry & Directional Flow Arrows (Fix #21)
     const riverPoints: THREE.Vector3[] = [];
     for (let l = 77.24; l <= 77.54; l += 0.015) {
       const lat = 11.108 + 0.008 * Math.sin((l - 77.25) * 12);
@@ -302,20 +285,27 @@ export default function Terrain3DViewer({
     riverCurveRef.current = riverCurve;
 
     const tubeGeo = new THREE.TubeGeometry(riverCurve, 80, 0.5, 8, false);
-    const waterMat = new THREE.MeshStandardMaterial({
-      color: 0x0284c7,
-      emissive: 0x0284c7,
-      emissiveIntensity: 0.4,
-      roughness: 0.1,
-    });
-    const riverMesh = new THREE.Mesh(tubeGeo, waterMat);
+    const riverMesh = new THREE.Mesh(tubeGeo, new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0284c7, emissiveIntensity: 0.4, roughness: 0.1 }));
     riverGroupRef.current.add(riverMesh);
 
-    // Pollution Plume Particle Markers along River Path
-    const plumeParticleCount = 18;
+    // Directional Flow Particle Indicators (~~~~~~~~~~~~~~→→→→→)
+    const flowCount = 12;
+    const flowParticles: THREE.Mesh[] = [];
+    const arrowGeo = new THREE.ConeGeometry(0.3, 0.8, 6);
+    arrowGeo.rotateX(Math.PI / 2);
+    const arrowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+    for (let f = 0; f < flowCount; f++) {
+      const arrow = new THREE.Mesh(arrowGeo, arrowMat);
+      riverFlowArrowsGroupRef.current.add(arrow);
+      flowParticles.push(arrow);
+    }
+
+    // 4. Pollution Plume Particles (Fix #9)
+    const plumeParticleCount = 16;
     const plumeParticles: THREE.Mesh[] = [];
     const plumeGeo = new THREE.SphereGeometry(0.4, 8, 8);
-    const plumeMat = new THREE.MeshBasicMaterial({ color: 0xdc2626, transparent: true, opacity: 0.8 });
+    const plumeMat = new THREE.MeshBasicMaterial({ color: 0xdc2626, transparent: true, opacity: 0.85 });
 
     for (let p = 0; p < plumeParticleCount; p++) {
       const particle = new THREE.Mesh(plumeGeo, plumeMat);
@@ -323,8 +313,16 @@ export default function Terrain3DViewer({
       plumeParticles.push(particle);
     }
 
-    // 4. Sensors
-    interactiveObjectsRef.current = [];
+    // 5. Flood Mesh Plane
+    const floodGeo = new THREE.PlaneGeometry(140, 140);
+    floodGeo.rotateX(-Math.PI / 2);
+    const floodMesh = new THREE.Mesh(floodGeo, new THREE.MeshStandardMaterial({ color: 0x0284c7, transparent: true, opacity: 0.45 }));
+    floodMesh.position.y = 0.6;
+    floodMesh.visible = layers.floodRisk;
+    scene.add(floodMesh);
+    floodMeshRef.current = floodMesh;
+
+    // 6. Sensor Station Beacons
     SENSOR_NODES_GEO.forEach((sensor) => {
       const pos = geoTo3D(sensor.lat, sensor.lon, 0.5);
       const group = new THREE.Group();
@@ -341,8 +339,7 @@ export default function Terrain3DViewer({
       sensorsGroupRef.current.add(group);
     });
 
-    // 5. Industrial Facilities with Status Symbols
-    unitBeaconsRef.current.clear();
+    // 7. Industrial Units with Accessible Status Badges
     INDUSTRIAL_UNITS_GEO.forEach((unit, idx) => {
       const pos = geoTo3D(unit.lat, unit.lon, 0);
       const bldgHeight = 2.0 + (idx % 3) * 0.8;
@@ -351,43 +348,34 @@ export default function Terrain3DViewer({
       group.position.copy(pos);
 
       const bldgGeo = new THREE.BoxGeometry(2.2, bldgHeight, 2.2);
-      const bldgMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.4, roughness: 0.6 });
-      const bldgMesh = new THREE.Mesh(bldgGeo, bldgMat);
+      const bldgMesh = new THREE.Mesh(bldgGeo, new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.4, roughness: 0.6 }));
       bldgMesh.position.y = bldgHeight / 2;
-      bldgMesh.castShadow = true;
       group.add(bldgMesh);
 
-      // Status Color & Symbol Badge
-      let statusColor = 0x10b981; // Green COMPLIANT
-      if (unit.status === "WARNING") statusColor = 0xf59e0b; // Yellow WARNING
-      if (unit.status === "INVESTIGATE") statusColor = 0xdc2626; // Red INVESTIGATE
+      let statusColor = 0x10b981;
+      if (unit.status === "WARNING") statusColor = 0xf59e0b;
+      if (unit.status === "INVESTIGATE") statusColor = 0xdc2626;
 
-      const beaconGeo = new THREE.SphereGeometry(0.55, 12, 12);
-      const beaconMat = new THREE.MeshStandardMaterial({ color: statusColor, emissive: statusColor, emissiveIntensity: 0.8 });
-      const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
+      const beaconMesh = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), new THREE.MeshStandardMaterial({ color: statusColor, emissive: statusColor, emissiveIntensity: 0.8 }));
       beaconMesh.position.y = bldgHeight + 0.6;
       beaconMesh.userData = { type: "unit", data: unit };
       group.add(beaconMesh);
 
       interactiveObjectsRef.current.push(beaconMesh);
-      unitBeaconsRef.current.set(unit.unit_id, beaconMesh);
-
       unitsGroupRef.current.add(group);
     });
 
-    // 6. Groundwater FIRKA Zones
+    // 8. Groundwater FIRKA Zones
     GROUNDWATER_FIRKAS_GEO.forEach((firka) => {
       const pos = geoTo3D(firka.lat, firka.lon, 0.1);
-      const cylinderGeo = new THREE.CylinderGeometry(6, 6, 0.4, 24);
-      const firkaMat = new THREE.MeshStandardMaterial({ color: firka.color, transparent: true, opacity: 0.35 });
-      const firkaMesh = new THREE.Mesh(cylinderGeo, firkaMat);
+      const firkaMesh = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 0.4, 24), new THREE.MeshStandardMaterial({ color: firka.color, transparent: true, opacity: 0.35 }));
       firkaMesh.position.copy(pos);
       firkaMesh.userData = { type: "groundwater", data: firka };
       interactiveObjectsRef.current.push(firkaMesh);
       groundwaterGroupRef.current.add(firkaMesh);
     });
 
-    // Raycasting Click Listener
+    // Raycasting Click Listener (Terrain Elevation & Node Inspector - Fix #23)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -400,7 +388,8 @@ export default function Terrain3DViewer({
       const intersects = raycaster.intersectObjects(interactiveObjectsRef.current, false);
 
       if (intersects.length > 0) {
-        const uData = intersects[0].object.userData;
+        const hit = intersects[0];
+        const uData = hit.object.userData;
 
         if (uData.type === "sensor") {
           onSelectNode({
@@ -449,6 +438,22 @@ export default function Terrain3DViewer({
             longitude: uData.data.lon,
             raw: uData.data,
           });
+        } else if (hit.object === terrainMeshRef.current && hit.point) {
+          // Terrain Elevation Inspector (Fix #23)
+          const { lat, lon } = vector3DToGeo(hit.point.x, hit.point.z);
+          const elevM = sampleRealElevationMeters(lat, lon);
+          onSelectNode({
+            id: `terrain_${lat.toFixed(3)}_${lon.toFixed(3)}`,
+            name: "Tiruppur Terrain Point",
+            type: "terrain",
+            designation: "Topographic Elevation DEM Surface",
+            latitude: lat,
+            longitude: lon,
+            elevationMeters: elevM,
+            firkaName: lat > 11.11 ? "Tiruppur North FIRKA" : "Tiruppur South FIRKA",
+            drainageBasin: "Noyyal River Catchment Sub-Basin",
+            status: "SAFE",
+          });
         }
       }
     };
@@ -465,17 +470,41 @@ export default function Terrain3DViewer({
 
       if (controlsRef.current) {
         controlsRef.current.autoRotate = autoRotate;
-        controlsRef.current.update();
+
+        // Smooth Camera Fly-To Lerp (Fix #19)
+        if (targetCamPosRef.current && targetLookAtRef.current) {
+          camera.position.lerp(targetCamPosRef.current, 0.05);
+          controls.target.lerp(targetLookAtRef.current, 0.05);
+
+          if (camera.position.distanceTo(targetCamPosRef.current) < 0.5) {
+            targetCamPosRef.current = null;
+            targetLookAtRef.current = null;
+          }
+        }
+
+        controls.update();
       }
 
-      // Animate Pollution Plume Particles downstream along Noyyal River Curve
-      if (riverCurveRef.current && layers.pollution) {
-        plumeParticles.forEach((particle, idx) => {
-          const t = ((elapsedTime * 0.12 + idx / plumeParticleCount) % 1);
+      // Animate River Flow Particles (Fix #21)
+      if (riverCurveRef.current) {
+        flowParticles.forEach((arrow, idx) => {
+          const t = ((elapsedTime * 0.08 + idx / flowCount) % 1);
           const pPos = riverCurveRef.current!.getPoint(t);
-          particle.position.copy(pPos);
-          particle.position.y += 0.3;
+          const tangent = riverCurveRef.current!.getTangent(t);
+          arrow.position.copy(pPos);
+          arrow.position.y += 0.35;
+          arrow.lookAt(pPos.clone().add(tangent));
         });
+
+        // Animate Pollution Plume Particles (Fix #9)
+        if (layers.pollution) {
+          plumeParticles.forEach((particle, idx) => {
+            const t = ((elapsedTime * 0.12 + idx / plumeParticleCount) % 1);
+            const pPos = riverCurveRef.current!.getPoint(t);
+            particle.position.copy(pPos);
+            particle.position.y += 0.3;
+          });
+        }
       }
 
       renderer.render(scene, camera);
@@ -501,38 +530,6 @@ export default function Terrain3DViewer({
       renderer.dispose();
     };
   }, [autoRotate, onSelectNode]);
-
-  // Lighting Mode Updates
-  useEffect(() => {
-    if (!dirLightRef.current || !hemiLightRef.current || !sceneRef.current) return;
-    const dirLight = dirLightRef.current;
-    const hemiLight = hemiLightRef.current;
-    const scene = sceneRef.current;
-
-    switch (lighting) {
-      case "day":
-        scene.background = new THREE.Color(0x0f172a);
-        scene.fog = new THREE.FogExp2(0x0f172a, 0.008);
-        dirLight.intensity = 1.4;
-        dirLight.color.setHex(0xffffff);
-        hemiLight.intensity = 0.9;
-        break;
-      case "dusk":
-        scene.background = new THREE.Color(0x1a0f2e);
-        scene.fog = new THREE.FogExp2(0x1a0f2e, 0.01);
-        dirLight.intensity = 0.9;
-        dirLight.color.setHex(0xf97316);
-        hemiLight.intensity = 0.6;
-        break;
-      case "night":
-        scene.background = new THREE.Color(0x020617);
-        scene.fog = new THREE.FogExp2(0x020617, 0.012);
-        dirLight.intensity = 0.3;
-        dirLight.color.setHex(0x38bdf8);
-        hemiLight.intensity = 0.3;
-        break;
-    }
-  }, [lighting]);
 
   return (
     <div

@@ -6,14 +6,68 @@ import Terrain3DViewer, {
   LightingPreset,
   SelectedNodeInfo,
   LayerToggles,
+  UserRoleOverlay,
+  geoTo3D,
 } from "@/components/Terrain3DViewer";
 import { getGlobalEvents, getUnitLedger, getUnitDpp, getUnits, getGroundwaterZones } from "@/lib/api";
-import type { ContractEvent, LedgerEntry, DppResponse, LedgerUnit } from "@/lib/types";
+import type { ContractEvent, LedgerEntry, DppResponse } from "@/lib/types";
+
+// Interactive Live Event Timeline Items (Fix #18)
+const LIVE_TIMELINE_EVENTS = [
+  {
+    id: "evt_001",
+    time: "13:42",
+    status: "INVESTIGATE",
+    symbol: "!",
+    title: "Unit 007 Discharge Anomaly",
+    location: "Angeripalayam Processing 007",
+    lat: 11.1420,
+    lon: 77.3310,
+    confidence: "87% AI Confidence",
+  },
+  {
+    id: "evt_002",
+    time: "13:39",
+    status: "NORMAL",
+    symbol: "●",
+    title: "Kasipalayam Telemetry Verified",
+    location: "Kasipalayam Bridge Station",
+    lat: 11.11975,
+    lon: 77.39716,
+    confidence: "pH 6.8 · EC 2850 µS/cm",
+  },
+  {
+    id: "evt_003",
+    time: "13:35",
+    status: "WARNING",
+    symbol: "▲",
+    title: "Groundwater Stress Alert",
+    location: "Tiruppur South FIRKA",
+    lat: 11.0820,
+    lon: 77.3550,
+    confidence: "112% Extraction Index",
+  },
+  {
+    id: "evt_004",
+    time: "13:29",
+    status: "COMPLIANT",
+    symbol: "●",
+    title: "ZLD Mandate Certified",
+    location: "Kasipalayam Unit 004",
+    lat: 11.1190,
+    lon: 77.3950,
+    confidence: "SHA-256 Ledger Minted",
+  },
+];
 
 export default function Terrain3DPage() {
   const [lighting, setLighting] = useState<LightingPreset>("day");
   const [autoRotate, setAutoRotate] = useState(false);
-  const [floodIntensity, setFloodIntensity] = useState<number>(0.3); // 0 to 1 monsoon rain intensity
+  const [floodIntensity, setFloodIntensity] = useState<number>(0.3);
+  const [userRole, setUserRole] = useState<UserRoleOverlay>("REGULATOR");
+
+  // Camera Focus Target (Fix #19)
+  const [focusPosition, setFocusPosition] = useState<{ x: number; y: number; z: number } | null>(null);
 
   // Analysis Modes State
   const [activeAnalysisMode, setActiveAnalysisMode] = useState<"baseline" | "water" | "groundwater" | "flood" | "compliance">("baseline");
@@ -21,6 +75,7 @@ export default function Terrain3DPage() {
   // Layer Toggles State
   const [layers, setLayers] = useState<LayerToggles>({
     terrain: true,
+    contours: true,
     river: true,
     units: true,
     sensors: true,
@@ -41,6 +96,7 @@ export default function Terrain3DPage() {
   const [nodeLedger, setNodeLedger] = useState<LedgerEntry[]>([]);
   const [nodeDpp, setNodeDpp] = useState<DppResponse | null>(null);
   const [showArchPanel, setShowArchPanel] = useState<boolean>(false);
+  const [showTimeline, setShowTimeline] = useState<boolean>(true);
 
   // Live Clock
   useEffect(() => {
@@ -68,11 +124,7 @@ export default function Terrain3DPage() {
       }
       if (zonesRes.data) {
         const crit = (zonesRes.data as any[]).filter(
-          (z) =>
-            z.category === "Critical" ||
-            z.category === "Over-Exploited" ||
-            z.cgwb_baseline?.category === "Critical" ||
-            z.cgwb_baseline?.category === "Over-Exploited"
+          (z) => z.category === "Critical" || z.category === "Over-Exploited" || z.cgwb_baseline?.category === "Critical"
         );
         setCriticalZones(crit.length || 3);
       }
@@ -103,23 +155,26 @@ export default function Terrain3DPage() {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleAnalysisModeChange = (mode: "baseline" | "water" | "groundwater" | "flood" | "compliance") => {
-    setActiveAnalysisMode(mode);
-    switch (mode) {
-      case "baseline":
-        setLayers({ terrain: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: false, pollution: false });
+  // Fly Camera to Timeline Event (Fix #18 & Fix #19)
+  const handleTimelineClick = (evt: typeof LIVE_TIMELINE_EVENTS[0]) => {
+    const pos = geoTo3D(evt.lat, evt.lon, 0);
+    setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
+  };
+
+  const handleRoleChange = (role: UserRoleOverlay) => {
+    setUserRole(role);
+    switch (role) {
+      case "REGULATOR":
+        setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: false, pollution: true });
         break;
-      case "water":
-        setLayers({ terrain: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: false, pollution: true });
+      case "GROUNDWATER_OFFICER":
+        setLayers({ terrain: true, contours: true, river: true, units: false, sensors: true, groundwater: true, floodRisk: false, pollution: false });
         break;
-      case "groundwater":
-        setLayers({ terrain: true, river: true, units: false, sensors: true, groundwater: true, floodRisk: false, pollution: false });
+      case "INDUSTRY":
+        setLayers({ terrain: true, contours: false, river: true, units: true, sensors: true, groundwater: false, floodRisk: false, pollution: false });
         break;
-      case "flood":
-        setLayers({ terrain: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: true, pollution: false });
-        break;
-      case "compliance":
-        setLayers({ terrain: true, river: true, units: true, sensors: true, groundwater: true, floodRisk: false, pollution: true });
+      case "CITIZEN":
+        setLayers({ terrain: true, contours: false, river: true, units: true, sensors: true, groundwater: true, floodRisk: true, pollution: false });
         break;
     }
   };
@@ -139,7 +194,7 @@ export default function Terrain3DPage() {
       }}
     >
       {/* -------------------------------------------------------------------- */}
-      {/* GLOBAL DYNAMIC KPI HEADER STRIP (FIX #17 & FIX #10)                 */}
+      {/* TOP HEADER WITH 2D GIS MAP / 3D TWIN SWITCHER (FIX #24 & FIX #27)   */}
       {/* -------------------------------------------------------------------- */}
       <header
         style={{
@@ -169,64 +224,71 @@ export default function Terrain3DPage() {
           >
             SMART TIRUPPUR
           </div>
+
           <div>
             <h1 style={{ margin: 0, fontSize: "15px", color: "#ffffff", fontWeight: 700 }}>
               3D Environmental Digital Twin
             </h1>
             <p style={{ margin: 0, fontSize: "11px", color: "#94a3b8" }}>
-              Geospatial DEM Terrain · Noyyal River Telemetry · FIRKA Groundwater Assessment
+              Physics DEM Terrain · Noyyal River Telemetry · FIRKA Groundwater Assessment
             </p>
           </div>
         </div>
 
-        {/* Global Dynamic KPI Bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: "18px", fontSize: "12px" }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ color: "#94a3b8", fontSize: "10px", fontWeight: 700 }}>FACILITIES</span>
-            <span style={{ fontWeight: 700, color: "#38bdf8" }}>{unitCount} Connected Units</span>
-          </div>
-
-          <div style={{ width: "1px", height: "24px", background: "#334155" }} />
-
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ color: "#94a3b8", fontSize: "10px", fontWeight: 700 }}>WATER REUSE</span>
-            <span style={{ fontWeight: 700, color: "#10b981" }}>{avgReuse}% Avg ZLD</span>
-          </div>
-
-          <div style={{ width: "1px", height: "24px", background: "#334155" }} />
-
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ color: "#94a3b8", fontSize: "10px", fontWeight: 700 }}>CRITICAL FIRKAS</span>
-            <span style={{ fontWeight: 700, color: "#f59e0b" }}>{criticalZones} Stress Zones</span>
-          </div>
-
-          <div style={{ width: "1px", height: "24px", background: "#334155" }} />
-
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ color: "#94a3b8", fontSize: "10px", fontWeight: 700 }}>AI ALERTS</span>
-            <span style={{ fontWeight: 700, color: activeAlerts > 0 ? "#ef4444" : "#10b981" }}>
-              {activeAlerts} Active Anomaly
-            </span>
+        {/* 2D MAP | 3D TWIN SWITCHER (FIX #24) */}
+        <div style={{ display: "flex", background: "#1e293b", padding: "3px", borderRadius: "8px", border: "1px solid #334155" }}>
+          <Link
+            href="/map"
+            style={{
+              padding: "5px 14px",
+              borderRadius: "6px",
+              fontSize: "12px",
+              fontWeight: 600,
+              textDecoration: "none",
+              color: "#94a3b8",
+            }}
+          >
+            🗺️ 2D GIS MAP
+          </Link>
+          <div
+            style={{
+              padding: "5px 14px",
+              borderRadius: "6px",
+              fontSize: "12px",
+              fontWeight: 700,
+              background: "#0d9488",
+              color: "#ffffff",
+              boxShadow: "0 2px 6px rgba(13, 148, 136, 0.4)",
+            }}
+          >
+            🌐 3D DIGITAL TWIN
           </div>
         </div>
 
+        {/* MULTI-ROLE OVERLAY SELECTOR (FIX #27) */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button
-            type="button"
-            onClick={() => setShowArchPanel(!showArchPanel)}
-            style={{
-              background: "#1e293b",
-              color: "#38bdf8",
-              border: "1px solid #334155",
-              fontSize: "12px",
-              fontWeight: 600,
-              padding: "5px 12px",
-              borderRadius: "6px",
-              cursor: "pointer",
-            }}
-          >
-            ⚙ Architecture
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
+            <span style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 700 }}>ROLE VIEW:</span>
+            <select
+              value={userRole}
+              onChange={(e) => handleRoleChange(e.target.value as UserRoleOverlay)}
+              style={{
+                background: "#1e293b",
+                color: "#38bdf8",
+                border: "1px solid #334155",
+                padding: "4px 10px",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              <option value="REGULATOR">Regulator View</option>
+              <option value="GROUNDWATER_OFFICER">Groundwater Officer View</option>
+              <option value="INDUSTRY">Industry Facility View</option>
+              <option value="CITIZEN">Public Citizen View</option>
+            </select>
+          </div>
 
           <div
             style={{
@@ -243,27 +305,27 @@ export default function Terrain3DPage() {
             }}
           >
             <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
-            LIVE ● {currentTime || "14:38"}
+            LIVE ● {currentTime || "19:05"}
           </div>
         </div>
       </header>
 
       {/* -------------------------------------------------------------------- */}
-      {/* MAIN VIEWPORT CONTAINER                                             */}
+      {/* MAIN VIEWPORT CANVAS                                                */}
       {/* -------------------------------------------------------------------- */}
       <div style={{ flex: 1, position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
-        {/* THREE.JS VIEWPORT CANVAS */}
         <Terrain3DViewer
           lighting={lighting}
           autoRotate={autoRotate}
           floodIntensity={floodIntensity}
+          role={userRole}
           layers={layers}
+          focusPosition={focusPosition}
           onSelectNode={setSelectedNode}
-          tourActive={false}
         />
 
         {/* ------------------------------------------------------------------ */}
-        {/* LEFT FLOATING CONTROL & ANALYSIS PANEL (FIX #12 & FIX #8 & FIX #9)  */}
+        {/* LEFT CONTROL & ANALYSIS PANEL                                      */}
         {/* ------------------------------------------------------------------ */}
         <div
           style={{
@@ -281,12 +343,12 @@ export default function Terrain3DPage() {
             boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4)",
             display: "flex",
             flexDirection: "column",
-            gap: "14px",
+            gap: "12px",
             maxHeight: "calc(100% - 32px)",
             overflowY: "auto",
           }}
         >
-          {/* DATA PROVENANCE & STATUS LEGEND (FIX #11) */}
+          {/* DATA PROVENANCE LEGEND */}
           <div style={{ background: "#1e293b", padding: "10px", borderRadius: "8px" }}>
             <div style={{ fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.08em", color: "#38bdf8", textTransform: "uppercase", marginBottom: "6px" }}>
               DATA STATUS & PROVENANCE
@@ -299,44 +361,6 @@ export default function Terrain3DPage() {
             </div>
           </div>
 
-          {/* ANALYSIS MODES (FIX #12) */}
-          <div>
-            <div style={{ fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.08em", color: "#0d9488", textTransform: "uppercase", marginBottom: "8px" }}>
-              ANALYSIS MODES
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {[
-                { id: "baseline", label: "Environmental Baseline 🌐" },
-                { id: "water", label: "Water Quality & Pollution Plume 🌊" },
-                { id: "groundwater", label: "FIRKA Groundwater Stewardship 💧" },
-                { id: "flood", label: "Monsoon Flood Risk 🌧️" },
-                { id: "compliance", label: "Industrial ZLD Compliance 🏭" },
-              ].map((mode) => (
-                <button
-                  key={mode.id}
-                  type="button"
-                  onClick={() => handleAnalysisModeChange(mode.id as any)}
-                  style={{
-                    textAlign: "left",
-                    background: activeAnalysisMode === mode.id ? "#0d9488" : "#1e293b",
-                    color: activeAnalysisMode === mode.id ? "#ffffff" : "#94a3b8",
-                    border: "1px solid",
-                    borderColor: activeAnalysisMode === mode.id ? "#0d9488" : "#334155",
-                    padding: "6px 12px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                  }}
-                >
-                  {mode.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ height: "1px", background: "#334155" }} />
-
           {/* VIEW LAYERS TOGGLES */}
           <div>
             <div style={{ fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.08em", color: "#94a3b8", textTransform: "uppercase", marginBottom: "8px" }}>
@@ -345,7 +369,8 @@ export default function Terrain3DPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px" }}>
               {[
                 { key: "terrain", label: "3D DEM Topography" },
-                { key: "river", label: "Noyyal River Channel" },
+                { key: "contours", label: "GIS Contour Lines (Fix #22)" },
+                { key: "river", label: "Noyyal River Flow Geometry" },
                 { key: "units", label: "Industrial Facilities (12 Units)" },
                 { key: "sensors", label: "Monitoring Stations" },
                 { key: "groundwater", label: "FIRKA Groundwater Stress" },
@@ -365,7 +390,7 @@ export default function Terrain3DPage() {
             </div>
           </div>
 
-          {/* MONSOON FLOOD SIMULATION SLIDER (FIX #8) */}
+          {/* MONSOON FLOOD SIMULATOR SLIDER */}
           {layers.floodRisk && (
             <div style={{ background: "#1e293b", padding: "10px", borderRadius: "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: 700, color: "#38bdf8", marginBottom: "6px" }}>
@@ -388,98 +413,45 @@ export default function Terrain3DPage() {
             </div>
           )}
 
-          <div style={{ height: "1px", background: "#334155" }} />
-
-          {/* LIGHTING CONTROL */}
-          <div>
-            <div style={{ fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.08em", color: "#94a3b8", textTransform: "uppercase", marginBottom: "6px" }}>
-              LIGHTING
+          {/* INTERACTIVE EVENT TIMELINE DRAWER (FIX #18) */}
+          <div style={{ background: "#1e293b", padding: "12px", borderRadius: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 800, color: "#38bdf8", letterSpacing: "0.05em" }}>
+                LIVE EVENT TIMELINE
+              </div>
+              <span style={{ fontSize: "10px", color: "#10b981", fontWeight: 700 }}>● REAL-TIME</span>
             </div>
-            <div style={{ display: "flex", gap: "6px" }}>
-              {[
-                { id: "day", label: "Day ☀️" },
-                { id: "dusk", label: "Dusk 🌅" },
-                { id: "night", label: "Night 🌙" },
-              ].map((mode) => (
-                <button
-                  key={mode.id}
-                  type="button"
-                  onClick={() => setLighting(mode.id as LightingPreset)}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "160px", overflowY: "auto" }}>
+              {LIVE_TIMELINE_EVENTS.map((evt) => (
+                <div
+                  key={evt.id}
+                  onClick={() => handleTimelineClick(evt)}
                   style={{
-                    flex: 1,
-                    background: lighting === mode.id ? "#2563eb" : "#1e293b",
-                    color: lighting === mode.id ? "#ffffff" : "#94a3b8",
-                    border: "1px solid",
-                    borderColor: lighting === mode.id ? "#3b82f6" : "#334155",
-                    padding: "4px",
+                    background: "#0f172a",
+                    padding: "8px 10px",
                     borderRadius: "6px",
                     cursor: "pointer",
-                    fontSize: "11px",
-                    fontWeight: 600,
+                    borderLeft: `3px solid ${
+                      evt.status === "INVESTIGATE" ? "#ef4444" : evt.status === "WARNING" ? "#f59e0b" : "#10b981"
+                    }`,
+                    transition: "all 0.15s ease",
                   }}
                 >
-                  {mode.label}
-                </button>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: 700, color: "#ffffff" }}>
+                    <span>{evt.symbol} {evt.title}</span>
+                    <span style={{ color: "#94a3b8" }}>{evt.time}</span>
+                  </div>
+                  <div style={{ fontSize: "10.5px", color: "#38bdf8", marginTop: "2px" }}>
+                    {evt.location} · {evt.confidence}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         </div>
 
         {/* ------------------------------------------------------------------ */}
-        {/* SYSTEM ARCHITECTURE INFO PANEL (FIX #13)                           */}
-        {/* ------------------------------------------------------------------ */}
-        {showArchPanel && (
-          <div
-            style={{
-              position: "absolute",
-              top: "16px",
-              left: "332px",
-              zIndex: 25,
-              width: "340px",
-              background: "rgba(15, 23, 42, 0.95)",
-              backdropFilter: "blur(16px)",
-              border: "1.5px solid #0d9488",
-              borderRadius: "12px",
-              padding: "18px",
-              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.5)",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-              <div style={{ fontSize: "13px", fontWeight: 800, color: "#0d9488", letterSpacing: "0.05em" }}>
-                SYSTEM ARCHITECTURE INFRASTRUCTURE
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowArchPanel(false)}
-                style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "16px" }}
-              >
-                ✕
-              </button>
-            </div>
-            <div style={{ fontSize: "12px", color: "#94a3b8", lineHeight: 1.6 }}>
-              The AI Inference Engine and Blockchain Ledger Vault run as secure cloud services, decoupling digital system infrastructure from physical 3D city geography.
-            </div>
-
-            <div style={{ marginTop: "14px", display: "grid", gap: "10px" }}>
-              <div style={{ background: "#1e293b", padding: "10px", borderRadius: "8px", borderLeft: "3px solid #2563eb" }}>
-                <div style={{ fontSize: "12px", fontWeight: 700, color: "#38bdf8" }}>🧠 Neural Bayesian Inference Engine</div>
-                <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
-                  Evaluates 1D transport physics equations & sensor variance probability distributions.
-                </div>
-              </div>
-
-              <div style={{ background: "#1e293b", padding: "10px", borderRadius: "8px", borderLeft: "3px solid #10b981" }}>
-                <div style={{ fontSize: "12px", fontWeight: 700, color: "#10b981" }}>🔗 Cryptographic SHA-256 Green Ledger</div>
-                <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
-                  Immutable hash chain powering verified Digital Product Passports (DPP).
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ------------------------------------------------------------------ */}
-        {/* RIGHT CONTEXTUAL INSPECTOR PANEL (FIX #16 & FIX #15)               */}
+        {/* RIGHT CONTEXTUAL INSPECTOR PANEL (FIX #16 & FIX #23)               */}
         {/* ------------------------------------------------------------------ */}
         <div
           style={{
@@ -506,35 +478,16 @@ export default function Terrain3DPage() {
           {!selectedNode ? (
             <div style={{ padding: "28px 0", textAlign: "center", color: "#94a3b8" }}>
               <div style={{ fontSize: "32px", marginBottom: "8px" }}>🌐</div>
-              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#f8fafc" }}>Select a 3D Facility or Station</div>
+              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#f8fafc" }}>Select any Object or Terrain</div>
               <div style={{ fontSize: "12px", marginTop: "4px", lineHeight: 1.5 }}>
-                Click any industrial facility, river monitoring beacon, or groundwater zone in the viewport.
+                Click an industrial facility, river station, groundwater zone, or terrain surface for instant elevation & GIS telemetry.
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div>
                 <div style={{ fontSize: "16px", fontWeight: 700, color: "#ffffff" }}>{selectedNode.name}</div>
                 <div style={{ fontSize: "12px", color: "#38bdf8", marginTop: "2px" }}>{selectedNode.designation}</div>
-              </div>
-
-              {/* Status Badge with Accessible Symbol */}
-              <div style={{ background: "#1e293b", padding: "10px 12px", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600 }}>STATUS</span>
-                <span
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    color:
-                      selectedNode.status === "INVESTIGATE"
-                        ? "#ef4444"
-                        : selectedNode.status === "WARNING"
-                        ? "#f59e0b"
-                        : "#10b981",
-                  }}
-                >
-                  {selectedNode.statusSymbol || "●"} {selectedNode.status || "NORMAL"}
-                </span>
               </div>
 
               {/* Coordinates */}
@@ -549,7 +502,21 @@ export default function Terrain3DPage() {
                 </div>
               </div>
 
-              {/* Environmental Parameters */}
+              {/* TERRAIN ELEVATION INSPECTOR (FIX #23) */}
+              {selectedNode.type === "terrain" && (
+                <div style={{ background: "#1e293b", padding: "12px", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#38bdf8" }}>TOPOGRAPHIC ELEVATION DATA</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "12px" }}>
+                    <div>Elevation: <strong style={{ color: "#10b981" }}>~{selectedNode.elevationMeters} m ASL</strong></div>
+                    <div>FIRKA: <strong style={{ color: "#f8fafc" }}>{selectedNode.firkaName}</strong></div>
+                  </div>
+                  <div style={{ fontSize: "11.5px", color: "#94a3b8", marginTop: "4px" }}>
+                    Drainage Basin: <strong>{selectedNode.drainageBasin}</strong>
+                  </div>
+                </div>
+              )}
+
+              {/* INDUSTRIAL UNIT DETAILS */}
               {selectedNode.type === "unit" && (
                 <>
                   <div style={{ background: "#1e293b", padding: "12px", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -562,21 +529,22 @@ export default function Terrain3DPage() {
                     </div>
                   </div>
 
-                  <div style={{ background: "#1e293b", padding: "12px", borderRadius: "8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
-                      <span style={{ color: "#94a3b8" }}>WATER REUSE RATIO</span>
-                      <strong style={{ color: "#10b981" }}>{selectedNode.reusePercent || 91}%</strong>
-                    </div>
-                    <div style={{ width: "100%", height: "6px", background: "#334155", borderRadius: "3px", overflow: "hidden" }}>
-                      <div style={{ width: `${selectedNode.reusePercent || 91}%`, height: "100%", background: "#10b981" }} />
-                    </div>
-                  </div>
-
+                  {/* PHYSICAL DISCHARGE INCIDENT JOURNEY (FIX #20) */}
                   {selectedNode.status === "INVESTIGATE" && (
-                    <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", padding: "10px", borderRadius: "8px" }}>
-                      <div style={{ fontSize: "11px", fontWeight: 700, color: "#ef4444" }}>AI BAYESIAN ATTRIBUTION</div>
-                      <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#ffffff", marginTop: "2px" }}>
-                        87% Confidence Attribution ({selectedNode.lastEventId || "E-1028"})
+                    <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", padding: "12px", borderRadius: "8px" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 800, color: "#ef4444", marginBottom: "6px" }}>
+                        PHYSICAL INCIDENT FLOW JOURNEY
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#f8fafc", lineHeight: 1.6 }}>
+                        🏭 <strong>{selectedNode.name}</strong>
+                        <br />
+                        ↓ <em>Suspected Effluent Discharge</em>
+                        <br />
+                        🌊 <strong>Noyyal River Flow Channel</strong>
+                        <br />
+                        ↓ <em>Downstream Plume Arrival</em>
+                        <br />
+                        📊 <strong>Kasipalayam Telemetry Station</strong> (87% Confidence)
                       </div>
                     </div>
                   )}
