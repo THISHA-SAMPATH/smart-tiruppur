@@ -71,6 +71,12 @@ export default function Nav() {
       <Link href="/steri" className={isActive("/steri") ? "active nav-link-item" : "nav-link-item"}>
         STERI Index 🧪
       </Link>
+      <Link href="/predictions" className={isActive("/predictions") ? "active nav-link-item" : "nav-link-item"}>
+        Early Warning 🔮
+      </Link>
+      <Link href="/actions" className={isActive("/actions") ? "active nav-link-item" : "nav-link-item"}>
+        Action Engine ⚡
+      </Link>
 
       {user.role === "ADMIN" && (
         <Link href="/admin" className={isActive("/admin") && pathname === "/admin" ? "active nav-link-item" : "nav-link-item"}>
