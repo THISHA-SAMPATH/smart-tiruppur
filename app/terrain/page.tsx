@@ -9,14 +9,19 @@ import Terrain3DViewer, {
   UserRoleOverlay,
   geoTo3D,
 } from "@/components/Terrain3DViewer";
-import { getGlobalEvents, getUnitLedger, getUnitDpp, getUnits, getGroundwaterZones } from "@/lib/api";
-import type { ContractEvent, LedgerEntry, DppResponse } from "@/lib/types";
+import LayerPanel from "@/components/digital-twin/LayerPanel";
+import ScenarioModePanel from "@/components/digital-twin/ScenarioModePanel";
+import InspectorPanel from "@/components/digital-twin/InspectorPanel";
+import TelemetryBar from "@/components/digital-twin/TelemetryBar";
+import DataProvenanceModal from "@/components/digital-twin/DataProvenanceModal";
+import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
+import "@/app/digital-twin.css";
 
 // Interactive Live Event Timeline Items (Fix #18)
 const LIVE_TIMELINE_EVENTS = [
   {
     id: "evt_001",
-    time: "13:42",
+    time: "19:20",
     status: "INVESTIGATE",
     symbol: "!",
     title: "Unit 007 Discharge Anomaly",
@@ -27,7 +32,7 @@ const LIVE_TIMELINE_EVENTS = [
   },
   {
     id: "evt_002",
-    time: "13:39",
+    time: "19:15",
     status: "NORMAL",
     symbol: "●",
     title: "Kasipalayam Telemetry Verified",
@@ -38,7 +43,7 @@ const LIVE_TIMELINE_EVENTS = [
   },
   {
     id: "evt_003",
-    time: "13:35",
+    time: "19:10",
     status: "WARNING",
     symbol: "▲",
     title: "Groundwater Stress Alert",
@@ -49,7 +54,7 @@ const LIVE_TIMELINE_EVENTS = [
   },
   {
     id: "evt_004",
-    time: "13:29",
+    time: "19:02",
     status: "COMPLIANT",
     symbol: "●",
     title: "ZLD Mandate Certified",
@@ -63,14 +68,23 @@ const LIVE_TIMELINE_EVENTS = [
 export default function Terrain3DPage() {
   const [lighting, setLighting] = useState<LightingPreset>("day");
   const [autoRotate, setAutoRotate] = useState(false);
-  const [floodIntensity, setFloodIntensity] = useState<number>(0.3);
   const [userRole, setUserRole] = useState<UserRoleOverlay>("REGULATOR");
 
-  // Camera Focus Target (Fix #19)
+  // Mode Switch (Fix #28): LIVE vs SCENARIO
+  const [mode, setMode] = useState<"LIVE" | "SCENARIO">("LIVE");
+
+  // Scenario Mode Parameters (Fix #28)
+  const [rainfall, setRainfall] = useState<number>(120);
+  const [dischargeLoad, setDischargeLoad] = useState<number>(100);
+  const [riverFlow, setRiverFlow] = useState<number>(110);
+  const [groundwaterDraft, setGroundwaterDraft] = useState<number>(110);
+  const [floodIntensity, setFloodIntensity] = useState<number>(0.35);
+
+  // Focus Position for Camera Lerp (Fix #19)
   const [focusPosition, setFocusPosition] = useState<{ x: number; y: number; z: number } | null>(null);
 
   // Analysis Modes State
-  const [activeAnalysisMode, setActiveAnalysisMode] = useState<"baseline" | "water" | "groundwater" | "flood" | "compliance">("baseline");
+  const [activeAnalysisMode, setActiveAnalysisMode] = useState<string>("baseline");
 
   // Layer Toggles State
   const [layers, setLayers] = useState<LayerToggles>({
@@ -91,12 +105,9 @@ export default function Terrain3DPage() {
   const [criticalZones, setCriticalZones] = useState<number>(3);
   const [currentTime, setCurrentTime] = useState<string>("");
 
-  // Inspector Panel State
+  // Inspector & Data Provenance Modal State
   const [selectedNode, setSelectedNode] = useState<SelectedNodeInfo | null>(null);
-  const [nodeLedger, setNodeLedger] = useState<LedgerEntry[]>([]);
-  const [nodeDpp, setNodeDpp] = useState<DppResponse | null>(null);
-  const [showArchPanel, setShowArchPanel] = useState<boolean>(false);
-  const [showTimeline, setShowTimeline] = useState<boolean>(true);
+  const [isProvenanceOpen, setIsProvenanceOpen] = useState<boolean>(false);
 
   // Live Clock
   useEffect(() => {
@@ -109,7 +120,7 @@ export default function Terrain3DPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch KPI Data
+  // Fetch Dynamic KPI Data
   useEffect(() => {
     void (async () => {
       const [unitsRes, eventsRes, zonesRes] = await Promise.all([
@@ -131,31 +142,10 @@ export default function Terrain3DPage() {
     })();
   }, []);
 
-  // Node Inspector Loader
-  useEffect(() => {
-    if (!selectedNode) {
-      setNodeLedger([]);
-      setNodeDpp(null);
-      return;
-    }
-
-    if (selectedNode.type === "unit") {
-      void (async () => {
-        const [ledgerRes, dppRes] = await Promise.all([
-          getUnitLedger(selectedNode.id),
-          getUnitDpp(selectedNode.id),
-        ]);
-        if (ledgerRes.data) setNodeLedger(ledgerRes.data.entries || []);
-        if (dppRes.data) setNodeDpp(dppRes.data);
-      })();
-    }
-  }, [selectedNode]);
-
   const toggleLayer = (key: keyof LayerToggles) => {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Fly Camera to Timeline Event (Fix #18 & Fix #19)
   const handleTimelineClick = (evt: typeof LIVE_TIMELINE_EVENTS[0]) => {
     const pos = geoTo3D(evt.lat, evt.lon, 0);
     setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
@@ -179,64 +169,74 @@ export default function Terrain3DPage() {
     }
   };
 
+  const handleAnalysisModeChange = (modeKey: "baseline" | "water" | "groundwater" | "flood" | "compliance") => {
+    setActiveAnalysisMode(modeKey);
+    switch (modeKey) {
+      case "baseline":
+        setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: false, pollution: false });
+        break;
+      case "water":
+        setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: false, pollution: true });
+        break;
+      case "groundwater":
+        setLayers({ terrain: true, contours: true, river: true, units: false, sensors: true, groundwater: true, floodRisk: false, pollution: false });
+        break;
+      case "flood":
+        setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: true, pollution: false });
+        break;
+      case "compliance":
+        setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: true, floodRisk: false, pollution: true });
+        break;
+    }
+  };
+
+  const handleRunScenario = () => {
+    const calculatedFlood = (rainfall - 50) / 250;
+    setFloodIntensity(Math.min(1, Math.max(0, calculatedFlood)));
+    setLayers((prev) => ({ ...prev, floodRisk: true, pollution: dischargeLoad > 110 }));
+  };
+
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "calc(100vh - 65px)",
-        position: "relative",
-        background: "#0f172a",
-        color: "#f8fafc",
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
+    <div className="dt-container">
       {/* -------------------------------------------------------------------- */}
-      {/* TOP HEADER WITH 2D GIS MAP / 3D TWIN SWITCHER (FIX #24 & FIX #27)   */}
+      {/* HEADER WITH MODE SWITCH & 2D GIS / 3D TWIN SWITCHER (FIX #24 & #28)  */}
       {/* -------------------------------------------------------------------- */}
-      <header
-        style={{
-          padding: "8px 24px",
-          background: "rgba(15, 23, 42, 0.96)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid #1e293b",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          zIndex: 30,
-          flexShrink: 0,
-        }}
-      >
+      <header className="dt-header">
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <div
-            style={{
-              background: "linear-gradient(135deg, #0d9488 0%, #2563eb 100%)",
-              color: "white",
-              fontSize: "11px",
-              fontWeight: 800,
-              padding: "4px 12px",
-              borderRadius: "999px",
-              letterSpacing: "0.08em",
-              boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)",
-            }}
-          >
-            SMART TIRUPPUR
-          </div>
+          <div className="dt-badge-brand">SMART TIRUPPUR</div>
 
           <div>
             <h1 style={{ margin: 0, fontSize: "15px", color: "#ffffff", fontWeight: 700 }}>
               3D Environmental Digital Twin
             </h1>
-            <p style={{ margin: 0, fontSize: "11px", color: "#94a3b8" }}>
+            <p style={{ margin: 0, fontSize: "11px", color: "var(--color-slate-muted)" }}>
               Physics DEM Terrain · Noyyal River Telemetry · FIRKA Groundwater Assessment
             </p>
           </div>
         </div>
 
+        {/* LIVE MODE vs SCENARIO MODE SWITCH (FIX #28) */}
+        <div style={{ display: "flex", background: "var(--color-slate-surface)", padding: "3px", borderRadius: "8px", border: "1px solid var(--color-slate-border)" }}>
+          <button
+            type="button"
+            className={`dt-btn ${mode === "LIVE" ? "active" : ""}`}
+            style={{ padding: "4px 12px", fontSize: "11.5px" }}
+            onClick={() => setMode("LIVE")}
+          >
+            ● LIVE MODE
+          </button>
+          <button
+            type="button"
+            className={`dt-btn ${mode === "SCENARIO" ? "active" : ""}`}
+            style={{ padding: "4px 12px", fontSize: "11.5px" }}
+            onClick={() => setMode("SCENARIO")}
+          >
+            ⚙ SCENARIO MODE
+          </button>
+        </div>
+
         {/* 2D MAP | 3D TWIN SWITCHER (FIX #24) */}
-        <div style={{ display: "flex", background: "#1e293b", padding: "3px", borderRadius: "8px", border: "1px solid #334155" }}>
+        <div style={{ display: "flex", background: "var(--color-slate-surface)", padding: "3px", borderRadius: "8px", border: "1px solid var(--color-slate-border)" }}>
           <Link
             href="/map"
             style={{
@@ -245,7 +245,7 @@ export default function Terrain3DPage() {
               fontSize: "12px",
               fontWeight: 600,
               textDecoration: "none",
-              color: "#94a3b8",
+              color: "var(--color-slate-muted)",
             }}
           >
             🗺️ 2D GIS MAP
@@ -256,7 +256,7 @@ export default function Terrain3DPage() {
               borderRadius: "6px",
               fontSize: "12px",
               fontWeight: 700,
-              background: "#0d9488",
+              background: "var(--color-cyan)",
               color: "#ffffff",
               boxShadow: "0 2px 6px rgba(13, 148, 136, 0.4)",
             }}
@@ -265,17 +265,17 @@ export default function Terrain3DPage() {
           </div>
         </div>
 
-        {/* MULTI-ROLE OVERLAY SELECTOR (FIX #27) */}
+        {/* ROLE VIEW SELECTOR */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
-            <span style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 700 }}>ROLE VIEW:</span>
+            <span style={{ color: "var(--color-slate-muted)", fontSize: "11px", fontWeight: 700 }}>ROLE VIEW:</span>
             <select
               value={userRole}
               onChange={(e) => handleRoleChange(e.target.value as UserRoleOverlay)}
               style={{
-                background: "#1e293b",
-                color: "#38bdf8",
-                border: "1px solid #334155",
+                background: "var(--color-slate-surface)",
+                color: "var(--color-teal)",
+                border: "1px solid var(--color-slate-border)",
                 padding: "4px 10px",
                 borderRadius: "6px",
                 fontSize: "12px",
@@ -295,25 +295,25 @@ export default function Terrain3DPage() {
               display: "inline-flex",
               alignItems: "center",
               gap: "6px",
-              background: "#1e293b",
-              border: "1px solid #334155",
+              background: "var(--color-slate-surface)",
+              border: "1px solid var(--color-slate-border)",
               padding: "5px 12px",
               borderRadius: "999px",
               fontSize: "12px",
               fontWeight: 600,
-              color: "#10b981",
+              color: "var(--color-green)",
             }}
           >
-            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
-            LIVE ● {currentTime || "19:05"}
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-green)", boxShadow: "0 0 8px var(--color-green)" }} />
+            LIVE ● {currentTime || "19:25"}
           </div>
         </div>
       </header>
 
       {/* -------------------------------------------------------------------- */}
-      {/* MAIN VIEWPORT CANVAS                                                */}
+      {/* THREE.JS VIEWPORT & MODULAR PANELS                                  */}
       {/* -------------------------------------------------------------------- */}
-      <div style={{ flex: 1, position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+      <div className="dt-viewport">
         <Terrain3DViewer
           lighting={lighting}
           autoRotate={autoRotate}
@@ -324,102 +324,39 @@ export default function Terrain3DPage() {
           onSelectNode={setSelectedNode}
         />
 
-        {/* ------------------------------------------------------------------ */}
-        {/* LEFT CONTROL & ANALYSIS PANEL                                      */}
-        {/* ------------------------------------------------------------------ */}
-        <div
-          style={{
-            position: "absolute",
-            top: "16px",
-            left: "16px",
-            zIndex: 20,
-            width: "300px",
-            background: "rgba(15, 23, 42, 0.9)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(51, 65, 85, 0.8)",
-            borderRadius: "12px",
-            padding: "16px",
-            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            maxHeight: "calc(100% - 32px)",
-            overflowY: "auto",
-          }}
-        >
-          {/* DATA PROVENANCE LEGEND */}
-          <div style={{ background: "#1e293b", padding: "10px", borderRadius: "8px" }}>
-            <div style={{ fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.08em", color: "#38bdf8", textTransform: "uppercase", marginBottom: "6px" }}>
-              DATA STATUS & PROVENANCE
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "11px" }}>
-              <div style={{ color: "#10b981", fontWeight: 600 }}>● LIVE Telemetry</div>
-              <div style={{ color: "#38bdf8", fontWeight: 600 }}>◐ SIMULATED Flood</div>
-              <div style={{ color: "#f59e0b", fontWeight: 600 }}>◆ DERIVED AI Attribution</div>
-              <div style={{ color: "#94a3b8", fontWeight: 600 }}>◇ BASELINE DEM Geo</div>
-            </div>
-          </div>
+        {/* LEFT PANEL */}
+        <div style={{ position: "absolute", top: "16px", left: "16px", zIndex: 20, width: "310px", display: "flex", flexDirection: "column", gap: "10px", maxHeight: "calc(100% - 32px)", overflowY: "auto" }}>
+          <LayerPanel
+            layers={layers}
+            lighting={lighting}
+            activeAnalysisMode={activeAnalysisMode}
+            onToggleLayer={toggleLayer}
+            onSelectAnalysisMode={handleAnalysisModeChange}
+            onChangeLighting={setLighting}
+          />
 
-          {/* VIEW LAYERS TOGGLES */}
-          <div>
-            <div style={{ fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.08em", color: "#94a3b8", textTransform: "uppercase", marginBottom: "8px" }}>
-              VIEW LAYERS
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px" }}>
-              {[
-                { key: "terrain", label: "3D DEM Topography" },
-                { key: "contours", label: "GIS Contour Lines (Fix #22)" },
-                { key: "river", label: "Noyyal River Flow Geometry" },
-                { key: "units", label: "Industrial Facilities (12 Units)" },
-                { key: "sensors", label: "Monitoring Stations" },
-                { key: "groundwater", label: "FIRKA Groundwater Stress" },
-                { key: "floodRisk", label: "Monsoon Flood Risk Zone" },
-                { key: "pollution", label: "Pollution Plume Propagation" },
-              ].map((item) => (
-                <label key={item.key} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#cbd5e1" }}>
-                  <input
-                    type="checkbox"
-                    checked={layers[item.key as keyof LayerToggles]}
-                    onChange={() => toggleLayer(item.key as keyof LayerToggles)}
-                    style={{ accentColor: "#0d9488", cursor: "pointer" }}
-                  />
-                  {item.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* MONSOON FLOOD SIMULATOR SLIDER */}
-          {layers.floodRisk && (
-            <div style={{ background: "#1e293b", padding: "10px", borderRadius: "8px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "#38bdf8", marginBottom: "6px" }}>
-                MONSOON RAINFALL SIMULATOR
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={floodIntensity}
-                onChange={(e) => setFloodIntensity(parseFloat(e.target.value))}
-                style={{ width: "100%", accentColor: "#0284c7" }}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#94a3b8", marginTop: "2px" }}>
-                <span>50mm Normal</span>
-                <span>150mm Heavy</span>
-                <span>300mm Extreme</span>
-              </div>
-            </div>
+          {/* SCENARIO MODE PANEL (FIX #28 & FIX #29) */}
+          {mode === "SCENARIO" && (
+            <ScenarioModePanel
+              rainfall={rainfall}
+              dischargeLoad={dischargeLoad}
+              riverFlow={riverFlow}
+              groundwaterDraft={groundwaterDraft}
+              onChangeRainfall={setRainfall}
+              onChangeDischargeLoad={setDischargeLoad}
+              onChangeRiverFlow={setRiverFlow}
+              onChangeGroundwaterDraft={setGroundwaterDraft}
+              onRunScenario={handleRunScenario}
+            />
           )}
 
-          {/* INTERACTIVE EVENT TIMELINE DRAWER (FIX #18) */}
-          <div style={{ background: "#1e293b", padding: "12px", borderRadius: "8px" }}>
+          {/* LIVE EVENT TIMELINE DRAWER (FIX #18) */}
+          <div className="dt-card-surface">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 800, color: "#38bdf8", letterSpacing: "0.05em" }}>
+              <div style={{ fontSize: "11px", fontWeight: 800, color: "var(--color-teal)", letterSpacing: "0.05em" }}>
                 LIVE EVENT TIMELINE
               </div>
-              <span style={{ fontSize: "10px", color: "#10b981", fontWeight: 700 }}>● REAL-TIME</span>
+              <span style={{ fontSize: "10px", color: "var(--color-green)", fontWeight: 700 }}>● REAL-TIME</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "160px", overflowY: "auto" }}>
               {LIVE_TIMELINE_EVENTS.map((evt) => (
@@ -427,21 +364,20 @@ export default function Terrain3DPage() {
                   key={evt.id}
                   onClick={() => handleTimelineClick(evt)}
                   style={{
-                    background: "#0f172a",
+                    background: "var(--color-slate-bg)",
                     padding: "8px 10px",
                     borderRadius: "6px",
                     cursor: "pointer",
                     borderLeft: `3px solid ${
-                      evt.status === "INVESTIGATE" ? "#ef4444" : evt.status === "WARNING" ? "#f59e0b" : "#10b981"
+                      evt.status === "INVESTIGATE" ? "var(--color-red)" : evt.status === "WARNING" ? "var(--color-amber)" : "var(--color-green)"
                     }`,
-                    transition: "all 0.15s ease",
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: 700, color: "#ffffff" }}>
                     <span>{evt.symbol} {evt.title}</span>
-                    <span style={{ color: "#94a3b8" }}>{evt.time}</span>
+                    <span style={{ color: "var(--color-slate-muted)" }}>{evt.time}</span>
                   </div>
-                  <div style={{ fontSize: "10.5px", color: "#38bdf8", marginTop: "2px" }}>
+                  <div style={{ fontSize: "10.5px", color: "var(--color-teal)", marginTop: "2px" }}>
                     {evt.location} · {evt.confidence}
                   </div>
                 </div>
@@ -450,161 +386,29 @@ export default function Terrain3DPage() {
           </div>
         </div>
 
-        {/* ------------------------------------------------------------------ */}
-        {/* RIGHT CONTEXTUAL INSPECTOR PANEL (FIX #16 & FIX #23)               */}
-        {/* ------------------------------------------------------------------ */}
-        <div
-          style={{
-            position: "absolute",
-            top: "16px",
-            right: "16px",
-            zIndex: 20,
-            width: "330px",
-            background: "rgba(15, 23, 42, 0.9)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(51, 65, 85, 0.8)",
-            borderRadius: "12px",
-            padding: "18px",
-            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4)",
-            maxHeight: "calc(100% - 32px)",
-            overflowY: "auto",
-          }}
-        >
-          <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.08em", color: "#38bdf8", textTransform: "uppercase", marginBottom: "12px" }}>
-            CONTEXTUAL INSPECTOR
-          </div>
-
-          {!selectedNode ? (
-            <div style={{ padding: "28px 0", textAlign: "center", color: "#94a3b8" }}>
-              <div style={{ fontSize: "32px", marginBottom: "8px" }}>🌐</div>
-              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#f8fafc" }}>Select any Object or Terrain</div>
-              <div style={{ fontSize: "12px", marginTop: "4px", lineHeight: 1.5 }}>
-                Click an industrial facility, river station, groundwater zone, or terrain surface for instant elevation & GIS telemetry.
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <div>
-                <div style={{ fontSize: "16px", fontWeight: 700, color: "#ffffff" }}>{selectedNode.name}</div>
-                <div style={{ fontSize: "12px", color: "#38bdf8", marginTop: "2px" }}>{selectedNode.designation}</div>
-              </div>
-
-              {/* Coordinates */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                <div style={{ background: "#1e293b", padding: "8px 10px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>LATITUDE</div>
-                  <div style={{ fontSize: "12px", fontWeight: 600, fontFamily: "monospace" }}>{selectedNode.latitude?.toFixed(4)}° N</div>
-                </div>
-                <div style={{ background: "#1e293b", padding: "8px 10px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>LONGITUDE</div>
-                  <div style={{ fontSize: "12px", fontWeight: 600, fontFamily: "monospace" }}>{selectedNode.longitude?.toFixed(4)}° E</div>
-                </div>
-              </div>
-
-              {/* TERRAIN ELEVATION INSPECTOR (FIX #23) */}
-              {selectedNode.type === "terrain" && (
-                <div style={{ background: "#1e293b", padding: "12px", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#38bdf8" }}>TOPOGRAPHIC ELEVATION DATA</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "12px" }}>
-                    <div>Elevation: <strong style={{ color: "#10b981" }}>~{selectedNode.elevationMeters} m ASL</strong></div>
-                    <div>FIRKA: <strong style={{ color: "#f8fafc" }}>{selectedNode.firkaName}</strong></div>
-                  </div>
-                  <div style={{ fontSize: "11.5px", color: "#94a3b8", marginTop: "4px" }}>
-                    Drainage Basin: <strong>{selectedNode.drainageBasin}</strong>
-                  </div>
-                </div>
-              )}
-
-              {/* INDUSTRIAL UNIT DETAILS */}
-              {selectedNode.type === "unit" && (
-                <>
-                  <div style={{ background: "#1e293b", padding: "12px", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#94a3b8" }}>ENVIRONMENTAL TELEMETRY</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "12px" }}>
-                      <div>pH: <strong style={{ color: "#10b981" }}>{selectedNode.ph || 6.8}</strong></div>
-                      <div>EC: <strong style={{ color: "#38bdf8" }}>{selectedNode.ec || 2850} µS/cm</strong></div>
-                      <div>Turbidity: <strong style={{ color: "#f59e0b" }}>{selectedNode.turbidity || 45} NTU</strong></div>
-                      <div>Flow: <strong style={{ color: "#f8fafc" }}>{selectedNode.flowRate || 128} L/s</strong></div>
-                    </div>
-                  </div>
-
-                  {/* PHYSICAL DISCHARGE INCIDENT JOURNEY (FIX #20) */}
-                  {selectedNode.status === "INVESTIGATE" && (
-                    <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", padding: "12px", borderRadius: "8px" }}>
-                      <div style={{ fontSize: "11px", fontWeight: 800, color: "#ef4444", marginBottom: "6px" }}>
-                        PHYSICAL INCIDENT FLOW JOURNEY
-                      </div>
-                      <div style={{ fontSize: "11px", color: "#f8fafc", lineHeight: 1.6 }}>
-                        🏭 <strong>{selectedNode.name}</strong>
-                        <br />
-                        ↓ <em>Suspected Effluent Discharge</em>
-                        <br />
-                        🌊 <strong>Noyyal River Flow Channel</strong>
-                        <br />
-                        ↓ <em>Downstream Plume Arrival</em>
-                        <br />
-                        📊 <strong>Kasipalayam Telemetry Station</strong> (87% Confidence)
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "4px" }}>
-                    <Link
-                      href={`/units/${selectedNode.id}`}
-                      style={{
-                        textAlign: "center",
-                        background: "#2563eb",
-                        color: "white",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                      }}
-                    >
-                      View DPP Passport →
-                    </Link>
-                    <Link
-                      href="/evidence"
-                      style={{
-                        textAlign: "center",
-                        background: "#1e293b",
-                        color: "#f8fafc",
-                        border: "1px solid #334155",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                      }}
-                    >
-                      Evidence Ledger →
-                    </Link>
-                  </div>
-                </>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setSelectedNode(null)}
-                style={{
-                  background: "transparent",
-                  color: "#94a3b8",
-                  border: "1px solid #334155",
-                  padding: "6px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                  marginTop: "6px",
-                }}
-              >
-                Close Inspector
-              </button>
-            </div>
-          )}
-        </div>
+        {/* RIGHT INSPECTOR PANEL */}
+        <InspectorPanel
+          selectedNode={selectedNode}
+          onClose={() => setSelectedNode(null)}
+          onOpenProvenance={() => setIsProvenanceOpen(true)}
+        />
       </div>
+
+      {/* FOOTER TELEMETRY STRIP (FIX #17 & FIX #34) */}
+      <TelemetryBar
+        unitCount={unitCount}
+        avgReuse={avgReuse}
+        criticalZones={criticalZones}
+        activeAlerts={activeAlerts}
+      />
+
+      {/* DATA PROVENANCE MODAL (FIX #36 & FIX #37) */}
+      <DataProvenanceModal
+        isOpen={isProvenanceOpen}
+        unitId={selectedNode?.id}
+        unitName={selectedNode?.name}
+        onClose={() => setIsProvenanceOpen(false)}
+      />
     </div>
   );
 }
