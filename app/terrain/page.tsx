@@ -102,6 +102,7 @@ export default function Terrain3DPage() {
     groundwater: true,
     floodRisk: false,
     pollution: false,
+    steriRisk: true,
   });
 
   // Dynamic KPI Data

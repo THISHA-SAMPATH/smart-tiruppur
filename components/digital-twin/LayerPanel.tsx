@@ -66,6 +66,7 @@ export default function LayerPanel({
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px" }}>
           {[
             { key: "terrain", label: "3D DEM Topography" },
+            { key: "steriRisk", label: "Environmental Risk (STERI 3D)" },
             { key: "contours", label: "GIS Contour Lines (Fix #22)" },
             { key: "river", label: "Noyyal River Flow" },
             { key: "units", label: "Industrial Facilities (12 Units)" },

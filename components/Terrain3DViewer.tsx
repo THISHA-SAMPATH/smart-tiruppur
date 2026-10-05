@@ -18,6 +18,7 @@ export interface LayerToggles {
   groundwater: boolean;
   floodRisk: boolean;
   pollution: boolean;
+  steriRisk?: boolean;
 }
 
 export type UnitStatusType = "COMPLIANT" | "WARNING" | "INVESTIGATE" | "OFFLINE";
@@ -25,7 +26,7 @@ export type UnitStatusType = "COMPLIANT" | "WARNING" | "INVESTIGATE" | "OFFLINE"
 export interface SelectedNodeInfo {
   id: string;
   name: string;
-  type: "sensor" | "unit" | "groundwater" | "terrain";
+  type: "sensor" | "unit" | "groundwater" | "terrain" | "steri_risk";
   designation?: string;
   status?: UnitStatusType | string;
   statusSymbol?: string;
@@ -43,6 +44,27 @@ export interface SelectedNodeInfo {
   confidence?: number;
   topSource?: string;
   lastEventId?: string;
+
+  // STERI Risk fields
+  steriScore?: number;
+  riskCategory?: string;
+  dominantFactorLabel?: string;
+  componentScores?: {
+    pollution: number;
+    waterQuality: number;
+    flood: number;
+    groundwater: number;
+    industrialPressure: number;
+    complaintIntensity: number;
+  };
+  provenance?: {
+    realDataSources: string[];
+    simulatedDataSources: string[];
+    derivedDataSources: string[];
+    historicalDataSources: string[];
+  };
+  recommendation?: string;
+  timestamp?: string;
   raw?: any;
 }
 
@@ -132,6 +154,135 @@ const GROUNDWATER_FIRKAS_GEO = [
   { id: "firka_uthukuli", name: "Uthukuli FIRKA", lat: 11.1620, lon: 77.4380, category: "Safe", draftRatio: "48%", color: 0x10b981 },
 ];
 
+const STERI_SPATIAL_SECTORS_3D = [
+  {
+    id: "angeripalayam",
+    name: "Angeripalayam Fabric Processing Sector",
+    lat: 11.1420,
+    lon: 77.3310,
+    steriScore: 0.74,
+    riskCategory: "VERY HIGH",
+    symbol: "▲",
+    color: 0xea580c,
+    dominantFactorLabel: "Industrial Unit Cluster Density",
+    componentScores: { pollution: 0.88, waterQuality: 0.76, flood: 0.35, groundwater: 0.72, industrialPressure: 0.92, complaintIntensity: 0.80 },
+    confidence: 0.89,
+    timestamp: new Date().toISOString(),
+    provenance: {
+      realDataSources: ["TNPCB Telemetry Station 001", "Municipal Effluent Logs"],
+      simulatedDataSources: ["Chemical Plume Dispersion Engine"],
+      derivedDataSources: ["Bayesian Unit 007 Anomaly Attribution (87%)"],
+      historicalDataSources: ["TNPCB 2024 Industrial Registry"],
+    },
+    recommendation: "Deploy targeted TNPCB mobile inspection team to Angeripalayam and mandate real-time OCEMS telemetry audit.",
+  },
+  {
+    id: "kasipalayam",
+    name: "Kasipalayam Noyyal Urban Exit Sector",
+    lat: 11.1190,
+    lon: 77.3950,
+    steriScore: 0.82,
+    riskCategory: "CRITICAL",
+    symbol: "!",
+    color: 0xdc2626,
+    dominantFactorLabel: "Noyyal Water Quality Degradation",
+    componentScores: { pollution: 0.82, waterQuality: 0.90, flood: 0.78, groundwater: 0.85, industrialPressure: 0.75, complaintIntensity: 0.72 },
+    confidence: 0.92,
+    timestamp: new Date().toISOString(),
+    provenance: {
+      realDataSources: ["Kasipalayam Bridge Hardware Sensor (Live pH/EC/Turbidity)"],
+      simulatedDataSources: ["Noyyal Downstream Hydrodynamic Model"],
+      derivedDataSources: ["Water Quality Index (WQI) Derivation"],
+      historicalDataSources: ["CGWB 2023 Groundwater Baseline"],
+    },
+    recommendation: "Trigger automated river aeration & emergency discharge regulation along Noyyal channel near Kasipalayam.",
+  },
+  {
+    id: "firka_south",
+    name: "Tiruppur South FIRKA",
+    lat: 11.0820,
+    lon: 77.3550,
+    steriScore: 0.63,
+    riskCategory: "VERY HIGH",
+    symbol: "▲",
+    color: 0xea580c,
+    dominantFactorLabel: "Groundwater Depletion Stress",
+    componentScores: { pollution: 0.48, waterQuality: 0.55, flood: 0.40, groundwater: 0.94, industrialPressure: 0.70, complaintIntensity: 0.65 },
+    confidence: 0.94,
+    timestamp: new Date().toISOString(),
+    provenance: {
+      realDataSources: ["CGWB State Piezometer Network (8 Piezometers)"],
+      simulatedDataSources: ["GEC-2015 Recharge/Extraction Simulator"],
+      derivedDataSources: ["FIRKA Groundwater Stress Derivation"],
+      historicalDataSources: ["CGWB 2023 Official Dynamic Assessment"],
+    },
+    recommendation: "Restrict commercial deep borewell extraction and mandate rainwater harvesting injection wells across Tiruppur South.",
+  },
+  {
+    id: "firka_north",
+    name: "Tiruppur North FIRKA",
+    lat: 11.1320,
+    lon: 77.3450,
+    steriScore: 0.58,
+    riskCategory: "HIGH",
+    symbol: "▲",
+    color: 0xd97706,
+    dominantFactorLabel: "Industrial Unit Cluster Density",
+    componentScores: { pollution: 0.65, waterQuality: 0.60, flood: 0.25, groundwater: 0.81, industrialPressure: 0.84, complaintIntensity: 0.58 },
+    confidence: 0.90,
+    timestamp: new Date().toISOString(),
+    provenance: {
+      realDataSources: ["North Tiruppur Piezometer Station"],
+      simulatedDataSources: ["Urban Runoff Simulation"],
+      derivedDataSources: ["Spatial Kriging Interpolation"],
+      historicalDataSources: ["State Groundwater Department Records"],
+    },
+    recommendation: "Audit CETP hydraulic capacity and enforce zero-liquid-discharge (ZLD) compliance caps for textile units in Tiruppur North.",
+  },
+  {
+    id: "arulpuram",
+    name: "Arulpuram CETP Dyeing Hub",
+    lat: 11.0835,
+    lon: 77.3210,
+    steriScore: 0.52,
+    riskCategory: "HIGH",
+    symbol: "▲",
+    color: 0xd97706,
+    dominantFactorLabel: "Industrial Unit Cluster Density",
+    componentScores: { pollution: 0.52, waterQuality: 0.45, flood: 0.30, groundwater: 0.68, industrialPressure: 0.88, complaintIntensity: 0.40 },
+    confidence: 0.95,
+    timestamp: new Date().toISOString(),
+    provenance: {
+      realDataSources: ["CETP Online Continuous Effluent Monitoring (OCEMS)", "DPP Green Ledger SHA-256"],
+      simulatedDataSources: ["CETP Hydraulic Load Model"],
+      derivedDataSources: ["DPP Compliance Audit Derivation"],
+      historicalDataSources: ["TNPCB ZLD Certification Database"],
+    },
+    recommendation: "Maintain continuous environmental monitoring and routine GIS telemetry surveillance in Arulpuram.",
+  },
+  {
+    id: "mangalam",
+    name: "Mangalam Noyyal Upstream Sector",
+    lat: 11.1065,
+    lon: 77.2600,
+    steriScore: 0.28,
+    riskCategory: "MODERATE",
+    symbol: "●",
+    color: 0xca8a04,
+    dominantFactorLabel: "Monsoon Inundation & Drainage Risk",
+    componentScores: { pollution: 0.15, waterQuality: 0.22, flood: 0.50, groundwater: 0.45, industrialPressure: 0.18, complaintIntensity: 0.12 },
+    confidence: 0.96,
+    timestamp: new Date().toISOString(),
+    provenance: {
+      realDataSources: ["Mangalam Bridge Telemetry Station (Station 001)"],
+      simulatedDataSources: ["Upstream River Discharge Simulator"],
+      derivedDataSources: ["Baseline Water Quality Standard"],
+      historicalDataSources: ["Public Works Dept (PWD) Hydrological Survey"],
+    },
+    recommendation: "Clear municipal stormwater drainage choke points and activate monsoon inundation warning sensors in Mangalam.",
+  },
+];
+
 export default function Terrain3DViewer({
   lighting,
   autoRotate,
@@ -153,6 +304,7 @@ export default function Terrain3DViewer({
   const unitsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const sensorsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const groundwaterGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const steriRiskGroupRef = useRef<THREE.Group>(new THREE.Group());
   const floodMeshRef = useRef<THREE.Mesh | null>(null);
   const pollutionPlumeGroupRef = useRef<THREE.Group>(new THREE.Group());
   const riverFlowArrowsGroupRef = useRef<THREE.Group>(new THREE.Group());
@@ -181,6 +333,7 @@ export default function Terrain3DViewer({
     unitsGroupRef.current.visible = layers.units;
     sensorsGroupRef.current.visible = layers.sensors;
     groundwaterGroupRef.current.visible = layers.groundwater;
+    steriRiskGroupRef.current.visible = Boolean(layers.steriRisk);
     if (floodMeshRef.current) floodMeshRef.current.visible = layers.floodRisk;
     pollutionPlumeGroupRef.current.visible = layers.pollution;
   }, [layers]);
@@ -211,6 +364,7 @@ export default function Terrain3DViewer({
     scene.add(unitsGroupRef.current);
     scene.add(sensorsGroupRef.current);
     scene.add(groundwaterGroupRef.current);
+    scene.add(steriRiskGroupRef.current);
     scene.add(pollutionPlumeGroupRef.current);
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
@@ -375,6 +529,26 @@ export default function Terrain3DViewer({
       groundwaterGroupRef.current.add(firkaMesh);
     });
 
+    // 9. STERI Environmental Risk 3D Terrain Overlays
+    STERI_SPATIAL_SECTORS_3D.forEach((sector) => {
+      const pos = geoTo3D(sector.lat, sector.lon, 0.25);
+      const steriMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(8, 8, 0.5, 24),
+        new THREE.MeshStandardMaterial({
+          color: sector.color,
+          emissive: sector.color,
+          emissiveIntensity: 0.35,
+          transparent: true,
+          opacity: 0.45,
+          roughness: 0.2,
+        })
+      );
+      steriMesh.position.copy(pos);
+      steriMesh.userData = { type: "steri_risk", data: sector };
+      interactiveObjectsRef.current.push(steriMesh);
+      steriRiskGroupRef.current.add(steriMesh);
+    });
+
     // Raycasting Click Listener (Terrain Elevation & Node Inspector - Fix #23)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -436,6 +610,30 @@ export default function Terrain3DViewer({
             status: uData.data.category.toUpperCase(),
             latitude: uData.data.lat,
             longitude: uData.data.lon,
+            raw: uData.data,
+          });
+        } else if (uData.type === "steri_risk") {
+          if (hit.point) {
+            targetCamPosRef.current = new THREE.Vector3(hit.point.x + 10, hit.point.y + 12, hit.point.z + 14);
+            targetLookAtRef.current = new THREE.Vector3(hit.point.x, hit.point.y, hit.point.z);
+          }
+          onSelectNode({
+            id: uData.data.id,
+            name: uData.data.name,
+            type: "steri_risk",
+            designation: `${uData.data.riskCategory} Environmental Risk Tier`,
+            status: uData.data.riskCategory,
+            statusSymbol: uData.data.symbol,
+            latitude: uData.data.lat,
+            longitude: uData.data.lon,
+            steriScore: uData.data.steriScore,
+            riskCategory: uData.data.riskCategory,
+            dominantFactorLabel: uData.data.dominantFactorLabel,
+            componentScores: uData.data.componentScores,
+            confidence: uData.data.confidence,
+            timestamp: uData.data.timestamp,
+            provenance: uData.data.provenance,
+            recommendation: uData.data.recommendation,
             raw: uData.data,
           });
         } else if (hit.object === terrainMeshRef.current && hit.point) {

@@ -185,6 +185,104 @@ export default function InspectorPanel({
             </div>
           </>
         )}
+
+        {/* STERI ENVIRONMENTAL RISK SECTOR INSPECTOR */}
+        {selectedNode.type === "steri_risk" && (
+          <>
+            <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-indigo)" }}>STERI AGGREGATE SCORE</span>
+                <span style={{ fontSize: "10px", color: "var(--color-slate-muted)" }}>
+                  Updated {selectedNode.timestamp ? new Date(selectedNode.timestamp).toLocaleTimeString() : "Live"}
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                <span style={{ fontSize: "28px", fontWeight: 800, fontFamily: "monospace", color: "var(--color-indigo)" }}>
+                  {selectedNode.steriScore?.toFixed(3) || "0.740"}
+                </span>
+                <span style={{ fontSize: "12px", color: "var(--color-slate-muted)" }}>/ 1.000</span>
+              </div>
+              <div style={{ fontSize: "11.5px", color: "var(--color-slate-text)" }}>
+                Dominant Factor: <strong>{selectedNode.dominantFactorLabel}</strong>
+              </div>
+            </div>
+
+            {/* 6 Component Sub-Scores */}
+            {selectedNode.componentScores && (
+              <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <div style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--color-slate-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Component Contributions (0.00 – 1.00)
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "11px" }}>
+                  <div style={{ background: "rgba(255,255,255,0.04)", padding: "4px 6px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "var(--color-slate-muted)" }}>Pollution:</span>
+                    <strong style={{ fontFamily: "monospace", color: "var(--color-cyan)" }}>{(selectedNode.componentScores.pollution * 100).toFixed(0)}%</strong>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.04)", padding: "4px 6px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "var(--color-slate-muted)" }}>Water Quality:</span>
+                    <strong style={{ fontFamily: "monospace", color: "var(--color-cyan)" }}>{(selectedNode.componentScores.waterQuality * 100).toFixed(0)}%</strong>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.04)", padding: "4px 6px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "var(--color-slate-muted)" }}>Flood Risk:</span>
+                    <strong style={{ fontFamily: "monospace", color: "var(--color-cyan)" }}>{(selectedNode.componentScores.flood * 100).toFixed(0)}%</strong>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.04)", padding: "4px 6px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "var(--color-slate-muted)" }}>Groundwater:</span>
+                    <strong style={{ fontFamily: "monospace", color: "var(--color-cyan)" }}>{(selectedNode.componentScores.groundwater * 100).toFixed(0)}%</strong>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.04)", padding: "4px 6px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "var(--color-slate-muted)" }}>Industrial Load:</span>
+                    <strong style={{ fontFamily: "monospace", color: "var(--color-cyan)" }}>{(selectedNode.componentScores.industrialPressure * 100).toFixed(0)}%</strong>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.04)", padding: "4px 6px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "var(--color-slate-muted)" }}>Complaints:</span>
+                    <strong style={{ fontFamily: "monospace", color: "var(--color-cyan)" }}>{(selectedNode.componentScores.complaintIntensity * 100).toFixed(0)}%</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Recommendation & Confidence */}
+            <div className="dt-card-surface" style={{ background: "rgba(37, 99, 235, 0.1)", borderColor: "rgba(37, 99, 235, 0.3)" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#38bdf8", marginBottom: "4px" }}>
+                💡 DECISION SUPPORT RECOMMENDATION ({(selectedNode.confidence ? selectedNode.confidence * 100 : 90).toFixed(0)}% Confidence)
+              </div>
+              <div style={{ fontSize: "11.5px", color: "var(--color-slate-text)", lineHeight: 1.5 }}>
+                {selectedNode.recommendation || "Maintain continuous environmental monitoring and routine GIS telemetry surveillance."}
+              </div>
+            </div>
+
+            {/* Expandable Risk Methodology Section */}
+            <details className="dt-card-surface" style={{ cursor: "pointer" }}>
+              <summary style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-indigo)" }}>
+                📐 Risk Methodology Explanation
+              </summary>
+              <div style={{ fontSize: "11px", color: "var(--color-slate-muted)", marginTop: "8px", lineHeight: 1.5 }}>
+                STERI combines 6 weighted spatial indicators into a multi-criteria score:
+                <div style={{ fontFamily: "monospace", fontSize: "10px", background: "rgba(0,0,0,0.3)", padding: "6px", borderRadius: "4px", margin: "6px 0", color: "#38bdf8" }}>
+                  STERI_i = wp*Pollution + ww*WaterQuality + wf*Flood + wg*Groundwater + wi*Industry + wc*Complaints
+                </div>
+                Aggregates real IoT hardware telemetry, 2D hydrodynamic flood models, Bayesian source attribution, and CGWB piezometer baselines.
+              </div>
+            </details>
+
+            <Link
+              href="/steri"
+              style={{
+                textAlign: "center",
+                background: "var(--color-indigo)",
+                color: "white",
+                padding: "8px",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Open STERI Research Module →
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );

@@ -7,11 +7,13 @@ import NoyyalWaterQualityLayer from "@/components/NoyyalWaterQualityLayer";
 import IndustrialAreasLayer from "@/components/IndustrialAreasLayer";
 import FirkaGroundwaterLayer from "@/components/FirkaGroundwaterLayer";
 import IndustrialUnitsLayer, { IndustrialUnitGeo } from "@/components/IndustrialUnitsLayer";
+import SteriSpatialRiskLayer from "@/components/SteriSpatialRiskLayer";
 
 const TIRUPPUR_CENTER: [number, number] = [11.1085, 77.3411];
 const DEFAULT_ZOOM = 13;
 
 export default function TiruppurMap() {
+  const [showSteriLayer, setShowSteriLayer] = useState(true);
   const [showRiverLayer, setShowRiverLayer] = useState(true);
   const [showWqLayer, setShowWqLayer] = useState(true);
   const [showAreasLayer, setShowAreasLayer] = useState(true);
@@ -101,6 +103,63 @@ export default function TiruppurMap() {
           <>
 
         <div style={{ display: "grid", gap: "8px" }}>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "#2563eb",
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showSteriLayer}
+              onChange={(e) => setShowSteriLayer(e.target.checked)}
+              style={{ accentColor: "#2563eb", cursor: "pointer" }}
+            />
+            <span
+              style={{
+                display: "inline-flex",
+                gap: "1px",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ width: "3px", height: "10px", background: "#16a34a" }} />
+              <span style={{ width: "3px", height: "10px", background: "#eab308" }} />
+              <span style={{ width: "3px", height: "10px", background: "#f97316" }} />
+              <span style={{ width: "3px", height: "10px", background: "#ea580c" }} />
+              <span style={{ width: "3px", height: "10px", background: "#dc2626" }} />
+            </span>
+            Environmental Risk (STERI)
+          </label>
+
+          {showSteriLayer && (
+            <div
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                padding: "6px 8px",
+                borderRadius: "4px",
+                fontSize: "10px",
+                lineHeight: "1.4",
+              }}
+            >
+              <span style={{ fontWeight: 700, color: "#475569", display: "block", marginBottom: "4px" }}>
+                STERI RISK TIERS & SYMBOLS:
+              </span>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px" }}>
+                <span style={{ color: "#16a34a", fontWeight: 700 }}>● LOW (Green)</span>
+                <span style={{ color: "#eab308", fontWeight: 700 }}>● MOD (Yellow)</span>
+                <span style={{ color: "#f97316", fontWeight: 700 }}>▲ HIGH (Orange)</span>
+                <span style={{ color: "#ea580c", fontWeight: 700 }}>▲ V.HIGH (Red-Org)</span>
+                <span style={{ color: "#dc2626", fontWeight: 700 }}>! CRITICAL (Red)</span>
+              </div>
+            </div>
+          )}
+
           <label
             style={{
               display: "flex",
@@ -380,6 +439,8 @@ export default function TiruppurMap() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        {showSteriLayer && <SteriSpatialRiskLayer />}
 
         {showRiverLayer && <NoyyalRiverLayer />}
 
