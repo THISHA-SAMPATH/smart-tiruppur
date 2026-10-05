@@ -68,6 +68,9 @@ export default function Nav() {
       <Link href="/groundwater" className={isActive("/groundwater") ? "active nav-link-item" : "nav-link-item"}>
         Groundwater 💧
       </Link>
+      <Link href="/steri" className={isActive("/steri") ? "active nav-link-item" : "nav-link-item"}>
+        STERI Index 🧪
+      </Link>
 
       {user.role === "ADMIN" && (
         <Link href="/admin" className={isActive("/admin") && pathname === "/admin" ? "active nav-link-item" : "nav-link-item"}>

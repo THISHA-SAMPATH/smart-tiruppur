@@ -186,11 +186,14 @@ export default function Terrain3DPage() {
     }
   };
 
-  const handleAnalysisModeChange = (modeKey: "baseline" | "water" | "groundwater" | "flood" | "compliance") => {
+  const handleAnalysisModeChange = (modeKey: "baseline" | "steri" | "water" | "groundwater" | "flood" | "compliance") => {
     setActiveAnalysisMode(modeKey);
     switch (modeKey) {
       case "baseline":
         setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: false, pollution: false });
+        break;
+      case "steri":
+        setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: true, floodRisk: true, pollution: true });
         break;
       case "water":
         setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: false, pollution: true });

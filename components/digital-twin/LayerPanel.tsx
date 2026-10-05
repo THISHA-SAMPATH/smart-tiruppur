@@ -8,7 +8,7 @@ interface LayerPanelProps {
   lighting: LightingPreset;
   activeAnalysisMode: string;
   onToggleLayer: (key: keyof LayerToggles) => void;
-  onSelectAnalysisMode: (mode: "baseline" | "water" | "groundwater" | "flood" | "compliance") => void;
+  onSelectAnalysisMode: (mode: "baseline" | "steri" | "water" | "groundwater" | "flood" | "compliance") => void;
   onChangeLighting: (mode: LightingPreset) => void;
 }
 
@@ -39,6 +39,7 @@ export default function LayerPanel({
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           {[
             { id: "baseline", label: "Environmental Baseline 🌐" },
+            { id: "steri", label: "STERI Spatial Risk Index 🧪" },
             { id: "water", label: "Water Quality & Plume 🌊" },
             { id: "groundwater", label: "FIRKA Groundwater 💧" },
             { id: "flood", label: "Monsoon Flood Risk 🌧️" },
