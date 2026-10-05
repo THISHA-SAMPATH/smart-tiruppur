@@ -67,6 +67,7 @@ export default function LayerPanel({
           {[
             { key: "terrain", label: "3D DEM Topography" },
             { key: "steriRisk", label: "Environmental Risk (STERI 3D)" },
+            { key: "citizenIssues", label: "Citizen Issues & Hotspots 👥" },
             { key: "contours", label: "GIS Contour Lines (Fix #22)" },
             { key: "river", label: "Noyyal River Flow" },
             { key: "units", label: "Industrial Facilities (12 Units)" },

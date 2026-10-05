@@ -19,6 +19,7 @@ export interface LayerToggles {
   floodRisk: boolean;
   pollution: boolean;
   steriRisk?: boolean;
+  citizenIssues?: boolean;
 }
 
 export type UnitStatusType = "COMPLIANT" | "WARNING" | "INVESTIGATE" | "OFFLINE";

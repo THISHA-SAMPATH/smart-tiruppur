@@ -1,0 +1,161 @@
+import { IndustrialWaterFacility, CircularityCitySummary } from "./types";
+
+export const DEMO_INDUSTRIAL_CIRCULARITY_FACILITIES: IndustrialWaterFacility[] = [
+  {
+    unit_id: "unit_001",
+    name: "Arulpuram CETP Textile Dyeing Unit 001",
+    facilityType: "Dyeing & Bleaching CETP Member",
+    latitude: 11.0835,
+    longitude: 77.3210,
+    freshwaterIntakeMld: 0.25,
+    processWaterReqMld: 3.20,
+    wastewaterGeneratedMld: 3.00,
+    treatmentCapacityMld: 3.50,
+    treatedWaterMld: 2.95,
+    waterReuseMld: 2.95,
+    dischargeMld: 0.00,
+    reusePercentage: 92.2,
+    circularityScore: 94,
+    renewableEnergyPct: 42,
+    treatmentStatus: "OPERATIONAL",
+    complianceStatus: "ZLD COMPLIANT",
+    isPotentialSourceCandidate: false,
+    isDemoData: true,
+  },
+  {
+    unit_id: "unit_002",
+    name: "Veerapandi Dyeing Unit 002",
+    facilityType: "Textile Processing & Finishing",
+    latitude: 11.0740,
+    longitude: 77.3520,
+    freshwaterIntakeMld: 0.30,
+    processWaterReqMld: 2.80,
+    wastewaterGeneratedMld: 2.60,
+    treatmentCapacityMld: 3.00,
+    treatedWaterMld: 2.50,
+    waterReuseMld: 2.50,
+    dischargeMld: 0.00,
+    reusePercentage: 89.3,
+    circularityScore: 91,
+    renewableEnergyPct: 35,
+    treatmentStatus: "OPERATIONAL",
+    complianceStatus: "ZLD COMPLIANT",
+    isPotentialSourceCandidate: false,
+    isDemoData: true,
+  },
+  {
+    unit_id: "unit_004",
+    name: "Kasipalayam Dyeing Unit 004",
+    facilityType: "Garment Washing & Finishing",
+    latitude: 11.1190,
+    longitude: 77.3950,
+    freshwaterIntakeMld: 0.15,
+    processWaterReqMld: 2.50,
+    wastewaterGeneratedMld: 2.40,
+    treatmentCapacityMld: 2.80,
+    treatedWaterMld: 2.35,
+    waterReuseMld: 2.35,
+    dischargeMld: 0.00,
+    reusePercentage: 94.0,
+    circularityScore: 96,
+    renewableEnergyPct: 50,
+    treatmentStatus: "OPERATIONAL",
+    complianceStatus: "ZLD COMPLIANT",
+    isPotentialSourceCandidate: false,
+    isDemoData: true,
+  },
+  {
+    unit_id: "unit_006",
+    name: "Tiruppur North CETP Unit 006",
+    facilityType: "CETP Member Facility",
+    latitude: 11.1350,
+    longitude: 77.3480,
+    freshwaterIntakeMld: 0.20,
+    processWaterReqMld: 4.50,
+    wastewaterGeneratedMld: 4.30,
+    treatmentCapacityMld: 5.00,
+    treatedWaterMld: 4.28,
+    waterReuseMld: 4.28,
+    dischargeMld: 0.00,
+    reusePercentage: 95.1,
+    circularityScore: 97,
+    renewableEnergyPct: 60,
+    treatmentStatus: "OPERATIONAL",
+    complianceStatus: "ZLD COMPLIANT",
+    isPotentialSourceCandidate: false,
+    isDemoData: true,
+  },
+  {
+    unit_id: "unit_007",
+    name: "Angeripalayam Processing 007",
+    facilityType: "Fabric Processing & Washing",
+    latitude: 11.1420,
+    longitude: 77.3310,
+    freshwaterIntakeMld: 0.85,
+    processWaterReqMld: 3.80,
+    wastewaterGeneratedMld: 3.50,
+    treatmentCapacityMld: 3.20,
+    treatedWaterMld: 2.88,
+    waterReuseMld: 2.88,
+    dischargeMld: 0.62,
+    reusePercentage: 75.8,
+    circularityScore: 68,
+    renewableEnergyPct: 18,
+    treatmentStatus: "DEGRADED",
+    complianceStatus: "UNDER INVESTIGATION",
+    isPotentialSourceCandidate: true,
+    anomalyNotes: "Downstream Kasipalayam Telemetry Station EC spike (3,450 µS/cm); Bayesian posterior 87%. Flagged as potential candidate for sampling.",
+    isDemoData: true,
+  },
+  {
+    unit_id: "unit_012",
+    name: "Vijayapuram Processing 012",
+    facilityType: "ZLD High Recovery Facility",
+    latitude: 11.0960,
+    longitude: 77.3380,
+    freshwaterIntakeMld: 0.12,
+    processWaterReqMld: 3.00,
+    wastewaterGeneratedMld: 2.90,
+    treatmentCapacityMld: 3.40,
+    treatedWaterMld: 2.88,
+    waterReuseMld: 2.88,
+    dischargeMld: 0.00,
+    reusePercentage: 96.0,
+    circularityScore: 98,
+    renewableEnergyPct: 65,
+    treatmentStatus: "OPERATIONAL",
+    complianceStatus: "ZLD COMPLIANT",
+    isPotentialSourceCandidate: false,
+    isDemoData: true,
+  },
+];
+
+/**
+ * Calculates citywide industrial water circularity aggregates.
+ */
+export function calculateCitywideCircularity(
+  facilities: IndustrialWaterFacility[] = DEMO_INDUSTRIAL_CIRCULARITY_FACILITIES
+): CircularityCitySummary {
+  const totalFreshwater = facilities.reduce((sum, f) => sum + f.freshwaterIntakeMld, 0);
+  const totalReused = facilities.reduce((sum, f) => sum + f.waterReuseMld, 0);
+  const totalReq = facilities.reduce((sum, f) => sum + f.processWaterReqMld, 0);
+
+  const citywideReuseRate = Number(((totalReused / (totalReq || 1)) * 100).toFixed(1));
+  const avgCircularity = Math.round(
+    facilities.reduce((sum, f) => sum + f.circularityScore, 0) / (facilities.length || 1)
+  );
+
+  const zldCount = facilities.filter((f) => f.complianceStatus === "ZLD COMPLIANT").length;
+
+  return {
+    totalFacilities: facilities.length,
+    citywideFreshwaterMld: Number(totalFreshwater.toFixed(2)),
+    citywideReusedMld: Number(totalReused.toFixed(2)),
+    citywideReuseRatePct: citywideReuseRate,
+    citywideCircularityScore: avgCircularity,
+    zldCompliantRatio: `${zldCount}/${facilities.length}`,
+    facilities,
+    timestamp: new Date().toISOString(),
+    isDemoData: true,
+  };
+}

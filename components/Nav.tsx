@@ -77,6 +77,12 @@ export default function Nav() {
       <Link href="/actions" className={isActive("/actions") ? "active nav-link-item" : "nav-link-item"}>
         Action Engine ⚡
       </Link>
+      <Link href="/flood-analysis" className={isActive("/flood-analysis") ? "active nav-link-item" : "nav-link-item"}>
+        Flood Analysis 🌧️
+      </Link>
+      <Link href="/circularity" className={isActive("/circularity") ? "active nav-link-item" : "nav-link-item"}>
+        Circularity ♻️
+      </Link>
 
       {user.role === "ADMIN" && (
         <Link href="/admin" className={isActive("/admin") && pathname === "/admin" ? "active nav-link-item" : "nav-link-item"}>
