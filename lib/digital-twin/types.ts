@@ -46,6 +46,39 @@ export interface DigitalTwinLayerToggles {
 }
 
 // ---------------------------------------------------------------------------
+// HYDROLOGY GIS DATA INTERFACES
+// ---------------------------------------------------------------------------
+export type HydrologyFeatureType = "river" | "tributary_stream" | "canal" | "waterbody";
+export type GISSourceType = "REAL" | "DERIVED" | "SIMULATED";
+
+export interface HydrologyFeatureProperties {
+  id?: string | number;
+  name: string;
+  type: HydrologyFeatureType;
+  source: string;
+  sourceType: GISSourceType;
+  flowDirection?: string;
+  waterway?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface HydrologyGISFeature {
+  type: "Feature";
+  properties: HydrologyFeatureProperties;
+  geometry: {
+    type: "LineString" | "MultiLineString" | "Polygon" | "MultiPolygon";
+    coordinates: any;
+  };
+}
+
+export interface HydrologyGISDataset {
+  type: "FeatureCollection";
+  datasetName?: string;
+  sourceType: GISSourceType;
+  features: HydrologyGISFeature[];
+}
+
+// ---------------------------------------------------------------------------
 // BUILDER CONTEXT
 // Passed to modular layer builders to assemble 3D objects cleanly
 // ---------------------------------------------------------------------------
@@ -56,4 +89,6 @@ export interface LayerBuilderContext {
   vector3DToGeo: (x: number, z: number) => { lat: number; lon: number };
   sampleElevation: (lat: number, lon: number) => number;
   terrainGrid?: TerrainGrid | null;
+  hydrologyDataset?: HydrologyGISDataset | null;
 }
+

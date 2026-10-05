@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getUnits } from "@/lib/api";
 import type { LedgerUnit } from "@/lib/types";
-import { LayerBuilderContext } from "@/lib/digital-twin/types";
+import { LayerBuilderContext, HydrologyGISDataset } from "@/lib/digital-twin/types";
 import { buildTerrainLayer } from "@/lib/digital-twin/terrain";
-import { buildHydrologyLayers } from "@/lib/digital-twin/hydrology";
+import { buildHydrologyLayers, parseGeoJSONToHydrologyDataset } from "@/lib/digital-twin/hydrology";
 import { buildRoadsLayer } from "@/lib/digital-twin/roads";
 import { buildUrbanLayer } from "@/lib/digital-twin/urban";
 import { buildIndustrialLayer } from "@/lib/digital-twin/industrial";
@@ -319,6 +319,30 @@ export default function Terrain3DViewer({
   const targetCamPosRef = useRef<THREE.Vector3 | null>(null);
   const targetLookAtRef = useRef<THREE.Vector3 | null>(null);
 
+  const [hydroGisDataset, setHydroGisDataset] = useState<HydrologyGISDataset | null>(null);
+
+  // Fetch verified Noyyal River GeoJSON if present in public/geo/
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/geo/noyyal-river.geojson")
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data) => {
+        if (isMounted && data) {
+          const dataset = parseGeoJSONToHydrologyDataset(data, "OpenStreetMap", "REAL");
+          setHydroGisDataset(dataset);
+        }
+      })
+      .catch(() => {
+        // Fallback procedural geometry handled gracefully by hydrology builder
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Smooth Camera Fly-To when focusPosition changes
   useEffect(() => {
     if (focusPosition && cameraRef.current && controlsRef.current) {
@@ -417,6 +441,7 @@ export default function Terrain3DViewer({
       geoTo3D,
       vector3DToGeo,
       sampleElevation: sampleTiruppurElevation,
+      hydrologyDataset: hydroGisDataset,
     };
 
     // 1. Terrain & Contours Builder
@@ -710,7 +735,7 @@ export default function Terrain3DViewer({
       renderer.domElement.removeEventListener("click", handlePointerDown);
       renderer.dispose();
     };
-  }, [autoRotate, onSelectNode]);
+  }, [autoRotate, onSelectNode, hydroGisDataset]);
 
   return (
     <div
