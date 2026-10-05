@@ -1,10 +1,16 @@
-"use client";
-
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getUnits } from "@/lib/api";
 import type { LedgerUnit } from "@/lib/types";
+import { LayerBuilderContext } from "@/lib/digital-twin/types";
+import { buildTerrainLayer } from "@/lib/digital-twin/terrain";
+import { buildHydrologyLayers } from "@/lib/digital-twin/hydrology";
+import { buildRoadsLayer } from "@/lib/digital-twin/roads";
+import { buildUrbanLayer } from "@/lib/digital-twin/urban";
+import { buildIndustrialLayer } from "@/lib/digital-twin/industrial";
+import { buildInfrastructureLayer } from "@/lib/digital-twin/infrastructure";
+import { buildVegetationLayer } from "@/lib/digital-twin/vegetation";
 
 export type LightingPreset = "day" | "dusk" | "night";
 export type UserRoleOverlay = "REGULATOR" | "GROUNDWATER_OFFICER" | "INDUSTRY" | "CITIZEN" | "ADMIN";
@@ -20,6 +26,11 @@ export interface LayerToggles {
   pollution: boolean;
   steriRisk?: boolean;
   citizenIssues?: boolean;
+  drainage?: boolean;
+  roads?: boolean;
+  buildings?: boolean;
+  infrastructure?: boolean;
+  vegetation?: boolean;
 }
 
 export type UnitStatusType = "COMPLIANT" | "WARNING" | "INVESTIGATE" | "OFFLINE";
@@ -129,21 +140,6 @@ const SENSOR_NODES_GEO = [
   { id: "tnpcb_noyyal_001", name: "Mangalam Telemetry Station", designation: "Upstream Entry Station", lat: 11.10651, lon: 77.26001, ph: 7.4, ec: 1420, turbidity: 18, flow: 142 },
   { id: "tnpcb_noyyal_002", name: "Kasipalayam Bridge Telemetry", designation: "Urban/Industrial Exit Station", lat: 11.11975, lon: 77.39716, ph: 6.8, ec: 2850, turbidity: 45, flow: 128 },
   { id: "tnpcb_noyyal_003", name: "Orathapalayam Reservoir Exit", designation: "Downstream Reservoir Station", lat: 11.11084, lon: 77.53981, ph: 7.8, ec: 3100, turbidity: 62, flow: 95 },
-];
-
-const INDUSTRIAL_UNITS_GEO = [
-  { unit_id: "unit_001", name: "Arulpuram CETP Dyeing Unit 001", lat: 11.0835, lon: 77.3210, type: "Dyeing & Bleaching", status: "COMPLIANT", symbol: "●", reuse: 92, flow: 145 },
-  { unit_id: "unit_002", name: "Veerapandi Dyeing Unit 002", lat: 11.0740, lon: 77.3520, type: "Textile Processing", status: "COMPLIANT", symbol: "●", reuse: 89, flow: 110 },
-  { unit_id: "unit_003", name: "Mangalam Road Unit 003", lat: 11.1020, lon: 77.2840, type: "ZLD Dyeing Unit", status: "WARNING", symbol: "▲", reuse: 84, flow: 160 },
-  { unit_id: "unit_004", name: "Kasipalayam Dyeing Unit 004", lat: 11.1190, lon: 77.3950, type: "Garment Washing", status: "COMPLIANT", symbol: "●", reuse: 94, flow: 98 },
-  { unit_id: "unit_005", name: "Rayapuram Processing Unit 005", lat: 11.1140, lon: 77.3510, type: "Yarn Dyeing", status: "COMPLIANT", symbol: "●", reuse: 91, flow: 125 },
-  { unit_id: "unit_006", name: "Tiruppur North CETP Unit 006", lat: 11.1350, lon: 77.3480, type: "CETP Member Facility", status: "COMPLIANT", symbol: "●", reuse: 95, flow: 210 },
-  { unit_id: "unit_007", name: "Angeripalayam Processing 007", lat: 11.1420, lon: 77.3310, type: "Fabric Processing", status: "INVESTIGATE", symbol: "!", reuse: 76, flow: 185 },
-  { unit_id: "unit_008", name: "Murugampalayam Dyeing 008", lat: 11.0890, lon: 77.3620, type: "Textile Finishing", status: "COMPLIANT", symbol: "●", reuse: 88, flow: 105 },
-  { unit_id: "unit_009", name: "Nallur Industrial Cluster 009", lat: 11.0780, lon: 77.3780, type: "Dyeing Unit", status: "COMPLIANT", symbol: "●", reuse: 90, flow: 130 },
-  { unit_id: "unit_010", name: "Palayakkarai Hub Unit 010", lat: 11.1110, lon: 77.4420, type: "Textile Processing", status: "WARNING", symbol: "▲", reuse: 81, flow: 140 },
-  { unit_id: "unit_011", name: "Uthukuli Road Unit 011", lat: 11.1280, lon: 77.4120, type: "Bleaching & Dyeing", status: "COMPLIANT", symbol: "●", reuse: 93, flow: 115 },
-  { unit_id: "unit_012", name: "Vijayapuram Processing 012", lat: 11.0960, lon: 77.3380, type: "ZLD Facility", status: "COMPLIANT", symbol: "●", reuse: 96, flow: 175 },
 ];
 
 const GROUNDWATER_FIRKAS_GEO = [
@@ -302,7 +298,12 @@ export default function Terrain3DViewer({
   const terrainGroupRef = useRef<THREE.Group>(new THREE.Group());
   const contourGroupRef = useRef<THREE.Group>(new THREE.Group());
   const riverGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const drainageGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const roadsGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const buildingsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const unitsGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const infrastructureGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const vegetationGroupRef = useRef<THREE.Group>(new THREE.Group());
   const sensorsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const groundwaterGroupRef = useRef<THREE.Group>(new THREE.Group());
   const steriRiskGroupRef = useRef<THREE.Group>(new THREE.Group());
@@ -318,7 +319,7 @@ export default function Terrain3DViewer({
   const targetCamPosRef = useRef<THREE.Vector3 | null>(null);
   const targetLookAtRef = useRef<THREE.Vector3 | null>(null);
 
-  // Smooth Camera Fly-To when focusPosition changes (Fix #19)
+  // Smooth Camera Fly-To when focusPosition changes
   useEffect(() => {
     if (focusPosition && cameraRef.current && controlsRef.current) {
       targetCamPosRef.current = new THREE.Vector3(focusPosition.x + 12, focusPosition.y + 14, focusPosition.z + 16);
@@ -331,7 +332,12 @@ export default function Terrain3DViewer({
     terrainGroupRef.current.visible = layers.terrain;
     contourGroupRef.current.visible = layers.contours;
     riverGroupRef.current.visible = layers.river;
+    drainageGroupRef.current.visible = Boolean(layers.drainage);
+    roadsGroupRef.current.visible = Boolean(layers.roads);
+    buildingsGroupRef.current.visible = Boolean(layers.buildings);
     unitsGroupRef.current.visible = layers.units;
+    infrastructureGroupRef.current.visible = Boolean(layers.infrastructure);
+    vegetationGroupRef.current.visible = Boolean(layers.vegetation);
     sensorsGroupRef.current.visible = layers.sensors;
     groundwaterGroupRef.current.visible = layers.groundwater;
     steriRiskGroupRef.current.visible = Boolean(layers.steriRisk);
@@ -361,8 +367,13 @@ export default function Terrain3DViewer({
     scene.add(terrainGroupRef.current);
     scene.add(contourGroupRef.current);
     scene.add(riverGroupRef.current);
+    scene.add(drainageGroupRef.current);
+    scene.add(roadsGroupRef.current);
+    scene.add(buildingsGroupRef.current);
     scene.add(riverFlowArrowsGroupRef.current);
     scene.add(unitsGroupRef.current);
+    scene.add(infrastructureGroupRef.current);
+    scene.add(vegetationGroupRef.current);
     scene.add(sensorsGroupRef.current);
     scene.add(groundwaterGroupRef.current);
     scene.add(steriRiskGroupRef.current);
@@ -398,86 +409,77 @@ export default function Terrain3DViewer({
     dirLight.castShadow = true;
     scene.add(dirLight);
 
-    // 1. DEM Terrain Geometry
-    const terrainWidth = 140;
-    const terrainDepth = 140;
-    const terrainSegs = 120;
-    const geometry = new THREE.PlaneGeometry(terrainWidth, terrainDepth, terrainSegs, terrainSegs);
-    geometry.rotateX(-Math.PI / 2);
+    // Layer Builder Context
+    interactiveObjectsRef.current = [];
+    const builderCtx: LayerBuilderContext = {
+      scene,
+      interactiveObjects: interactiveObjectsRef.current,
+      geoTo3D,
+      vector3DToGeo,
+      sampleElevation: sampleTiruppurElevation,
+    };
 
-    const posAttr = geometry.attributes.position;
-    for (let i = 0; i < posAttr.count; i++) {
-      const x = posAttr.getX(i);
-      const z = posAttr.getZ(i);
-      const lon = TIRUPPUR_CENTER_LON + x / (METERS_PER_DEG_LON * WORLD_SCALE);
-      const lat = TIRUPPUR_CENTER_LAT - z / (METERS_PER_DEG_LAT * WORLD_SCALE);
-      posAttr.setY(i, sampleTiruppurElevation(lat, lon));
-    }
-    geometry.computeVertexNormals();
+    // 1. Terrain & Contours Builder
+    const terrainRes = buildTerrainLayer(builderCtx);
+    terrainGroupRef.current.clear();
+    contourGroupRef.current.clear();
+    terrainGroupRef.current.add(terrainRes.terrainGroup);
+    contourGroupRef.current.add(terrainRes.contourGroup);
+    terrainMeshRef.current = terrainRes.terrainMesh;
 
-    const terrainMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85, metalness: 0.15 });
-    const terrainMesh = new THREE.Mesh(geometry, terrainMat);
-    terrainMesh.receiveShadow = true;
-    terrainGroupRef.current.add(terrainMesh);
-    terrainMeshRef.current = terrainMesh;
-    interactiveObjectsRef.current.push(terrainMesh);
+    // 2. Hydrology & River Builder
+    const hydroRes = buildHydrologyLayers(builderCtx);
+    riverGroupRef.current.clear();
+    drainageGroupRef.current.clear();
+    riverFlowArrowsGroupRef.current.clear();
+    pollutionPlumeGroupRef.current.clear();
+    riverGroupRef.current.add(hydroRes.riverGroup);
+    drainageGroupRef.current.add(hydroRes.drainageGroup);
+    riverFlowArrowsGroupRef.current.add(hydroRes.riverFlowArrowsGroup);
+    pollutionPlumeGroupRef.current.add(hydroRes.pollutionPlumeGroup);
+    riverCurveRef.current = hydroRes.riverCurve;
+    const flowParticles = hydroRes.flowParticles;
+    const plumeParticles = hydroRes.plumeParticles;
 
-    // 2. GIS Contour Line Rings (Fix #22)
-    const contourLevels = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
-    contourLevels.forEach((level) => {
-      const contourGrid = new THREE.GridHelper(140, 35, 0x0d9488, 0x1e293b);
-      contourGrid.position.y = level;
-      contourGroupRef.current.add(contourGrid);
-    });
+    // 3. Roads Layer Builder
+    const roadsRes = buildRoadsLayer(builderCtx);
+    roadsGroupRef.current.clear();
+    roadsGroupRef.current.add(roadsRes.roadsGroup);
 
-    // 3. Noyyal River Geometry & Directional Flow Arrows (Fix #21)
-    const riverPoints: THREE.Vector3[] = [];
-    for (let l = 77.24; l <= 77.54; l += 0.015) {
-      const lat = 11.108 + 0.008 * Math.sin((l - 77.25) * 12);
-      riverPoints.push(geoTo3D(lat, l, 0.25));
-    }
-    const riverCurve = new THREE.CatmullRomCurve3(riverPoints);
-    riverCurveRef.current = riverCurve;
+    // 4. Urban Buildings Layer Builder
+    const urbanRes = buildUrbanLayer(builderCtx);
+    buildingsGroupRef.current.clear();
+    buildingsGroupRef.current.add(urbanRes.buildingsGroup);
 
-    const tubeGeo = new THREE.TubeGeometry(riverCurve, 80, 0.5, 8, false);
-    const riverMesh = new THREE.Mesh(tubeGeo, new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0284c7, emissiveIntensity: 0.4, roughness: 0.1 }));
-    riverGroupRef.current.add(riverMesh);
+    // 5. Industrial Facilities Builder
+    const industrialRes = buildIndustrialLayer(builderCtx);
+    unitsGroupRef.current.clear();
+    unitsGroupRef.current.add(industrialRes.unitsGroup);
 
-    // Directional Flow Particle Indicators (~~~~~~~~~~~~~~→→→→→)
-    const flowCount = 12;
-    const flowParticles: THREE.Mesh[] = [];
-    const arrowGeo = new THREE.ConeGeometry(0.3, 0.8, 6);
-    arrowGeo.rotateX(Math.PI / 2);
-    const arrowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    // 6. Utility Infrastructure Builder
+    const infraRes = buildInfrastructureLayer(builderCtx);
+    infrastructureGroupRef.current.clear();
+    infrastructureGroupRef.current.add(infraRes.infrastructureGroup);
 
-    for (let f = 0; f < flowCount; f++) {
-      const arrow = new THREE.Mesh(arrowGeo, arrowMat);
-      riverFlowArrowsGroupRef.current.add(arrow);
-      flowParticles.push(arrow);
-    }
+    // 7. Vegetation Builder
+    const vegRes = buildVegetationLayer(builderCtx);
+    vegetationGroupRef.current.clear();
+    vegetationGroupRef.current.add(vegRes.vegetationGroup);
 
-    // 4. Pollution Plume Particles (Fix #9)
-    const plumeParticleCount = 16;
-    const plumeParticles: THREE.Mesh[] = [];
-    const plumeGeo = new THREE.SphereGeometry(0.4, 8, 8);
-    const plumeMat = new THREE.MeshBasicMaterial({ color: 0xdc2626, transparent: true, opacity: 0.85 });
-
-    for (let p = 0; p < plumeParticleCount; p++) {
-      const particle = new THREE.Mesh(plumeGeo, plumeMat);
-      pollutionPlumeGroupRef.current.add(particle);
-      plumeParticles.push(particle);
-    }
-
-    // 5. Flood Mesh Plane
+    // 8. Flood Mesh Plane
     const floodGeo = new THREE.PlaneGeometry(140, 140);
     floodGeo.rotateX(-Math.PI / 2);
-    const floodMesh = new THREE.Mesh(floodGeo, new THREE.MeshStandardMaterial({ color: 0x0284c7, transparent: true, opacity: 0.45 }));
+    const floodMesh = new THREE.Mesh(
+      floodGeo,
+      new THREE.MeshStandardMaterial({ color: 0x0284c7, transparent: true, opacity: 0.45 })
+    );
     floodMesh.position.y = 0.6;
     floodMesh.visible = layers.floodRisk;
     scene.add(floodMesh);
     floodMeshRef.current = floodMesh;
 
-    // 6. Sensor Station Beacons
+    // 9. Sensor Station Beacons
+    sensorsGroupRef.current.clear();
     SENSOR_NODES_GEO.forEach((sensor) => {
       const pos = geoTo3D(sensor.lat, sensor.lon, 0.5);
       const group = new THREE.Group();
@@ -494,43 +496,22 @@ export default function Terrain3DViewer({
       sensorsGroupRef.current.add(group);
     });
 
-    // 7. Industrial Units with Accessible Status Badges
-    INDUSTRIAL_UNITS_GEO.forEach((unit, idx) => {
-      const pos = geoTo3D(unit.lat, unit.lon, 0);
-      const bldgHeight = 2.0 + (idx % 3) * 0.8;
-
-      const group = new THREE.Group();
-      group.position.copy(pos);
-
-      const bldgGeo = new THREE.BoxGeometry(2.2, bldgHeight, 2.2);
-      const bldgMesh = new THREE.Mesh(bldgGeo, new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.4, roughness: 0.6 }));
-      bldgMesh.position.y = bldgHeight / 2;
-      group.add(bldgMesh);
-
-      let statusColor = 0x10b981;
-      if (unit.status === "WARNING") statusColor = 0xf59e0b;
-      if (unit.status === "INVESTIGATE") statusColor = 0xdc2626;
-
-      const beaconMesh = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), new THREE.MeshStandardMaterial({ color: statusColor, emissive: statusColor, emissiveIntensity: 0.8 }));
-      beaconMesh.position.y = bldgHeight + 0.6;
-      beaconMesh.userData = { type: "unit", data: unit };
-      group.add(beaconMesh);
-
-      interactiveObjectsRef.current.push(beaconMesh);
-      unitsGroupRef.current.add(group);
-    });
-
-    // 8. Groundwater FIRKA Zones
+    // 10. Groundwater FIRKA Zones
+    groundwaterGroupRef.current.clear();
     GROUNDWATER_FIRKAS_GEO.forEach((firka) => {
       const pos = geoTo3D(firka.lat, firka.lon, 0.1);
-      const firkaMesh = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 0.4, 24), new THREE.MeshStandardMaterial({ color: firka.color, transparent: true, opacity: 0.35 }));
+      const firkaMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(6, 6, 0.4, 24),
+        new THREE.MeshStandardMaterial({ color: firka.color, transparent: true, opacity: 0.35 })
+      );
       firkaMesh.position.copy(pos);
       firkaMesh.userData = { type: "groundwater", data: firka };
       interactiveObjectsRef.current.push(firkaMesh);
       groundwaterGroupRef.current.add(firkaMesh);
     });
 
-    // 9. STERI Environmental Risk 3D Terrain Overlays
+    // 11. STERI Environmental Risk 3D Terrain Overlays
+    steriRiskGroupRef.current.clear();
     STERI_SPATIAL_SECTORS_3D.forEach((sector) => {
       const pos = geoTo3D(sector.lat, sector.lon, 0.25);
       const steriMesh = new THREE.Mesh(
@@ -549,6 +530,7 @@ export default function Terrain3DViewer({
       interactiveObjectsRef.current.push(steriMesh);
       steriRiskGroupRef.current.add(steriMesh);
     });
+
 
     // Raycasting Click Listener (Terrain Elevation & Node Inspector - Fix #23)
     const raycaster = new THREE.Raycaster();
@@ -687,7 +669,7 @@ export default function Terrain3DViewer({
       // Animate River Flow Particles (Fix #21)
       if (riverCurveRef.current) {
         flowParticles.forEach((arrow, idx) => {
-          const t = ((elapsedTime * 0.08 + idx / flowCount) % 1);
+          const t = ((elapsedTime * 0.08 + idx / (flowParticles.length || 12)) % 1);
           const pPos = riverCurveRef.current!.getPoint(t);
           const tangent = riverCurveRef.current!.getTangent(t);
           arrow.position.copy(pPos);
@@ -698,7 +680,7 @@ export default function Terrain3DViewer({
         // Animate Pollution Plume Particles (Fix #9)
         if (layers.pollution) {
           plumeParticles.forEach((particle, idx) => {
-            const t = ((elapsedTime * 0.12 + idx / plumeParticleCount) % 1);
+            const t = ((elapsedTime * 0.12 + idx / (plumeParticles.length || 16)) % 1);
             const pPos = riverCurveRef.current!.getPoint(t);
             particle.position.copy(pPos);
             particle.position.y += 0.3;

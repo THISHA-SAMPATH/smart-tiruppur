@@ -66,20 +66,25 @@ export default function LayerPanel({
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px" }}>
           {[
             { key: "terrain", label: "3D DEM Topography" },
-            { key: "steriRisk", label: "Environmental Risk (STERI 3D)" },
-            { key: "citizenIssues", label: "Citizen Issues & Hotspots 👥" },
-            { key: "contours", label: "GIS Contour Lines (Fix #22)" },
             { key: "river", label: "Noyyal River Flow" },
+            { key: "drainage", label: "Drainage Channels (GIS Network)" },
+            { key: "roads", label: "Road Network (GIS Transit)" },
+            { key: "buildings", label: "Urban Residential Fabric" },
             { key: "units", label: "Industrial Facilities (12 Units)" },
+            { key: "infrastructure", label: "Utility Infrastructure" },
+            { key: "vegetation", label: "Vegetation & Canopy" },
             { key: "sensors", label: "Monitoring Stations" },
             { key: "groundwater", label: "FIRKA Groundwater Stress" },
+            { key: "steriRisk", label: "Environmental Risk (STERI 3D)" },
+            { key: "citizenIssues", label: "Citizen Issues & Hotspots 👥" },
+            { key: "contours", label: "GIS Contour Lines" },
             { key: "floodRisk", label: "Monsoon Flood Risk Zone" },
             { key: "pollution", label: "Pollution Plume Propagation" },
           ].map((item) => (
             <label key={item.key} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--color-slate-text)" }}>
               <input
                 type="checkbox"
-                checked={layers[item.key as keyof LayerToggles]}
+                checked={Boolean(layers[item.key as keyof LayerToggles])}
                 onChange={() => onToggleLayer(item.key as keyof LayerToggles)}
                 style={{ accentColor: "var(--color-cyan)", cursor: "pointer" }}
               />
