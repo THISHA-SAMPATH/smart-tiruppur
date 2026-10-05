@@ -14,7 +14,10 @@ import ScenarioModePanel from "@/components/digital-twin/ScenarioModePanel";
 import InspectorPanel from "@/components/digital-twin/InspectorPanel";
 import TelemetryBar from "@/components/digital-twin/TelemetryBar";
 import DataProvenanceModal from "@/components/digital-twin/DataProvenanceModal";
+import DigitalTwinSearch from "@/components/digital-twin/DigitalTwinSearch";
+import AccessibleTableViewer from "@/components/digital-twin/AccessibleTableViewer";
 import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
+import type { LedgerEntry, DppResponse } from "@/lib/types";
 import "@/app/digital-twin.css";
 
 // Interactive Live Event Timeline Items (Fix #18)
@@ -69,6 +72,9 @@ export default function Terrain3DPage() {
   const [lighting, setLighting] = useState<LightingPreset>("day");
   const [autoRotate, setAutoRotate] = useState(false);
   const [userRole, setUserRole] = useState<UserRoleOverlay>("REGULATOR");
+
+  // Dual View Mode (Fix #44): 3D View vs Accessible Table View
+  const [viewMode, setViewMode] = useState<"3D" | "TABLE">("3D");
 
   // Mode Switch (Fix #28): LIVE vs SCENARIO
   const [mode, setMode] = useState<"LIVE" | "SCENARIO">("LIVE");
@@ -151,6 +157,17 @@ export default function Terrain3DPage() {
     setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
   };
 
+  const handleSearchResult = (item: { lat: number; lon: number; name: string }) => {
+    const pos = geoTo3D(item.lat, item.lon, 0);
+    setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
+  };
+
+  const handleLocateMe = () => {
+    // Locate nearest landmark (Tiruppur Corporation Center / Kasipalayam Station)
+    const pos = geoTo3D(11.11975, 77.39716, 0);
+    setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
+  };
+
   const handleRoleChange = (role: UserRoleOverlay) => {
     setUserRole(role);
     switch (role) {
@@ -199,7 +216,7 @@ export default function Terrain3DPage() {
   return (
     <div className="dt-container">
       {/* -------------------------------------------------------------------- */}
-      {/* HEADER WITH MODE SWITCH & 2D GIS / 3D TWIN SWITCHER (FIX #24 & #28)  */}
+      {/* HEADER WITH SEARCH, VIEW MODES & ROLE SELECTOR                       */}
       {/* -------------------------------------------------------------------- */}
       <header className="dt-header">
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
@@ -215,6 +232,32 @@ export default function Terrain3DPage() {
           </div>
         </div>
 
+        {/* SEARCH BAR (FIX #40 & FIX #41) */}
+        <DigitalTwinSearch
+          onSelectResult={handleSearchResult}
+          onLocateMe={handleLocateMe}
+        />
+
+        {/* DUAL VIEW MODE SWITCHER: 3D VIEW | TABLE VIEW (FIX #44) */}
+        <div style={{ display: "flex", background: "var(--color-slate-surface)", padding: "3px", borderRadius: "8px", border: "1px solid var(--color-slate-border)" }}>
+          <button
+            type="button"
+            className={`dt-btn ${viewMode === "3D" ? "active" : ""}`}
+            style={{ padding: "4px 12px", fontSize: "11.5px" }}
+            onClick={() => setViewMode("3D")}
+          >
+            🌐 3D VIEW
+          </button>
+          <button
+            type="button"
+            className={`dt-btn ${viewMode === "TABLE" ? "active" : ""}`}
+            style={{ padding: "4px 12px", fontSize: "11.5px" }}
+            onClick={() => setViewMode("TABLE")}
+          >
+            📋 TABLE VIEW
+          </button>
+        </div>
+
         {/* LIVE MODE vs SCENARIO MODE SWITCH (FIX #28) */}
         <div style={{ display: "flex", background: "var(--color-slate-surface)", padding: "3px", borderRadius: "8px", border: "1px solid var(--color-slate-border)" }}>
           <button
@@ -223,7 +266,7 @@ export default function Terrain3DPage() {
             style={{ padding: "4px 12px", fontSize: "11.5px" }}
             onClick={() => setMode("LIVE")}
           >
-            ● LIVE MODE
+            ● LIVE
           </button>
           <button
             type="button"
@@ -231,64 +274,31 @@ export default function Terrain3DPage() {
             style={{ padding: "4px 12px", fontSize: "11.5px" }}
             onClick={() => setMode("SCENARIO")}
           >
-            ⚙ SCENARIO MODE
+            ⚙ SCENARIO
           </button>
         </div>
 
-        {/* 2D MAP | 3D TWIN SWITCHER (FIX #24) */}
-        <div style={{ display: "flex", background: "var(--color-slate-surface)", padding: "3px", borderRadius: "8px", border: "1px solid var(--color-slate-border)" }}>
-          <Link
-            href="/map"
+        {/* ROLE VIEW SELECTOR (FIX #38) */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <select
+            value={userRole}
+            onChange={(e) => handleRoleChange(e.target.value as UserRoleOverlay)}
             style={{
-              padding: "5px 14px",
+              background: "var(--color-slate-surface)",
+              color: "var(--color-teal)",
+              border: "1px solid var(--color-slate-border)",
+              padding: "4px 10px",
               borderRadius: "6px",
               fontSize: "12px",
               fontWeight: 600,
-              textDecoration: "none",
-              color: "var(--color-slate-muted)",
+              cursor: "pointer",
             }}
           >
-            🗺️ 2D GIS MAP
-          </Link>
-          <div
-            style={{
-              padding: "5px 14px",
-              borderRadius: "6px",
-              fontSize: "12px",
-              fontWeight: 700,
-              background: "var(--color-cyan)",
-              color: "#ffffff",
-              boxShadow: "0 2px 6px rgba(13, 148, 136, 0.4)",
-            }}
-          >
-            🌐 3D DIGITAL TWIN
-          </div>
-        </div>
-
-        {/* ROLE VIEW SELECTOR */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
-            <span style={{ color: "var(--color-slate-muted)", fontSize: "11px", fontWeight: 700 }}>ROLE VIEW:</span>
-            <select
-              value={userRole}
-              onChange={(e) => handleRoleChange(e.target.value as UserRoleOverlay)}
-              style={{
-                background: "var(--color-slate-surface)",
-                color: "var(--color-teal)",
-                border: "1px solid var(--color-slate-border)",
-                padding: "4px 10px",
-                borderRadius: "6px",
-                fontSize: "12px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              <option value="REGULATOR">Regulator View</option>
-              <option value="GROUNDWATER_OFFICER">Groundwater Officer View</option>
-              <option value="INDUSTRY">Industry Facility View</option>
-              <option value="CITIZEN">Public Citizen View</option>
-            </select>
-          </div>
+            <option value="REGULATOR">Regulator View</option>
+            <option value="GROUNDWATER_OFFICER">Groundwater Officer View</option>
+            <option value="INDUSTRY">Industry View</option>
+            <option value="CITIZEN">Public Citizen View</option>
+          </select>
 
           <div
             style={{
@@ -305,94 +315,98 @@ export default function Terrain3DPage() {
             }}
           >
             <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-green)", boxShadow: "0 0 8px var(--color-green)" }} />
-            LIVE ● {currentTime || "19:25"}
+            LIVE ● {currentTime || "19:32"}
           </div>
         </div>
       </header>
 
       {/* -------------------------------------------------------------------- */}
-      {/* THREE.JS VIEWPORT & MODULAR PANELS                                  */}
+      {/* VIEWPORT CONTENT (3D OR ACCESSIBLE TABLE VIEW - FIX #44)            */}
       {/* -------------------------------------------------------------------- */}
-      <div className="dt-viewport">
-        <Terrain3DViewer
-          lighting={lighting}
-          autoRotate={autoRotate}
-          floodIntensity={floodIntensity}
-          role={userRole}
-          layers={layers}
-          focusPosition={focusPosition}
-          onSelectNode={setSelectedNode}
-        />
-
-        {/* LEFT PANEL */}
-        <div style={{ position: "absolute", top: "16px", left: "16px", zIndex: 20, width: "310px", display: "flex", flexDirection: "column", gap: "10px", maxHeight: "calc(100% - 32px)", overflowY: "auto" }}>
-          <LayerPanel
-            layers={layers}
+      {viewMode === "TABLE" ? (
+        <AccessibleTableViewer />
+      ) : (
+        <div className="dt-viewport">
+          <Terrain3DViewer
             lighting={lighting}
-            activeAnalysisMode={activeAnalysisMode}
-            onToggleLayer={toggleLayer}
-            onSelectAnalysisMode={handleAnalysisModeChange}
-            onChangeLighting={setLighting}
+            autoRotate={autoRotate}
+            floodIntensity={floodIntensity}
+            role={userRole}
+            layers={layers}
+            focusPosition={focusPosition}
+            onSelectNode={setSelectedNode}
           />
 
-          {/* SCENARIO MODE PANEL (FIX #28 & FIX #29) */}
-          {mode === "SCENARIO" && (
-            <ScenarioModePanel
-              rainfall={rainfall}
-              dischargeLoad={dischargeLoad}
-              riverFlow={riverFlow}
-              groundwaterDraft={groundwaterDraft}
-              onChangeRainfall={setRainfall}
-              onChangeDischargeLoad={setDischargeLoad}
-              onChangeRiverFlow={setRiverFlow}
-              onChangeGroundwaterDraft={setGroundwaterDraft}
-              onRunScenario={handleRunScenario}
+          {/* LEFT PANEL */}
+          <div style={{ position: "absolute", top: "16px", left: "16px", zIndex: 20, width: "310px", display: "flex", flexDirection: "column", gap: "10px", maxHeight: "calc(100% - 32px)", overflowY: "auto" }}>
+            <LayerPanel
+              layers={layers}
+              lighting={lighting}
+              activeAnalysisMode={activeAnalysisMode}
+              onToggleLayer={toggleLayer}
+              onSelectAnalysisMode={handleAnalysisModeChange}
+              onChangeLighting={setLighting}
             />
-          )}
 
-          {/* LIVE EVENT TIMELINE DRAWER (FIX #18) */}
-          <div className="dt-card-surface">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 800, color: "var(--color-teal)", letterSpacing: "0.05em" }}>
-                LIVE EVENT TIMELINE
-              </div>
-              <span style={{ fontSize: "10px", color: "var(--color-green)", fontWeight: 700 }}>● REAL-TIME</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "160px", overflowY: "auto" }}>
-              {LIVE_TIMELINE_EVENTS.map((evt) => (
-                <div
-                  key={evt.id}
-                  onClick={() => handleTimelineClick(evt)}
-                  style={{
-                    background: "var(--color-slate-bg)",
-                    padding: "8px 10px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    borderLeft: `3px solid ${
-                      evt.status === "INVESTIGATE" ? "var(--color-red)" : evt.status === "WARNING" ? "var(--color-amber)" : "var(--color-green)"
-                    }`,
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: 700, color: "#ffffff" }}>
-                    <span>{evt.symbol} {evt.title}</span>
-                    <span style={{ color: "var(--color-slate-muted)" }}>{evt.time}</span>
-                  </div>
-                  <div style={{ fontSize: "10.5px", color: "var(--color-teal)", marginTop: "2px" }}>
-                    {evt.location} · {evt.confidence}
-                  </div>
+            {/* SCENARIO MODE PANEL (FIX #28 & FIX #29) */}
+            {mode === "SCENARIO" && (
+              <ScenarioModePanel
+                rainfall={rainfall}
+                dischargeLoad={dischargeLoad}
+                riverFlow={riverFlow}
+                groundwaterDraft={groundwaterDraft}
+                onChangeRainfall={setRainfall}
+                onChangeDischargeLoad={setDischargeLoad}
+                onChangeRiverFlow={setRiverFlow}
+                onChangeGroundwaterDraft={setGroundwaterDraft}
+                onRunScenario={handleRunScenario}
+              />
+            )}
+
+            {/* LIVE EVENT TIMELINE DRAWER (FIX #18) */}
+            <div className="dt-card-surface">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <div style={{ fontSize: "11px", fontWeight: 800, color: "var(--color-teal)", letterSpacing: "0.05em" }}>
+                  LIVE EVENT TIMELINE
                 </div>
-              ))}
+                <span style={{ fontSize: "10px", color: "var(--color-green)", fontWeight: 700 }}>● REAL-TIME</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "160px", overflowY: "auto" }}>
+                {LIVE_TIMELINE_EVENTS.map((evt) => (
+                  <div
+                    key={evt.id}
+                    onClick={() => handleTimelineClick(evt)}
+                    style={{
+                      background: "var(--color-slate-bg)",
+                      padding: "8px 10px",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      borderLeft: `3px solid ${
+                        evt.status === "INVESTIGATE" ? "var(--color-red)" : evt.status === "WARNING" ? "var(--color-amber)" : "var(--color-green)"
+                      }`,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: 700, color: "#ffffff" }}>
+                      <span>{evt.symbol} {evt.title}</span>
+                      <span style={{ color: "var(--color-slate-muted)" }}>{evt.time}</span>
+                    </div>
+                    <div style={{ fontSize: "10.5px", color: "var(--color-teal)", marginTop: "2px" }}>
+                      {evt.location} · {evt.confidence}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* RIGHT INSPECTOR PANEL */}
-        <InspectorPanel
-          selectedNode={selectedNode}
-          onClose={() => setSelectedNode(null)}
-          onOpenProvenance={() => setIsProvenanceOpen(true)}
-        />
-      </div>
+          {/* RIGHT INSPECTOR PANEL */}
+          <InspectorPanel
+            selectedNode={selectedNode}
+            onClose={() => setSelectedNode(null)}
+            onOpenProvenance={() => setIsProvenanceOpen(true)}
+          />
+        </div>
+      )}
 
       {/* FOOTER TELEMETRY STRIP (FIX #17 & FIX #34) */}
       <TelemetryBar
