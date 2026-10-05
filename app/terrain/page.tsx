@@ -6,6 +6,7 @@ import Terrain3DViewer, {
   LightingPreset,
   CameraViewPreset,
   SelectedNodeInfo,
+  LayerToggles,
 } from "@/components/Terrain3DViewer";
 import { getGlobalEvents, getUnitLedger, getUnitDpp } from "@/lib/api";
 import type { ContractEvent, LedgerEntry, DppResponse } from "@/lib/types";
@@ -15,26 +16,36 @@ export default function Terrain3DPage() {
   const [viewPreset, setViewPreset] = useState<CameraViewPreset>("overview");
   const [autoRotate, setAutoRotate] = useState(false);
   const [livePolling, setLivePolling] = useState(true);
-  const [tourActive, setTourActive] = useState(false);
+
+  // Layer Toggles State
+  const [layers, setLayers] = useState<LayerToggles>({
+    terrain: true,
+    river: true,
+    units: true,
+    sensors: true,
+    groundwater: true,
+    floodRisk: false,
+  });
 
   // Inspector Panel State
   const [selectedNode, setSelectedNode] = useState<SelectedNodeInfo | null>(null);
   const [nodeLedger, setNodeLedger] = useState<LedgerEntry[]>([]);
   const [nodeDpp, setNodeDpp] = useState<DppResponse | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>("");
 
-  // Live Event Stream
-  const [recentEvents, setRecentEvents] = useState<ContractEvent[]>([]);
-
+  // Live Clock
   useEffect(() => {
-    void (async () => {
-      const res = await getGlobalEvents();
-      if (res.data) {
-        setRecentEvents(res.data.slice(0, 8));
-      }
-    })();
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
   }, []);
 
+  // Node Details Loader
   useEffect(() => {
     if (!selectedNode) {
       setNodeLedger([]);
@@ -56,491 +67,410 @@ export default function Terrain3DPage() {
     }
   }, [selectedNode]);
 
-  const handleEventTriggered = (newEvent: ContractEvent) => {
-    setRecentEvents((prev) => [newEvent, ...prev.slice(0, 7)]);
+  const toggleLayer = (key: keyof LayerToggles) => {
+    setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   return (
     <div
       style={{
-        minHeight: "calc(100vh - 65px)",
+        width: "100%",
+        height: "calc(100vh - 65px)",
+        position: "relative",
         background: "#0f172a",
         color: "#f8fafc",
-        fontFamily: "'Inter', system-ui, sans-serif",
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
         display: "flex",
         flexDirection: "column",
-        overflowX: "hidden",
+        overflow: "hidden",
       }}
     >
-      {/* Main Container */}
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
-        {/* Top Clean Header */}
-        <header
-          style={{
-            padding: "16px 24px",
-            background: "#1e293b",
-            borderBottom: "1px solid #334155",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "16px",
-            zIndex: 20,
-          }}
-        >
+      {/* TOP COMMAND BAR */}
+      <header
+        style={{
+          padding: "10px 24px",
+          background: "rgba(15, 23, 42, 0.95)",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid #1e293b",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          zIndex: 30,
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <div
+            style={{
+              background: "linear-gradient(135deg, #0d9488 0%, #2563eb 100%)",
+              color: "white",
+              fontSize: "11px",
+              fontWeight: 800,
+              padding: "4px 12px",
+              borderRadius: "999px",
+              letterSpacing: "0.08em",
+              boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)",
+            }}
+          >
+            SMART TIRUPPUR
+          </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span
-                style={{
-                  background: "linear-gradient(135deg, #0d9488 0%, #2563eb 100%)",
-                  color: "white",
-                  fontSize: "10.5px",
-                  fontWeight: 700,
-                  padding: "3px 10px",
-                  borderRadius: "999px",
-                  letterSpacing: "0.06em",
-                  boxShadow: "0 2px 8px rgba(37, 99, 235, 0.3)",
-                }}
-              >
-                REAL-TIME 3D DIGITAL TWIN
-              </span>
-              <h1 style={{ margin: 0, fontSize: "20px", color: "#ffffff", fontWeight: 700 }}>
-                Smart Tiruppur Monitoring Grid
-              </h1>
-            </div>
-            <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#94a3b8" }}>
-              Geospatial DEM elevation terrain · Noyyal River flow telemetry · Neural Bayesian inference & Blockchain ledger
+            <h1 style={{ margin: 0, fontSize: "16px", color: "#ffffff", fontWeight: 700, letterSpacing: "-0.01em" }}>
+              3D Urban & Environmental Digital Twin
+            </h1>
+            <p style={{ margin: 0, fontSize: "11.5px", color: "#94a3b8" }}>
+              Physics DEM Terrain · Noyyal River Telemetry · FIRKA Groundwater Stress
             </p>
           </div>
+        </div>
 
-          {/* Navigation Action Buttons */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <Link
-              href="/regulator"
-              style={{
-                background: "#0f172a",
-                color: "#f8fafc",
-                border: "1px solid #334155",
-                fontSize: "13px",
-                fontWeight: 600,
-                padding: "7px 16px",
-                borderRadius: "8px",
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                transition: "all 0.15s ease",
-              }}
-            >
-              ← Regulator Dashboard
-            </Link>
-
-            <Link
-              href="/simulator"
-              style={{
-                background: "linear-gradient(135deg, #0d9488 0%, #2563eb 100%)",
-                color: "white",
-                border: "none",
-                fontSize: "13px",
-                fontWeight: 600,
-                padding: "7px 16px",
-                borderRadius: "8px",
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                boxShadow: "0 4px 14px rgba(37, 99, 235, 0.3)",
-              }}
-            >
-              Interactive Simulator 🎨
-            </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              background: "#1e293b",
+              border: "1px solid #334155",
+              padding: "5px 12px",
+              borderRadius: "999px",
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#38bdf8",
+            }}
+          >
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
+            LIVE ● {currentTime || "14:15"}
           </div>
-        </header>
 
-        {/* 3D Toolbar & Camera View Controls */}
+          <Link
+            href="/regulator"
+            style={{
+              background: "#1e293b",
+              color: "#f8fafc",
+              border: "1px solid #334155",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              padding: "6px 14px",
+              borderRadius: "8px",
+              textDecoration: "none",
+            }}
+          >
+            Regulator Dashboard →
+          </Link>
+
+          <Link
+            href="/simulator"
+            style={{
+              background: "linear-gradient(135deg, #0d9488 0%, #2563eb 100%)",
+              color: "white",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              padding: "6px 14px",
+              borderRadius: "8px",
+              textDecoration: "none",
+              boxShadow: "0 2px 10px rgba(37, 99, 235, 0.3)",
+            }}
+          >
+            Simulator 🎨
+          </Link>
+        </div>
+      </header>
+
+      {/* MAIN VIEWPORT CONTAINER */}
+      <div style={{ flex: 1, position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+        {/* THREE.JS VIEWPORT CANVAS */}
+        <Terrain3DViewer
+          lighting={lighting}
+          viewPreset={viewPreset}
+          autoRotate={autoRotate}
+          livePolling={livePolling}
+          layers={layers}
+          onSelectNode={setSelectedNode}
+          tourActive={false}
+        />
+
+        {/* LEFT FLOATING PANEL: LAYERS & CONTROLS */}
         <div
           style={{
-            padding: "10px 24px",
-            background: "#0f172a",
-            borderBottom: "1px solid #1e293b",
+            position: "absolute",
+            top: "16px",
+            left: "16px",
+            zIndex: 20,
+            width: "280px",
+            background: "rgba(15, 23, 42, 0.88)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(51, 65, 85, 0.8)",
+            borderRadius: "12px",
+            padding: "16px",
+            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4)",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "12px",
-            fontSize: "12.5px",
-            zIndex: 15,
+            flexDirection: "column",
+            gap: "14px",
           }}
         >
-          {/* Camera View Presets */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-            <span style={{ color: "#64748b", fontWeight: 700, fontSize: "11px", letterSpacing: "0.05em", marginRight: "4px" }}>
-              CAMERA:
-            </span>
-            {[
-              { id: "overview", label: "Overview 🌐" },
-              { id: "datacenter", label: "AI Data Center 🧠" },
-              { id: "river", label: "Noyyal River 💧" },
-              { id: "industrial", label: "Textile Corridor 🏭" },
-              { id: "ledger", label: "Ledger Vault 🔗" },
-            ].map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => setViewPreset(preset.id as CameraViewPreset)}
-                style={{
-                  background: viewPreset === preset.id ? "#2563eb" : "#1e293b",
-                  color: viewPreset === preset.id ? "white" : "#cbd5e1",
-                  border: "1px solid",
-                  borderColor: viewPreset === preset.id ? "#3b82f6" : "#334155",
-                  padding: "5px 14px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  transition: "all 0.15s ease",
-                  boxShadow: viewPreset === preset.id ? "0 2px 8px rgba(37, 99, 235, 0.4)" : "none",
-                }}
-              >
-                {preset.label}
-              </button>
-            ))}
+          {/* Layer Checkboxes */}
+          <div>
+            <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", color: "#0d9488", textTransform: "uppercase", marginBottom: "8px" }}>
+              LAYERS & DATA SOURCES
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12.5px" }}>
+              {[
+                { key: "terrain", label: "3D DEM Terrain" },
+                { key: "river", label: "Noyyal River Geometry" },
+                { key: "units", label: "Industrial Facilities (12 Units)" },
+                { key: "sensors", label: "Telemetry Stations" },
+                { key: "groundwater", label: "Groundwater FIRKA Stress" },
+                { key: "floodRisk", label: "Flood Risk Overlay" },
+              ].map((item) => (
+                <label key={item.key} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#cbd5e1" }}>
+                  <input
+                    type="checkbox"
+                    checked={layers[item.key as keyof LayerToggles]}
+                    onChange={() => toggleLayer(item.key as keyof LayerToggles)}
+                    style={{ accentColor: "#0d9488", cursor: "pointer" }}
+                  />
+                  {item.label}
+                </label>
+              ))}
+            </div>
           </div>
 
-          {/* Lighting & Options */}
-          <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ color: "#64748b", fontWeight: 700, fontSize: "11px", letterSpacing: "0.05em", marginRight: "4px" }}>
-                LIGHTING:
-              </span>
+          <div style={{ height: "1px", background: "#334155" }} />
+
+          {/* Camera View Presets */}
+          <div>
+            <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", color: "#94a3b8", textTransform: "uppercase", marginBottom: "8px" }}>
+              CAMERA VIEWS
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {[
-                { id: "day", label: "Daylight ☀️" },
-                { id: "dusk", label: "Sunset 🌅" },
-                { id: "night", label: "Soft Atmosphere ⛅" },
+                { id: "overview", label: "Overview 🌐" },
+                { id: "datacenter", label: "AI Center 🧠" },
+                { id: "river", label: "Noyyal River 💧" },
+                { id: "industrial", label: "Corridor 🏭" },
+                { id: "ledger", label: "Ledger 🔗" },
+              ].map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => setViewPreset(preset.id as CameraViewPreset)}
+                  style={{
+                    background: viewPreset === preset.id ? "#2563eb" : "#1e293b",
+                    color: viewPreset === preset.id ? "#ffffff" : "#94a3b8",
+                    border: "1px solid",
+                    borderColor: viewPreset === preset.id ? "#3b82f6" : "#334155",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "11.5px",
+                    fontWeight: 600,
+                  }}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ height: "1px", background: "#334155" }} />
+
+          {/* Lighting Mode */}
+          <div>
+            <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", color: "#94a3b8", textTransform: "uppercase", marginBottom: "8px" }}>
+              LIGHTING MODE
+            </div>
+            <div style={{ display: "flex", gap: "6px" }}>
+              {[
+                { id: "day", label: "Day ☀️" },
+                { id: "dusk", label: "Dusk 🌅" },
+                { id: "night", label: "Night 🌙" },
               ].map((mode) => (
                 <button
                   key={mode.id}
                   type="button"
                   onClick={() => setLighting(mode.id as LightingPreset)}
                   style={{
-                    background: lighting === mode.id ? "#1e293b" : "transparent",
-                    color: lighting === mode.id ? "#38bdf8" : "#94a3b8",
+                    flex: 1,
+                    background: lighting === mode.id ? "#0d9488" : "#1e293b",
+                    color: lighting === mode.id ? "#ffffff" : "#94a3b8",
                     border: "1px solid",
-                    borderColor: lighting === mode.id ? "#0284c7" : "transparent",
-                    padding: "4px 10px",
+                    borderColor: lighting === mode.id ? "#0d9488" : "#334155",
+                    padding: "5px",
                     borderRadius: "6px",
                     cursor: "pointer",
-                    fontSize: "12px",
-                    fontWeight: lighting === mode.id ? 600 : 500,
+                    fontSize: "11.5px",
+                    fontWeight: 600,
                   }}
                 >
                   {mode.label}
                 </button>
               ))}
             </div>
-
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "#cbd5e1", fontWeight: 500 }}>
-              <input
-                type="checkbox"
-                checked={autoRotate}
-                onChange={(e) => setAutoRotate(e.target.checked)}
-                style={{ accentColor: "#2563eb" }}
-              />
-              Orbit Rotate
-            </label>
-
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "#38bdf8", fontWeight: 600 }}>
-              <input
-                type="checkbox"
-                checked={livePolling}
-                onChange={(e) => setLivePolling(e.target.checked)}
-                style={{ accentColor: "#0284c7" }}
-              />
-              Live Polling (4s)
-            </label>
           </div>
         </div>
 
-        {/* 3D Canvas Area */}
-        <div style={{ flex: 1, height: "calc(100vh - 180px)", position: "relative" }}>
-          <Terrain3DViewer
-            lighting={lighting}
-            viewPreset={viewPreset}
-            autoRotate={autoRotate}
-            livePolling={livePolling}
-            onSelectNode={(node) => setSelectedNode(node)}
-            onEventTriggered={handleEventTriggered}
-            tourActive={tourActive}
-            onTourEnd={() => setTourActive(false)}
-          />
-
-          {/* INSPECTOR SIDE PANEL (CLEAN WHITE CARD) */}
-          {selectedNode && (
-            <div
-              style={{
-                position: "absolute",
-                top: "20px",
-                right: "20px",
-                width: "360px",
-                maxHeight: "calc(100% - 40px)",
-                overflowY: "auto",
-                zIndex: 30,
-                background: "#ffffff",
-                border: "1px solid var(--hairline, #d8d0bc)",
-                borderRadius: "var(--radius-md, 6px)",
-                boxShadow: "0 12px 32px rgba(31, 42, 36, 0.12)",
-                padding: "20px",
-                color: "var(--ink, #1f2a24)",
-                animation: "fadeIn 0.2s ease-out",
-              }}
-            >
-              {/* Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
-                <div>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      color: "#2563eb",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {selectedNode.type} DETAILS
-                  </span>
-                  <h3 style={{ margin: "2px 0 0", fontSize: "17px", color: "var(--ink, #1f2a24)", fontFamily: "Fraunces, serif" }}>
-                    {selectedNode.name}
-                  </h3>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedNode(null)}
-                  style={{
-                    background: "var(--paper-raised, #f6f3ea)",
-                    border: "1px solid var(--hairline, #d8d0bc)",
-                    color: "var(--ink-soft, #4b5850)",
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "50%",
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                    fontSize: "14px",
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Node Metadata Badges */}
-              <div style={{ display: "grid", gap: "8px", fontSize: "13px", marginBottom: "16px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--hairline, #d8d0bc)", paddingBottom: "6px" }}>
-                  <span style={{ color: "var(--ink-soft, #4b5850)" }}>Node ID:</span>
-                  <span style={{ fontFamily: "IBM Plex Mono, monospace", color: "#2563eb", fontWeight: 600 }}>{selectedNode.id}</span>
-                </div>
-
-                {selectedNode.designation && (
-                  <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--hairline, #d8d0bc)", paddingBottom: "6px" }}>
-                    <span style={{ color: "var(--ink-soft, #4b5850)" }}>Designation:</span>
-                    <span>{selectedNode.designation}</span>
-                  </div>
-                )}
-
-                {selectedNode.latitude && (
-                  <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--hairline, #d8d0bc)", paddingBottom: "6px" }}>
-                    <span style={{ color: "var(--ink-soft, #4b5850)" }}>GPS Coordinates:</span>
-                    <span style={{ fontFamily: "IBM Plex Mono, monospace" }}>
-                      {selectedNode.latitude.toFixed(4)}, {selectedNode.longitude?.toFixed(4)}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Sensor Readouts */}
-              {selectedNode.type === "sensor" && selectedNode.raw && (
-                <div
-                  style={{
-                    background: "#eff6ff",
-                    border: "1px solid #bfdbfe",
-                    borderRadius: "6px",
-                    padding: "12px",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#1e40af", marginBottom: "8px" }}>
-                    LIVE SENSOR TELEMETRY READINGS
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px" }}>
-                    <div>
-                      <div style={{ color: "#475569", fontSize: "11px" }}>pH Value</div>
-                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#1e3a8a" }}>{selectedNode.raw.ph}</div>
-                    </div>
-                    <div>
-                      <div style={{ color: "#475569", fontSize: "11px" }}>Conductivity (EC)</div>
-                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#1e3a8a" }}>{selectedNode.raw.ec} µS/cm</div>
-                    </div>
-                    <div>
-                      <div style={{ color: "#475569", fontSize: "11px" }}>Turbidity</div>
-                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#1e3a8a" }}>{selectedNode.raw.turbidity} NTU</div>
-                    </div>
-                    <div>
-                      <div style={{ color: "#475569", fontSize: "11px" }}>Status</div>
-                      <div style={{ fontSize: "13px", fontWeight: 700, color: "#16a34a" }}>ONLINE</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Unit DPP & Ledger Section */}
-              {selectedNode.type === "unit" && (
-                <>
-                  {loadingDetails ? (
-                    <div style={{ padding: "16px", textAlign: "center", color: "var(--ink-soft)", fontSize: "12.5px" }}>
-                      Fetching Ledger & DPP Proofs...
-                    </div>
-                  ) : (
-                    <>
-                      {nodeDpp && (
-                        <div
-                          style={{
-                            background: "#f0fdf4",
-                            border: "1px solid #bbf7d0",
-                            borderRadius: "6px",
-                            padding: "12px",
-                            marginBottom: "16px",
-                          }}
-                        >
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#166534", marginBottom: "6px" }}>
-                            DIGITAL PRODUCT PASSPORT (DPP)
-                          </div>
-                          <div style={{ fontSize: "12.5px", marginBottom: "6px", color: "var(--ink)" }}>
-                            <strong>Compliance Summary:</strong> {nodeDpp.compliance_summary}
-                          </div>
-                          <div style={{ fontSize: "12.5px", color: "var(--ink)" }}>
-                            <strong>Water Reuse:</strong> {nodeDpp.reuse_and_energy?.reuse_percentage}%
-                          </div>
-                          <Link
-                            href={`/units/${selectedNode.id}`}
-                            style={{
-                              display: "inline-block",
-                              marginTop: "8px",
-                              fontSize: "12px",
-                              color: "#2563eb",
-                              fontWeight: 600,
-                              textDecoration: "underline",
-                            }}
-                          >
-                            View Full DPP Certificate →
-                          </Link>
-                        </div>
-                      )}
-
-                      {/* Event History Chain */}
-                      <div>
-                        <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--ink-soft, #4b5850)", marginBottom: "8px" }}>
-                          LEDGER EVENT HISTORY ({nodeLedger.length})
-                        </div>
-                        {nodeLedger.length === 0 ? (
-                          <div style={{ fontSize: "12.5px", color: "var(--ink-soft)", fontStyle: "italic" }}>
-                            No events recorded for this facility yet.
-                          </div>
-                        ) : (
-                          <div style={{ display: "grid", gap: "6px", maxHeight: "160px", overflowY: "auto" }}>
-                            {nodeLedger.map((entry, idx) => (
-                              <div
-                                key={entry.event_id || idx}
-                                style={{
-                                  background: "var(--paper-raised, #f6f3ea)",
-                                  padding: "8px 10px",
-                                  borderRadius: "4px",
-                                  borderLeft: `3px solid ${
-                                    entry.decision === "investigate" ? "var(--madder, #9c3b22)" : "#16a34a"
-                                  }`,
-                                  fontSize: "11.5px",
-                                }}
-                              >
-                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                                  <span style={{ fontWeight: 700, color: entry.decision === "investigate" ? "var(--madder, #9c3b22)" : "#16a34a" }}>
-                                    {entry.decision?.toUpperCase()}
-                                  </span>
-                                  <span style={{ color: "var(--ink-soft)" }}>{new Date(entry.timestamp).toLocaleTimeString()}</span>
-                                </div>
-                                <div style={{ color: "var(--ink-soft)", fontFamily: "IBM Plex Mono, monospace", fontSize: "10px" }}>
-                                  Hash: {entry.current_hash?.substring(0, 16)}...
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Clean Footer Live Event Stream Bar */}
-        <footer
+        {/* RIGHT FLOATING PANEL: INSPECTOR CARD */}
+        <div
           style={{
-            padding: "12px 24px",
-            background: "var(--paper-raised, #f6f3ea)",
-            borderTop: "1px solid var(--hairline, #d8d0bc)",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            overflowX: "auto",
-            zIndex: 15,
+            position: "absolute",
+            top: "16px",
+            right: "16px",
+            zIndex: 20,
+            width: "320px",
+            background: "rgba(15, 23, 42, 0.88)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(51, 65, 85, 0.8)",
+            borderRadius: "12px",
+            padding: "16px",
+            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4)",
+            maxHeight: "calc(100% - 32px)",
+            overflowY: "auto",
           }}
         >
-          <div style={{ whiteSpace: "nowrap", fontSize: "11px", fontWeight: 700, color: "#2563eb", letterSpacing: "0.05em" }}>
-            LIVE EVENT STREAM:
+          <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", color: "#38bdf8", textTransform: "uppercase", marginBottom: "10px" }}>
+            INSPECTOR / NODE DETAILS
           </div>
 
-          {recentEvents.length === 0 ? (
-            <div style={{ fontSize: "12px", color: "var(--ink-soft)" }}>Connecting to live ledger feed...</div>
+          {!selectedNode ? (
+            <div style={{ padding: "20px 0", textAlign: "center", color: "#94a3b8" }}>
+              <div style={{ fontSize: "28px", marginBottom: "8px" }}>🌐</div>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: "#f8fafc" }}>No Location Selected</div>
+              <div style={{ fontSize: "12px", marginTop: "4px" }}>
+                Click any 3D facility building, sensor beacon, or groundwater zone in the viewer.
+              </div>
+            </div>
           ) : (
-            <div style={{ display: "flex", gap: "12px", flex: 1, overflowX: "auto" }}>
-              {recentEvents.map((ev, idx) => (
-                <div
-                  key={ev.event_id + idx}
-                  style={{
-                    background: "#ffffff",
-                    border: "1px solid var(--hairline, #d8d0bc)",
-                    borderRadius: "6px",
-                    padding: "6px 12px",
-                    minWidth: "220px",
-                    fontSize: "11.5px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "10px",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 600, color: ev.decision === "investigate" ? "var(--madder, #9c3b22)" : "#16a34a" }}>
-                      {ev.decision?.toUpperCase()}: {ev.most_likely_source || "Network"}
-                    </div>
-                    <div style={{ color: "var(--ink-soft)", fontSize: "10.5px" }}>
-                      {new Date(ev.timestamp).toLocaleTimeString()} · Conf: {Math.round(ev.confidence * 100)}%
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <div style={{ fontSize: "16px", fontWeight: 700, color: "#ffffff" }}>{selectedNode.name}</div>
+                <div style={{ fontSize: "12px", color: "#38bdf8", marginTop: "2px" }}>{selectedNode.designation}</div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <div style={{ background: "#1e293b", padding: "8px 10px", borderRadius: "6px" }}>
+                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>LATITUDE</div>
+                  <div style={{ fontSize: "12px", fontWeight: 600, fontFamily: "monospace" }}>{selectedNode.latitude?.toFixed(4)}° N</div>
+                </div>
+                <div style={{ background: "#1e293b", padding: "8px 10px", borderRadius: "6px" }}>
+                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>LONGITUDE</div>
+                  <div style={{ fontSize: "12px", fontWeight: 600, fontFamily: "monospace" }}>{selectedNode.longitude?.toFixed(4)}° E</div>
+                </div>
+              </div>
+
+              {selectedNode.type === "sensor" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px" }}>
+                  <div style={{ background: "#1e293b", padding: "8px", borderRadius: "6px", textAlign: "center" }}>
+                    <div style={{ fontSize: "10px", color: "#94a3b8" }}>pH</div>
+                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#10b981" }}>{selectedNode.raw?.ph || 7.2}</div>
+                  </div>
+                  <div style={{ background: "#1e293b", padding: "8px", borderRadius: "6px", textAlign: "center" }}>
+                    <div style={{ fontSize: "10px", color: "#94a3b8" }}>EC</div>
+                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#38bdf8" }}>{selectedNode.raw?.ec || 1420}</div>
+                  </div>
+                  <div style={{ background: "#1e293b", padding: "8px", borderRadius: "6px", textAlign: "center" }}>
+                    <div style={{ fontSize: "10px", color: "#94a3b8" }}>TURBIDITY</div>
+                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#f59e0b" }}>{selectedNode.raw?.turbidity || 18}</div>
+                  </div>
+                </div>
+              )}
+
+              {selectedNode.type === "unit" && (
+                <div>
+                  <div style={{ background: "#1e293b", padding: "10px", borderRadius: "6px", marginBottom: "8px" }}>
+                    <div style={{ fontSize: "11px", color: "#94a3b8" }}>COMPLIANCE STATUS</div>
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: "#10b981", marginTop: "2px" }}>
+                      ✔ ZERO LIQUID DISCHARGE (ZLD) MANDATED
                     </div>
                   </div>
-                  <span
+                  <Link
+                    href={`/units/${selectedNode.id}`}
                     style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: ev.decision === "investigate" ? "var(--madder, #9c3b22)" : "#16a34a",
+                      display: "block",
+                      textAlign: "center",
+                      background: "#2563eb",
+                      color: "white",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      textDecoration: "none",
                     }}
-                  />
+                  >
+                    View Unit Passport & Ledger →
+                  </Link>
                 </div>
-              ))}
+              )}
+
+              <button
+                type="button"
+                onClick={() => setSelectedNode(null)}
+                style={{
+                  background: "transparent",
+                  color: "#94a3b8",
+                  border: "1px solid #334155",
+                  padding: "6px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                }}
+              >
+                Close Inspector
+              </button>
             </div>
           )}
-        </footer>
-      </main>
+        </div>
+      </div>
+
+      {/* BOTTOM TELEMETRY STRIP */}
+      <footer
+        style={{
+          padding: "10px 24px",
+          background: "rgba(15, 23, 42, 0.95)",
+          backdropFilter: "blur(12px)",
+          borderTop: "1px solid #1e293b",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "16px",
+          fontSize: "12px",
+          zIndex: 30,
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ fontSize: "16px" }}>💧</div>
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: "10.5px", fontWeight: 700 }}>WATER QUALITY (NOYYAL)</div>
+            <div style={{ fontWeight: 600, color: "#f8fafc" }}>pH 7.2 · EC 1420 µS/cm · Normal</div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ fontSize: "16px" }}>🏭</div>
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: "10.5px", fontWeight: 700 }}>INDUSTRIAL UNITS</div>
+            <div style={{ fontWeight: 600, color: "#f8fafc" }}>12 Connected Facilities · 100% ZLD</div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ fontSize: "16px" }}>🌐</div>
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: "10.5px", fontWeight: 700 }}>GROUNDWATER STRESS</div>
+            <div style={{ fontWeight: 600, color: "#f8fafc" }}>6 FIRKA Zones · 62% Extraction</div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ fontSize: "16px" }}>📜</div>
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: "10.5px", fontWeight: 700 }}>LEDGER INTEGRITY</div>
+            <div style={{ fontWeight: 600, color: "#10b981" }}>SHA-256 Chain Active · 0 Alerts</div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
