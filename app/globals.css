@@ -230,8 +230,9 @@ nav.topnav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 28px;
-  background: rgba(255, 255, 255, 0.9);
+  height: 68px;
+  padding: 0 28px;
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--hairline);
@@ -241,20 +242,24 @@ nav.topnav {
 nav.topnav .links {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 13.5px;
 }
 
 nav.topnav .links .nav-link-item {
   text-decoration: none;
   color: var(--ink-soft);
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: var(--radius-sm);
   font-weight: 500;
   transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
 }
 
 nav.topnav .links .nav-link-item:hover {
@@ -263,6 +268,58 @@ nav.topnav .links .nav-link-item:hover {
 }
 
 nav.topnav .links .nav-link-item.active {
+  color: var(--teal);
+  background: var(--teal-soft);
+  font-weight: 600;
+}
+
+/* Nav Dropdown Container & Menu */
+.nav-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 190px;
+  background: #ffffff;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+  padding: 6px;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: navFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes navFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.nav-dropdown-item {
+  text-decoration: none;
+  color: var(--ink-soft);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-dropdown-item:hover {
+  color: var(--ink);
+  background: #f8fafc;
+}
+
+.nav-dropdown-item.active {
   color: var(--teal);
   background: var(--teal-soft);
   font-weight: 600;

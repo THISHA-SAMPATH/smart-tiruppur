@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -9,16 +9,36 @@ export default function Nav() {
   const pathname = usePathname();
   const { user, logout, loading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // Close mobile drawer when pathname changes
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when pathname changes or when clicking outside
   useEffect(() => {
     setMobileMenuOpen(false);
+    setActiveDropdown(null);
+    setUserMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setActiveDropdown(null);
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (pathname === "/login") return null;
 
   const isActive = (path: string) =>
     path === "/" ? pathname === "/" : pathname.startsWith(path);
+
+  const isDropdownActive = (paths: string[]) =>
+    paths.some((p) => pathname.startsWith(p));
 
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
@@ -54,139 +74,356 @@ export default function Nav() {
     }
   };
 
-  const navLinks = !loading && user ? (
-    <>
-      <Link href="/terrain" className={isActive("/terrain") ? "active nav-link-item" : "nav-link-item"}>
-        Digital Twin 🌐
-      </Link>
-      <Link href="/map" className={isActive("/map") ? "active nav-link-item" : "nav-link-item"}>
-        2D GIS Map 🗺️
-      </Link>
-      <Link href="/monitoring" className={isActive("/monitoring") ? "active nav-link-item" : "nav-link-item"}>
-        Environment 🌊
-      </Link>
-      <Link href="/groundwater" className={isActive("/groundwater") ? "active nav-link-item" : "nav-link-item"}>
-        Groundwater 💧
-      </Link>
-      <Link href="/steri" className={isActive("/steri") ? "active nav-link-item" : "nav-link-item"}>
-        STERI Index 🧪
-      </Link>
-      <Link href="/predictions" className={isActive("/predictions") ? "active nav-link-item" : "nav-link-item"}>
-        Early Warning 🔮
-      </Link>
-      <Link href="/actions" className={isActive("/actions") ? "active nav-link-item" : "nav-link-item"}>
-        Action Engine ⚡
-      </Link>
-      <Link href="/flood-analysis" className={isActive("/flood-analysis") ? "active nav-link-item" : "nav-link-item"}>
-        Flood Analysis 🌧️
-      </Link>
-      <Link href="/circularity" className={isActive("/circularity") ? "active nav-link-item" : "nav-link-item"}>
-        Circularity ♻️
-      </Link>
+  const getIndustryRouteForRole = (role?: string) => {
+    switch (role) {
+      case "REGULATOR":
+        return "/regulator";
+      case "INDUSTRY":
+        return "/industry";
+      case "CITIZEN":
+        return "/citizen";
+      case "ADMIN":
+      default:
+        return "/admin";
+    }
+  };
 
-      {user.role === "ADMIN" && (
-        <Link href="/admin" className={isActive("/admin") && pathname === "/admin" ? "active nav-link-item" : "nav-link-item"}>
-          Industries 🏭
-        </Link>
-      )}
+  const getIndustryLabelForRole = (role?: string) => {
+    switch (role) {
+      case "REGULATOR":
+        return "Regulator Hub";
+      case "INDUSTRY":
+        return "My Facility";
+      case "CITIZEN":
+        return "Citizen Portal";
+      case "ADMIN":
+      default:
+        return "Industries";
+    }
+  };
 
-      {user.role === "REGULATOR" && (
-        <Link href="/regulator" className={isActive("/regulator") ? "active nav-link-item" : "nav-link-item"}>
-          Regulator Hub 🏭
-        </Link>
-      )}
-
-      {user.role === "INDUSTRY" && (
-        <Link href="/industry" className={isActive("/industry") ? "active nav-link-item" : "nav-link-item"}>
-          My Facility 🏭
-        </Link>
-      )}
-
-      {user.role === "CITIZEN" && (
-        <Link href="/citizen" className={isActive("/citizen") ? "active nav-link-item" : "nav-link-item"}>
-          Citizen Portal 👥
-        </Link>
-      )}
-
-      <Link href="/evidence" className={isActive("/evidence") ? "active nav-link-item" : "nav-link-item"}>
-        Incidents 📜
-      </Link>
-      <Link href="/verify" className={isActive("/verify") ? "active nav-link-item" : "nav-link-item"}>
-        Verify DPP 🛡️
-      </Link>
-    </>
-  ) : null;
+  const toggleDropdown = (name: string) => {
+    setActiveDropdown((prev) => (prev === name ? null : name));
+    setUserMenuOpen(false);
+  };
 
   return (
-    <nav className="topnav">
-      <div style={{ display: "flex", alignItems: "baseline", gap: "16px" }}>
+    <nav className="topnav" ref={dropdownRef}>
+      {/* Brand Logo */}
+      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
         <Link href={user ? getRoleHomePath(user.role) : "/"} className="brand">
           NoyyalSense<span>TN</span>
         </Link>
       </div>
 
-      {/* Desktop Links */}
-      <div className="links links-desktop" style={{ alignItems: "center" }}>
-        {navLinks}
+      {/* Primary Desktop Navigation Groups */}
+      {!loading && user && (
+        <div className="links links-desktop" style={{ alignItems: "center" }}>
+          {/* Overview */}
+          <Link
+            href={getRoleHomePath(user.role)}
+            className={`nav-link-item ${isActive(getRoleHomePath(user.role)) ? "active" : ""}`}
+          >
+            Overview
+          </Link>
 
+          {/* Digital Twin (Direct) */}
+          <Link
+            href="/terrain"
+            className={`nav-link-item ${isActive("/terrain") ? "active" : ""}`}
+          >
+            Digital Twin
+          </Link>
+
+          {/* GIS (Direct) */}
+          <Link
+            href="/map"
+            className={`nav-link-item ${isActive("/map") ? "active" : ""}`}
+          >
+            GIS
+          </Link>
+
+          {/* INTELLIGENCE Dropdown */}
+          <div
+            className="nav-dropdown"
+            onMouseEnter={() => setActiveDropdown("intelligence")}
+            onMouseLeave={() => setActiveDropdown(null)}
+          >
+            <button
+              type="button"
+              className={`nav-link-item ${isDropdownActive(["/monitoring", "/groundwater", "/steri", "/predictions"]) ? "active" : ""}`}
+              onClick={() => toggleDropdown("intelligence")}
+            >
+              Intelligence ▾
+            </button>
+            {activeDropdown === "intelligence" && (
+              <div className="nav-dropdown-menu">
+                <Link
+                  href="/monitoring"
+                  className={`nav-dropdown-item ${isActive("/monitoring") ? "active" : ""}`}
+                >
+                  Environment
+                </Link>
+                <Link
+                  href="/groundwater"
+                  className={`nav-dropdown-item ${isActive("/groundwater") ? "active" : ""}`}
+                >
+                  Groundwater
+                </Link>
+                <Link
+                  href="/steri"
+                  className={`nav-dropdown-item ${isActive("/steri") ? "active" : ""}`}
+                >
+                  STERI Index
+                </Link>
+                <Link
+                  href="/predictions"
+                  className={`nav-dropdown-item ${isActive("/predictions") ? "active" : ""}`}
+                >
+                  Early Warning
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* OPERATIONS Dropdown */}
+          <div
+            className="nav-dropdown"
+            onMouseEnter={() => setActiveDropdown("operations")}
+            onMouseLeave={() => setActiveDropdown(null)}
+          >
+            <button
+              type="button"
+              className={`nav-link-item ${isDropdownActive(["/actions", "/flood-analysis", getIndustryRouteForRole(user.role), "/evidence"]) ? "active" : ""}`}
+              onClick={() => toggleDropdown("operations")}
+            >
+              Operations ▾
+            </button>
+            {activeDropdown === "operations" && (
+              <div className="nav-dropdown-menu">
+                <Link
+                  href="/actions"
+                  className={`nav-dropdown-item ${isActive("/actions") ? "active" : ""}`}
+                >
+                  Action Engine
+                </Link>
+                <Link
+                  href="/flood-analysis"
+                  className={`nav-dropdown-item ${isActive("/flood-analysis") ? "active" : ""}`}
+                >
+                  Flood Analysis
+                </Link>
+                <Link
+                  href={getIndustryRouteForRole(user.role)}
+                  className={`nav-dropdown-item ${isActive(getIndustryRouteForRole(user.role)) ? "active" : ""}`}
+                >
+                  {getIndustryLabelForRole(user.role)}
+                </Link>
+                <Link
+                  href="/evidence"
+                  className={`nav-dropdown-item ${isActive("/evidence") ? "active" : ""}`}
+                >
+                  Incidents
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* COMPLIANCE Dropdown */}
+          <div
+            className="nav-dropdown"
+            onMouseEnter={() => setActiveDropdown("compliance")}
+            onMouseLeave={() => setActiveDropdown(null)}
+          >
+            <button
+              type="button"
+              className={`nav-link-item ${isDropdownActive(["/circularity", "/verify", "/evidence"]) ? "active" : ""}`}
+              onClick={() => toggleDropdown("compliance")}
+            >
+              Compliance ▾
+            </button>
+            {activeDropdown === "compliance" && (
+              <div className="nav-dropdown-menu">
+                <Link
+                  href="/circularity"
+                  className={`nav-dropdown-item ${isActive("/circularity") ? "active" : ""}`}
+                >
+                  Circularity
+                </Link>
+                <Link
+                  href="/verify"
+                  className={`nav-dropdown-item ${isActive("/verify") ? "active" : ""}`}
+                >
+                  DPP Verification
+                </Link>
+                <Link
+                  href="/evidence"
+                  className={`nav-dropdown-item ${isActive("/evidence") ? "active" : ""}`}
+                >
+                  Evidence Ledger
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* MORE Dropdown */}
+          <div
+            className="nav-dropdown"
+            onMouseEnter={() => setActiveDropdown("more")}
+            onMouseLeave={() => setActiveDropdown(null)}
+          >
+            <button
+              type="button"
+              className={`nav-link-item ${isDropdownActive(["/scenarios", "/about"]) ? "active" : ""}`}
+              onClick={() => toggleDropdown("more")}
+            >
+              More ▾
+            </button>
+            {activeDropdown === "more" && (
+              <div className="nav-dropdown-menu">
+                <Link
+                  href="/scenarios"
+                  className={`nav-dropdown-item ${isActive("/scenarios") ? "active" : ""}`}
+                >
+                  Scenarios
+                </Link>
+                <Link
+                  href="/monitoring"
+                  className="nav-dropdown-item"
+                >
+                  Data Sources
+                </Link>
+                <Link
+                  href="/about"
+                  className={`nav-dropdown-item ${isActive("/about") ? "active" : ""}`}
+                >
+                  System Status
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Right Controls: User Profile & Compact Role Badge */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         {!loading && !user && pathname !== "/login" && (
-          <Link href="/login" className="btn btn-ghost" style={{ padding: "4px 12px", fontSize: "13px" }}>
+          <Link href="/login" className="btn btn-ghost" style={{ padding: "6px 14px", fontSize: "13px" }}>
             Sign In
           </Link>
         )}
 
         {!loading && user && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              marginLeft: "12px",
-              paddingLeft: "12px",
-              borderLeft: "1px solid var(--hairline)",
-            }}
-          >
-            <span className={`badge ${getRoleBadgeClass(user.role)}`} style={{ fontSize: "11px", padding: "2px 8px" }}>
-              <span className="badge-dot" />
-              {formatRoleLabel(user.role)}
-            </span>
-
-            <span className="small muted" style={{ maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {user.name.split(" ")[0]}
-            </span>
-
+          <div style={{ position: "relative" }}>
             <button
-              onClick={() => void logout()}
-              className="btn btn-ghost"
+              type="button"
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
               style={{
-                padding: "4px 10px",
-                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px 8px",
                 borderRadius: "var(--radius-sm)",
               }}
-              title="Sign out of account"
             >
-              Sign Out
+              <span className={`badge ${getRoleBadgeClass(user.role)}`} style={{ fontSize: "10.5px", padding: "2px 8px" }}>
+                <span className="badge-dot" />
+                {formatRoleLabel(user.role)}
+              </span>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
+                {user.name.split(" ")[0]} ▾
+              </span>
             </button>
+
+            {/* User Dropdown Menu */}
+            {userMenuOpen && (
+              <div
+                className="nav-dropdown-menu"
+                style={{ right: 0, left: "auto", minWidth: "180px", marginTop: "4px" }}
+              >
+                <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--hairline)" }}>
+                  <div style={{ fontSize: "11px", color: "var(--ink-soft)" }}>Logged in as</div>
+                  <div style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--ink)" }}>{user.name}</div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    void logout();
+                  }}
+                  className="nav-dropdown-item"
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    color: "var(--madder)",
+                    fontWeight: 600,
+                    marginTop: "2px",
+                  }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         )}
-      </div>
 
-      {/* Mobile Hamburger Button */}
-      <button
-        type="button"
-        className="nav-hamburger"
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        aria-label="Toggle navigation menu"
-        aria-expanded={mobileMenuOpen}
-      >
-        {mobileMenuOpen ? "✕" : "☰"}
-      </button>
+        {/* Mobile Hamburger Button */}
+        <button
+          type="button"
+          className="nav-hamburger"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle navigation menu"
+          aria-expanded={mobileMenuOpen}
+        >
+          {mobileMenuOpen ? "✕" : "☰"}
+        </button>
+      </div>
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="nav-mobile-drawer">
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {navLinks}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {!loading && user && (
+              <>
+                <Link href={getRoleHomePath(user.role)} className="nav-link-item">
+                  Overview
+                </Link>
+                <Link href="/terrain" className="nav-link-item">
+                  Digital Twin
+                </Link>
+                <Link href="/map" className="nav-link-item">
+                  GIS Map
+                </Link>
+                <div style={{ padding: "6px 0", borderTop: "1px solid var(--hairline)", fontWeight: 700, fontSize: "11px", color: "var(--ink-soft)" }}>
+                  INTELLIGENCE
+                </div>
+                <Link href="/monitoring" className="nav-link-item">Environment</Link>
+                <Link href="/groundwater" className="nav-link-item">Groundwater</Link>
+                <Link href="/steri" className="nav-link-item">STERI Index</Link>
+                <Link href="/predictions" className="nav-link-item">Early Warning</Link>
+                <div style={{ padding: "6px 0", borderTop: "1px solid var(--hairline)", fontWeight: 700, fontSize: "11px", color: "var(--ink-soft)" }}>
+                  OPERATIONS
+                </div>
+                <Link href="/actions" className="nav-link-item">Action Engine</Link>
+                <Link href="/flood-analysis" className="nav-link-item">Flood Analysis</Link>
+                <Link href={getIndustryRouteForRole(user.role)} className="nav-link-item">{getIndustryLabelForRole(user.role)}</Link>
+                <Link href="/evidence" className="nav-link-item">Incidents</Link>
+                <div style={{ padding: "6px 0", borderTop: "1px solid var(--hairline)", fontWeight: 700, fontSize: "11px", color: "var(--ink-soft)" }}>
+                  COMPLIANCE
+                </div>
+                <Link href="/circularity" className="nav-link-item">Circularity</Link>
+                <Link href="/verify" className="nav-link-item">DPP Verification</Link>
+                <Link href="/evidence" className="nav-link-item">Evidence Ledger</Link>
+                <div style={{ padding: "6px 0", borderTop: "1px solid var(--hairline)", fontWeight: 700, fontSize: "11px", color: "var(--ink-soft)" }}>
+                  MORE
+                </div>
+                <Link href="/scenarios" className="nav-link-item">Scenarios</Link>
+              </>
+            )}
 
             {!loading && !user && pathname !== "/login" && (
               <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid var(--hairline)" }}>
@@ -197,7 +434,7 @@ export default function Nav() {
             )}
 
             {!loading && user && (
-              <div className="nav-user-panel">
+              <div className="nav-user-panel" style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid var(--hairline)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span className="small muted">
                     Logged in as <strong>{user.name}</strong>
@@ -221,10 +458,10 @@ export default function Nav() {
                     fontSize: "13px",
                     color: "var(--madder)",
                     borderColor: "var(--madder)",
-                    marginTop: "6px",
+                    marginTop: "8px",
                   }}
                 >
-                  Sign Out of Account
+                  Sign Out
                 </button>
               </div>
             )}
