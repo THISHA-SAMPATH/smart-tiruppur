@@ -69,7 +69,7 @@ export default function LayerPanel({
             { key: "river", label: "Noyyal River Flow" },
             { key: "drainage", label: "Drainage Channels (GIS Network)" },
             { key: "roads", label: "Road Network (GIS Transit)" },
-            { key: "buildings", label: "Urban Residential Fabric" },
+            { key: "buildings", label: "Urban Fabric (OSM Buildings)" },
             { key: "units", label: "Industrial Facilities (12 Units)" },
             { key: "infrastructure", label: "Utility Infrastructure" },
             { key: "vegetation", label: "Vegetation & Canopy" },

@@ -3,14 +3,19 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getUnits } from "@/lib/api";
 import type { LedgerUnit } from "@/lib/types";
-import { LayerBuilderContext, HydrologyGISDataset } from "@/lib/digital-twin/types";
+import { BuildingGISDataset, LayerBuilderContext, HydrologyGISDataset, RoadGISDataset } from "@/lib/digital-twin/types";
 import { buildTerrainLayer } from "@/lib/digital-twin/terrain";
 import { buildHydrologyLayers, parseGeoJSONToHydrologyDataset } from "@/lib/digital-twin/hydrology";
-import { buildRoadsLayer } from "@/lib/digital-twin/roads";
-import { buildUrbanLayer } from "@/lib/digital-twin/urban";
+import { buildRoadsLayer, parseGeoJSONToRoadDataset } from "@/lib/digital-twin/roads";
+import { buildUrbanLayer, parseGeoJSONToBuildingDataset } from "@/lib/digital-twin/urban";
 import { buildIndustrialLayer } from "@/lib/digital-twin/industrial";
 import { buildInfrastructureLayer } from "@/lib/digital-twin/infrastructure";
 import { buildVegetationLayer } from "@/lib/digital-twin/vegetation";
+import {
+  geoTo3D as projectGeoTo3D,
+  sampleTiruppurElevation as sampleProjectedElevation,
+  vector3DToGeo as projectVector3DToGeo,
+} from "@/lib/geo/projection";
 
 export type LightingPreset = "day" | "dusk" | "night";
 export type UserRoleOverlay = "REGULATOR" | "GROUNDWATER_OFFICER" | "INDUSTRY" | "CITIZEN" | "ADMIN";
@@ -38,7 +43,7 @@ export type UnitStatusType = "COMPLIANT" | "WARNING" | "INVESTIGATE" | "OFFLINE"
 export interface SelectedNodeInfo {
   id: string;
   name: string;
-  type: "sensor" | "unit" | "groundwater" | "terrain" | "steri_risk";
+  type: "sensor" | "unit" | "groundwater" | "terrain" | "steri_risk" | "road" | "building" | "hydrology";
   designation?: string;
   status?: UnitStatusType | string;
   statusSymbol?: string;
@@ -320,6 +325,8 @@ export default function Terrain3DViewer({
   const targetLookAtRef = useRef<THREE.Vector3 | null>(null);
 
   const [hydroGisDataset, setHydroGisDataset] = useState<HydrologyGISDataset | null>(null);
+  const [roadsGisDataset, setRoadsGisDataset] = useState<RoadGISDataset | null>(null);
+  const [buildingsGisDataset, setBuildingsGisDataset] = useState<BuildingGISDataset | null>(null);
 
   // Fetch verified Noyyal River GeoJSON if present in public/geo/
   useEffect(() => {
@@ -337,6 +344,44 @@ export default function Terrain3DViewer({
       })
       .catch(() => {
         // Fallback procedural geometry handled gracefully by hydrology builder
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Load the OSM/Overpass footprints exactly as supplied; no gap-filling geometry.
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/geo/tiruppur-buildings.geojson")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data) setBuildingsGisDataset(parseGeoJSONToBuildingDataset(data));
+      })
+      .catch(() => {
+        // Keep the existing urban layer empty when the optional open-data source is unavailable.
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Fetch verified Tiruppur Road Network GeoJSON if present in public/geo/
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/geo/tiruppur-roads.geojson")
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data) => {
+        if (isMounted && data) {
+          const dataset = parseGeoJSONToRoadDataset(data, "TNGIS", "REAL");
+          setRoadsGisDataset(dataset);
+        }
+      })
+      .catch(() => {
+        // Handled gracefully: empty roads group returned (zero fake data invented)
       });
     return () => {
       isMounted = false;
@@ -438,10 +483,13 @@ export default function Terrain3DViewer({
     const builderCtx: LayerBuilderContext = {
       scene,
       interactiveObjects: interactiveObjectsRef.current,
-      geoTo3D,
-      vector3DToGeo,
-      sampleElevation: sampleTiruppurElevation,
+      // Roads and all layer builders use the shared GIS projection implementation.
+      geoTo3D: projectGeoTo3D,
+      vector3DToGeo: projectVector3DToGeo,
+      sampleElevation: sampleProjectedElevation,
       hydrologyDataset: hydroGisDataset,
+      roadsDataset: roadsGisDataset,
+      buildingsDataset: buildingsGisDataset,
     };
 
     // 1. Terrain & Contours Builder
@@ -644,6 +692,32 @@ export default function Terrain3DViewer({
             recommendation: uData.data.recommendation,
             raw: uData.data,
           });
+        } else if (uData.type === "road") {
+          const { lat, lon } = hit.point ? vector3DToGeo(hit.point.x, hit.point.z) : { lat: 11.1085, lon: 77.3411 };
+          onSelectNode({
+            id: uData.featureId || uData.data.featureId || uData.data.id || "road_feature",
+            name: uData.roadName || uData.data.name || "GIS Road Feature",
+            type: "road",
+            designation: uData.roadClass || uData.data.roadClass || uData.data.highway
+              ? `Road class: ${uData.roadClass || uData.data.roadClass || uData.data.highway}`
+              : "TNGIS road feature",
+            status: "REAL_GIS",
+            latitude: lat,
+            longitude: lon,
+            raw: uData.data,
+          });
+        } else if (uData.type === "building") {
+          const { lat, lon } = hit.point ? vector3DToGeo(hit.point.x, hit.point.z) : { lat: 11.1085, lon: 77.3411 };
+          onSelectNode({
+            id: uData.featureId || "osm_building",
+            name: uData.data.name || "OSM Building Footprint",
+            type: "building",
+            designation: uData.data.building ? `Building type: ${uData.data.building}` : "OSM building footprint",
+            status: "OPEN_DATA",
+            latitude: lat,
+            longitude: lon,
+            raw: uData.originalProperties,
+          });
         } else if (hit.object === terrainMeshRef.current && hit.point) {
           // Terrain Elevation Inspector (Fix #23)
           const { lat, lon } = vector3DToGeo(hit.point.x, hit.point.z);
@@ -735,7 +809,7 @@ export default function Terrain3DViewer({
       renderer.domElement.removeEventListener("click", handlePointerDown);
       renderer.dispose();
     };
-  }, [autoRotate, onSelectNode, hydroGisDataset]);
+  }, [autoRotate, onSelectNode, hydroGisDataset, roadsGisDataset, buildingsGisDataset]);
 
   return (
     <div
