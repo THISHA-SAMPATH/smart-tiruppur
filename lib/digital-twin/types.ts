@@ -35,12 +35,15 @@ export interface DigitalTwinLayerToggles {
   roads?: boolean;
   buildings?: boolean;
   units: boolean;
+  /** Explicitly simulated links from demo outfalls to the active waterway. */
+  dischargePaths?: boolean;
   infrastructure?: boolean;
   vegetation?: boolean;
   sensors: boolean;
   groundwater: boolean;
   floodRisk: boolean;
   pollution: boolean;
+  sourceSensorInfluence?: boolean;
   steriRisk?: boolean;
   citizenIssues?: boolean;
 }
@@ -164,5 +167,6 @@ export interface LayerBuilderContext {
   hydrologyDataset?: HydrologyGISDataset | null;
   roadsDataset?: RoadGISDataset | null;
   buildingsDataset?: BuildingGISDataset | null;
+  /** Active Noyyal/waterway curve supplied by the hydrology layer. */
+  activeWaterwayCurve?: THREE.CatmullRomCurve3 | null;
 }
-

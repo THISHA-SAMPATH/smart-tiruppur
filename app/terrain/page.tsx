@@ -101,12 +101,14 @@ export default function Terrain3DPage() {
     roads: true,
     buildings: true,
     units: true,
+    dischargePaths: true,
     infrastructure: true,
     vegetation: true,
     sensors: true,
     groundwater: true,
     floodRisk: false,
     pollution: false,
+    sourceSensorInfluence: false,
     steriRisk: true,
   });
 

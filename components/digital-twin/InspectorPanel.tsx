@@ -31,6 +31,16 @@ export default function InspectorPanel({
     );
   }
 
+  const industrialSelection =
+    selectedNode.type === "unit" || selectedNode.type === "outfall"
+      ? selectedNode.raw
+      : null;
+  const unit = industrialSelection?.unit;
+  const outfall = industrialSelection?.outfall;
+  const sourceStrength = industrialSelection?.sourceStrength;
+  const normalizedSourceStrength = industrialSelection?.normalizedSourceStrength;
+  const sensorSelection = selectedNode.type === "sensor" ? selectedNode.raw : null;
+
   return (
     <div className="dt-panel-right">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
@@ -95,8 +105,66 @@ export default function InspectorPanel({
           </div>
         )}
 
-        {/* INDUSTRIAL FACILITY TELEMETRY & TIMESTAMPS (FIX #35 & FIX #36) */}
-        {selectedNode.type === "unit" && (
+        {/* Simulated sensor state is distinct from the modeled source-influence quantity. */}
+        {sensorSelection && (
+          <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "12px" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-amber)" }}>SIMULATED SENSOR NETWORK</span>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+              <div>Sensor ID: <strong>{sensorSelection.sensor_id}</strong></div>
+              <div>Stream ID: <strong>{sensorSelection.stream_id}</strong></div>
+              <div>pH: <strong>{sensorSelection.ph}</strong></div>
+              <div>EC: <strong>{sensorSelection.ec}</strong></div>
+              <div>Turbidity: <strong>{sensorSelection.turbidity}</strong></div>
+              <div>Flow: <strong>{sensorSelection.flow}</strong></div>
+              <div>Distance to Noyyal: <strong>{sensorSelection.distanceToRiver.toFixed(2)}</strong></div>
+              <div>River position: <strong>{sensorSelection.riverPosition.toFixed(3)}</strong></div>
+              <div>River chainage: <strong>{sensorSelection.riverChainage.toFixed(2)}</strong></div>
+              <div>Downstream order: <strong>{sensorSelection.downstreamOrder}</strong></div>
+              <div>Source Type: <strong>{sensorSelection.sourceType}</strong></div>
+              <div>Confidence: <strong>{sensorSelection.confidence.toFixed(2)}</strong></div>
+              <div style={{ gridColumn: "1 / -1" }}>Source: <strong>{sensorSelection.source}</strong></div>
+              <div style={{ gridColumn: "1 / -1" }}>Relative simulated source influence: <strong>{(sensorSelection.simulatedSourceInfluence * 100).toFixed(0)}%</strong></div>
+              <div style={{ gridColumn: "1 / -1" }}>Upstream simulated industrial sources: <strong>{sensorSelection.upstreamSimulatedSourceCount}</strong></div>
+            </div>
+            <div style={{ fontSize: "11px", color: "var(--color-slate-muted)", lineHeight: 1.45 }}>
+              Sensor state and source influence are synthetic demonstration values. River attachment: {sensorSelection.riverGeometrySource}.
+            </div>
+          </div>
+        )}
+
+        {/* Synthetic demonstration data: these locations and parameters are model inputs, not observations. */}
+        {industrialSelection && unit && outfall && (
+          <>
+            <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-amber)" }}>SIMULATED INDUSTRIAL SOURCE</span>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "12px" }}>
+                <div>Unit ID: <strong>{unit.unit_id}</strong></div>
+                <div>Type: <strong>{unit.type}</strong></div>
+                <div>Status: <strong>{unit.status}</strong></div>
+                <div>Flow: <strong>{unit.flow}</strong></div>
+                <div>Reuse: <strong>{unit.reuse}%</strong></div>
+                <div>Outfall ID: <strong>{outfall.outfall_id}</strong></div>
+                <div>Flow rate: <strong>{outfall.flow_rate}</strong></div>
+                <div>Pollutant: <strong>{outfall.pollutant}</strong></div>
+                <div>Concentration: <strong>{outfall.concentration}</strong></div>
+                <div>Relative simulated source strength: <strong>{(normalizedSourceStrength * 100).toFixed(0)}%</strong></div>
+              </div>
+            </div>
+            <div className="dt-card-surface" style={{ fontSize: "12px" }}>
+              <div>Source Type: <strong>{outfall.sourceType}</strong></div>
+              <div style={{ marginTop: "5px" }}>Source: <strong>{outfall.source}</strong></div>
+              <div style={{ marginTop: "5px" }}>Confidence: <strong>{outfall.confidence.toFixed(2)}</strong></div>
+              <div style={{ marginTop: "5px" }}>Strength input: <strong>{sourceStrength}</strong> (flow rate × concentration)</div>
+              {selectedNode.type === "outfall" && <div style={{ marginTop: "5px" }}>Downstream sensor count: <strong>{industrialSelection.downstreamSensorCount || 0}</strong></div>}
+              <div style={{ fontSize: "11px", color: "var(--color-slate-muted)", marginTop: "8px", lineHeight: 1.45 }}>
+                SIMULATED SOURCE-TO-RIVER TRANSPORT VISUALIZATION. Synthetic model inputs only; not a physically calibrated dispersion model.
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Legacy unit telemetry is intentionally hidden: this layer now presents synthetic source inputs instead. */}
+        {[selectedNode as SelectedNodeInfo].map((selectedNode) => false && selectedNode.type === "unit" && (
           <>
             <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -104,7 +172,7 @@ export default function InspectorPanel({
                 <span style={{ fontSize: "10px", color: "var(--color-green)", fontWeight: 600 }}>Updated 19:23:04</span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "12px" }}>
-                <div>pH: <strong style={{ color: "var(--color-green)" }}>{selectedNode.ph || 6.8}</strong></div>
+                <div>pH: <strong style={{ color: "var(--color-green)" }}>{selectedNode!.ph || 6.8}</strong></div>
                 <div>EC: <strong style={{ color: "var(--color-teal)" }}>{selectedNode.ec || 2850} µS/cm</strong></div>
                 <div>Turbidity: <strong style={{ color: "var(--color-amber)" }}>{selectedNode.turbidity || 45} NTU</strong></div>
                 <div>Flow: <strong style={{ color: "var(--color-slate-text)" }}>{selectedNode.flowRate || 128} L/s</strong></div>
@@ -114,7 +182,7 @@ export default function InspectorPanel({
             <div className="dt-card-surface">
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
                 <span style={{ color: "var(--color-slate-muted)" }}>WATER REUSE RATIO</span>
-                <strong style={{ color: "var(--color-green)" }}>{selectedNode.reusePercent || 91}%</strong>
+                <strong style={{ color: "var(--color-green)" }}>{selectedNode!.reusePercent || 91}%</strong>
               </div>
               <div style={{ width: "100%", height: "6px", background: "var(--color-slate-border)", borderRadius: "3px", overflow: "hidden" }}>
                 <div style={{ width: `${selectedNode.reusePercent || 91}%`, height: "100%", background: "var(--color-green)" }} />
@@ -122,7 +190,7 @@ export default function InspectorPanel({
             </div>
 
             {/* PHYSICAL DISCHARGE INCIDENT FLOW (FIX #20) */}
-            {selectedNode.status === "INVESTIGATE" && (
+            {selectedNode!.status === "INVESTIGATE" && (
               <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid var(--color-red)", padding: "12px", borderRadius: "8px" }}>
                 <div style={{ fontSize: "11px", fontWeight: 800, color: "var(--color-red)", marginBottom: "6px" }}>
                   PHYSICAL INCIDENT FLOW JOURNEY
@@ -153,7 +221,7 @@ export default function InspectorPanel({
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
               <Link
-                href={`/units/${selectedNode.id}`}
+                href={`/units/${selectedNode!.id}`}
                 style={{
                   textAlign: "center",
                   background: "var(--color-indigo)",
@@ -185,7 +253,7 @@ export default function InspectorPanel({
               </Link>
             </div>
           </>
-        )}
+        ))}
 
         {/* STERI ENVIRONMENTAL RISK SECTOR INSPECTOR */}
         {selectedNode.type === "steri_risk" && (

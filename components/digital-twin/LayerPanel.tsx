@@ -71,6 +71,7 @@ export default function LayerPanel({
             { key: "roads", label: "Road Network (GIS Transit)" },
             { key: "buildings", label: "Urban Fabric (OSM Buildings)" },
             { key: "units", label: "Industrial Facilities (12 Units)" },
+            { key: "dischargePaths", label: "Simulated Discharge Paths" },
             { key: "infrastructure", label: "Utility Infrastructure" },
             { key: "vegetation", label: "Vegetation & Canopy" },
             { key: "sensors", label: "Monitoring Stations" },
@@ -79,7 +80,8 @@ export default function LayerPanel({
             { key: "citizenIssues", label: "Citizen Issues & Hotspots 👥" },
             { key: "contours", label: "GIS Contour Lines" },
             { key: "floodRisk", label: "Monsoon Flood Risk Zone" },
-            { key: "pollution", label: "Pollution Plume Propagation" },
+            { key: "pollution", label: "Pollution Transport (Simulated)" },
+            { key: "sourceSensorInfluence", label: "Source → Sensor Influence" },
           ].map((item) => (
             <label key={item.key} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--color-slate-text)" }}>
               <input

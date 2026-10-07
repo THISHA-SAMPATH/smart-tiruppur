@@ -5,16 +5,26 @@ import { getUnits } from "@/lib/api";
 import type { LedgerUnit } from "@/lib/types";
 import { BuildingGISDataset, LayerBuilderContext, HydrologyGISDataset, RoadGISDataset } from "@/lib/digital-twin/types";
 import { buildTerrainLayer } from "@/lib/digital-twin/terrain";
-import { buildHydrologyLayers, parseGeoJSONToHydrologyDataset } from "@/lib/digital-twin/hydrology";
+import { buildHydrologyLayers, buildSimulatedSourceTransport, parseGeoJSONToHydrologyDataset, SimulatedTransportParticle } from "@/lib/digital-twin/hydrology";
 import { buildRoadsLayer, parseGeoJSONToRoadDataset } from "@/lib/digital-twin/roads";
 import { buildUrbanLayer, parseGeoJSONToBuildingDataset } from "@/lib/digital-twin/urban";
 import { buildIndustrialLayer } from "@/lib/digital-twin/industrial";
+import { buildSensorLayer } from "@/lib/digital-twin/sensors";
 import { buildInfrastructureLayer } from "@/lib/digital-twin/infrastructure";
 import { buildVegetationLayer } from "@/lib/digital-twin/vegetation";
 import {
-  geoTo3D as projectGeoTo3D,
-  sampleTiruppurElevation as sampleProjectedElevation,
-  vector3DToGeo as projectVector3DToGeo,
+  geoTo3D,
+  sampleRealElevationMeters,
+  sampleTiruppurElevation,
+  vector3DToGeo,
+} from "@/lib/geo/projection";
+
+// Compatibility exports for terrain page consumers; implementation remains centralized.
+export {
+  geoTo3D,
+  sampleRealElevationMeters,
+  sampleTiruppurElevation,
+  vector3DToGeo,
 } from "@/lib/geo/projection";
 
 export type LightingPreset = "day" | "dusk" | "night";
@@ -29,6 +39,8 @@ export interface LayerToggles {
   groundwater: boolean;
   floodRisk: boolean;
   pollution: boolean;
+  dischargePaths?: boolean;
+  sourceSensorInfluence?: boolean;
   steriRisk?: boolean;
   citizenIssues?: boolean;
   drainage?: boolean;
@@ -43,7 +55,7 @@ export type UnitStatusType = "COMPLIANT" | "WARNING" | "INVESTIGATE" | "OFFLINE"
 export interface SelectedNodeInfo {
   id: string;
   name: string;
-  type: "sensor" | "unit" | "groundwater" | "terrain" | "steri_risk" | "road" | "building" | "hydrology";
+  type: "sensor" | "unit" | "outfall" | "groundwater" | "terrain" | "steri_risk" | "road" | "building" | "hydrology";
   designation?: string;
   status?: UnitStatusType | string;
   statusSymbol?: string;
@@ -99,54 +111,9 @@ interface Terrain3DViewerProps {
 // GEOREFERENCE SYSTEM FOR TIRUPPUR DISTRICT
 // Center: 11.1085° N, 77.3411° E
 // ---------------------------------------------------------------------------
-export const TIRUPPUR_CENTER_LAT = 11.1085;
-export const TIRUPPUR_CENTER_LON = 77.3411;
-
-const METERS_PER_DEG_LAT = 111000;
-const METERS_PER_DEG_LON = 111000 * Math.cos((TIRUPPUR_CENTER_LAT * Math.PI) / 180);
-const WORLD_SCALE = 0.0035;
-
-export function sampleTiruppurElevation(lat: number, lon: number): number {
-  const dLat = (lat - TIRUPPUR_CENTER_LAT) * 100;
-  const dLon = (lon - TIRUPPUR_CENTER_LON) * 100;
-
-  const nwHigh = Math.max(0, (-dLon + dLat + 8) * 0.7);
-  const eastSlope = -dLon * 0.35;
-  const riverLat = 11.108 + 0.008 * Math.sin((lon - 77.25) * 12);
-  const distToRiver = Math.abs(lat - riverLat);
-  const riverDepression = Math.exp(-Math.pow(distToRiver / 0.012, 2)) * 3.8;
-
-  const elevMeters = 300 + nwHigh * 7.5 + eastSlope * 5 - riverDepression * 4;
-  return Math.max(0.1, (elevMeters - 288) * 0.16);
-}
-
-export function sampleRealElevationMeters(lat: number, lon: number): number {
-  const elev3D = sampleTiruppurElevation(lat, lon);
-  return Math.round(288 + elev3D / 0.16);
-}
-
-export function geoTo3D(lat: number, lon: number, elevOffset: number = 0): THREE.Vector3 {
-  const x = (lon - TIRUPPUR_CENTER_LON) * METERS_PER_DEG_LON * WORLD_SCALE;
-  const z = -(lat - TIRUPPUR_CENTER_LAT) * METERS_PER_DEG_LAT * WORLD_SCALE;
-  const y = sampleTiruppurElevation(lat, lon) + elevOffset;
-  return new THREE.Vector3(x, y, z);
-}
-
-export function vector3DToGeo(x: number, z: number): { lat: number; lon: number } {
-  const lon = TIRUPPUR_CENTER_LON + x / (METERS_PER_DEG_LON * WORLD_SCALE);
-  const lat = TIRUPPUR_CENTER_LAT - z / (METERS_PER_DEG_LAT * WORLD_SCALE);
-  return { lat, lon };
-}
-
 // ---------------------------------------------------------------------------
 // GEOREFERENCED DATA NODES
 // ---------------------------------------------------------------------------
-const SENSOR_NODES_GEO = [
-  { id: "tnpcb_noyyal_001", name: "Mangalam Telemetry Station", designation: "Upstream Entry Station", lat: 11.10651, lon: 77.26001, ph: 7.4, ec: 1420, turbidity: 18, flow: 142 },
-  { id: "tnpcb_noyyal_002", name: "Kasipalayam Bridge Telemetry", designation: "Urban/Industrial Exit Station", lat: 11.11975, lon: 77.39716, ph: 6.8, ec: 2850, turbidity: 45, flow: 128 },
-  { id: "tnpcb_noyyal_003", name: "Orathapalayam Reservoir Exit", designation: "Downstream Reservoir Station", lat: 11.11084, lon: 77.53981, ph: 7.8, ec: 3100, turbidity: 62, flow: 95 },
-];
-
 const GROUNDWATER_FIRKAS_GEO = [
   { id: "firka_north", name: "Tiruppur North FIRKA", lat: 11.1320, lon: 77.3450, category: "Critical", draftRatio: "88%", color: 0xf59e0b },
   { id: "firka_south", name: "Tiruppur South FIRKA", lat: 11.0820, lon: 77.3550, category: "Over-Exploited", draftRatio: "112%", color: 0xef4444 },
@@ -307,6 +274,7 @@ export default function Terrain3DViewer({
   const roadsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const buildingsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const unitsGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const dischargePathsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const infrastructureGroupRef = useRef<THREE.Group>(new THREE.Group());
   const vegetationGroupRef = useRef<THREE.Group>(new THREE.Group());
   const sensorsGroupRef = useRef<THREE.Group>(new THREE.Group());
@@ -314,6 +282,7 @@ export default function Terrain3DViewer({
   const steriRiskGroupRef = useRef<THREE.Group>(new THREE.Group());
   const floodMeshRef = useRef<THREE.Mesh | null>(null);
   const pollutionPlumeGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const sourceSensorInfluenceGroupRef = useRef<THREE.Group>(new THREE.Group());
   const riverFlowArrowsGroupRef = useRef<THREE.Group>(new THREE.Group());
 
   const interactiveObjectsRef = useRef<THREE.Object3D[]>([]);
@@ -405,6 +374,7 @@ export default function Terrain3DViewer({
     roadsGroupRef.current.visible = Boolean(layers.roads);
     buildingsGroupRef.current.visible = Boolean(layers.buildings);
     unitsGroupRef.current.visible = layers.units;
+    dischargePathsGroupRef.current.visible = Boolean(layers.dischargePaths);
     infrastructureGroupRef.current.visible = Boolean(layers.infrastructure);
     vegetationGroupRef.current.visible = Boolean(layers.vegetation);
     sensorsGroupRef.current.visible = layers.sensors;
@@ -412,6 +382,7 @@ export default function Terrain3DViewer({
     steriRiskGroupRef.current.visible = Boolean(layers.steriRisk);
     if (floodMeshRef.current) floodMeshRef.current.visible = layers.floodRisk;
     pollutionPlumeGroupRef.current.visible = layers.pollution;
+    sourceSensorInfluenceGroupRef.current.visible = Boolean(layers.sourceSensorInfluence);
   }, [layers]);
 
   // Flood Intensity Level
@@ -441,12 +412,14 @@ export default function Terrain3DViewer({
     scene.add(buildingsGroupRef.current);
     scene.add(riverFlowArrowsGroupRef.current);
     scene.add(unitsGroupRef.current);
+    scene.add(dischargePathsGroupRef.current);
     scene.add(infrastructureGroupRef.current);
     scene.add(vegetationGroupRef.current);
     scene.add(sensorsGroupRef.current);
     scene.add(groundwaterGroupRef.current);
     scene.add(steriRiskGroupRef.current);
     scene.add(pollutionPlumeGroupRef.current);
+    scene.add(sourceSensorInfluenceGroupRef.current);
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(0, 42, 58);
@@ -484,9 +457,9 @@ export default function Terrain3DViewer({
       scene,
       interactiveObjects: interactiveObjectsRef.current,
       // Roads and all layer builders use the shared GIS projection implementation.
-      geoTo3D: projectGeoTo3D,
-      vector3DToGeo: projectVector3DToGeo,
-      sampleElevation: sampleProjectedElevation,
+      geoTo3D,
+      vector3DToGeo,
+      sampleElevation: sampleTiruppurElevation,
       hydrologyDataset: hydroGisDataset,
       roadsDataset: roadsGisDataset,
       buildingsDataset: buildingsGisDataset,
@@ -512,7 +485,6 @@ export default function Terrain3DViewer({
     pollutionPlumeGroupRef.current.add(hydroRes.pollutionPlumeGroup);
     riverCurveRef.current = hydroRes.riverCurve;
     const flowParticles = hydroRes.flowParticles;
-    const plumeParticles = hydroRes.plumeParticles;
 
     // 3. Roads Layer Builder
     const roadsRes = buildRoadsLayer(builderCtx);
@@ -525,9 +497,37 @@ export default function Terrain3DViewer({
     buildingsGroupRef.current.add(urbanRes.buildingsGroup);
 
     // 5. Industrial Facilities Builder
-    const industrialRes = buildIndustrialLayer(builderCtx);
+    const industrialRes = buildIndustrialLayer({ ...builderCtx, activeWaterwayCurve: hydroRes.riverCurve });
     unitsGroupRef.current.clear();
     unitsGroupRef.current.add(industrialRes.unitsGroup);
+    dischargePathsGroupRef.current.clear();
+    dischargePathsGroupRef.current.add(industrialRes.dischargePathsGroup);
+    const sourceTransport = buildSimulatedSourceTransport(industrialRes.outfallConnections);
+    pollutionPlumeGroupRef.current.add(sourceTransport.group);
+    const simulatedTransportParticles: SimulatedTransportParticle[] = sourceTransport.particles;
+
+    // 5a. Simulated sensor network snapped to the active Noyyal curve.
+    const sensorRes = buildSensorLayer(
+      { ...builderCtx, activeWaterwayCurve: hydroRes.riverCurve },
+      industrialRes.outfallConnections,
+      hydroRes.isGisLoaded,
+    );
+    sensorsGroupRef.current.clear();
+    sensorsGroupRef.current.add(sensorRes.sensorsGroup);
+    sourceSensorInfluenceGroupRef.current.clear();
+    sourceSensorInfluenceGroupRef.current.add(sensorRes.sourceSensorInfluenceGroup);
+    const downstreamCountByOutfall = new Map<string, number>();
+    sensorRes.sourceSensorLinks.forEach((link) => {
+      if (link.downstream) downstreamCountByOutfall.set(link.outfallId, (downstreamCountByOutfall.get(link.outfallId) || 0) + 1);
+    });
+    dischargePathsGroupRef.current.traverse((object) => {
+      if (object.userData?.type !== "outfall") return;
+      object.userData.data.downstreamSensorCount = downstreamCountByOutfall.get(object.userData.data.outfall.outfall_id) || 0;
+    });
+    unitsGroupRef.current.traverse((object) => {
+      if (object.userData?.type !== "unit") return;
+      object.userData.data.downstreamSensorCount = downstreamCountByOutfall.get(object.userData.data.outfall.outfall_id) || 0;
+    });
 
     // 6. Utility Infrastructure Builder
     const infraRes = buildInfrastructureLayer(builderCtx);
@@ -550,24 +550,6 @@ export default function Terrain3DViewer({
     floodMesh.visible = layers.floodRisk;
     scene.add(floodMesh);
     floodMeshRef.current = floodMesh;
-
-    // 9. Sensor Station Beacons
-    sensorsGroupRef.current.clear();
-    SENSOR_NODES_GEO.forEach((sensor) => {
-      const pos = geoTo3D(sensor.lat, sensor.lon, 0.5);
-      const group = new THREE.Group();
-      group.position.copy(pos);
-
-      const beaconGeo = new THREE.CylinderGeometry(0.3, 0.6, 2.5, 8);
-      const beaconMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.6 });
-      const mesh = new THREE.Mesh(beaconGeo, beaconMat);
-      mesh.castShadow = true;
-      mesh.userData = { type: "sensor", data: sensor };
-      group.add(mesh);
-      interactiveObjectsRef.current.push(mesh);
-
-      sensorsGroupRef.current.add(group);
-    });
 
     // 10. Groundwater FIRKA Zones
     groundwaterGroupRef.current.clear();
@@ -623,7 +605,7 @@ export default function Terrain3DViewer({
 
         if (uData.type === "sensor") {
           onSelectNode({
-            id: uData.data.id,
+            id: uData.data.sensor_id,
             name: uData.data.name,
             type: "sensor",
             designation: uData.data.designation,
@@ -638,24 +620,33 @@ export default function Terrain3DViewer({
             raw: uData.data,
           });
         } else if (uData.type === "unit") {
+          const { unit, outfall, sourceStrength, normalizedSourceStrength, connectionLabel, downstreamSensorCount } = uData.data;
           onSelectNode({
-            id: uData.data.unit_id,
-            name: uData.data.name,
+            id: unit.unit_id,
+            name: unit.name,
             type: "unit",
-            designation: uData.data.type,
-            latitude: uData.data.lat,
-            longitude: uData.data.lon,
-            status: uData.data.status,
-            statusSymbol: uData.data.symbol,
-            reusePercent: uData.data.reuse,
-            flowRate: uData.data.flow,
-            ph: 6.8,
-            ec: 2850,
-            turbidity: 45,
-            confidence: uData.data.status === "INVESTIGATE" ? 87 : 96,
-            topSource: uData.data.unit_id,
-            lastEventId: uData.data.status === "INVESTIGATE" ? "E-1028" : undefined,
-            raw: uData.data,
+            designation: unit.type,
+            latitude: unit.lat,
+            longitude: unit.lon,
+            status: unit.status,
+            statusSymbol: unit.symbol,
+            reusePercent: unit.reuse,
+            flowRate: unit.flow,
+            confidence: unit.confidence,
+            raw: { unit, outfall, sourceStrength, normalizedSourceStrength, connectionLabel, downstreamSensorCount },
+          });
+        } else if (uData.type === "outfall") {
+          const { unit, outfall, sourceStrength, normalizedSourceStrength, connectionLabel, downstreamSensorCount } = uData.data;
+          onSelectNode({
+            id: outfall.outfall_id,
+            name: `${outfall.outfall_id} — simulated outfall`,
+            type: "outfall",
+            designation: connectionLabel || "SIMULATED DISCHARGE PATH",
+            status: "SIMULATED",
+            latitude: outfall.lat,
+            longitude: outfall.lon,
+            confidence: outfall.confidence,
+            raw: { unit, outfall, sourceStrength, normalizedSourceStrength, connectionLabel, downstreamSensorCount },
           });
         } else if (uData.type === "groundwater") {
           onSelectNode({
@@ -776,13 +767,17 @@ export default function Terrain3DViewer({
           arrow.lookAt(pPos.clone().add(tangent));
         });
 
-        // Animate Pollution Plume Particles (Fix #9)
+        // SIMULATED SOURCE-TO-RIVER TRANSPORT VISUALIZATION (not a dispersion model).
         if (layers.pollution) {
-          plumeParticles.forEach((particle, idx) => {
-            const t = ((elapsedTime * 0.12 + idx / (plumeParticles.length || 16)) % 1);
-            const pPos = riverCurveRef.current!.getPoint(t);
-            particle.position.copy(pPos);
-            particle.position.y += 0.3;
+          simulatedTransportParticles.forEach(({ mesh, connection, phase }) => {
+            const cycle = (elapsedTime * 0.12 + phase) % 1;
+            if (cycle < 0.2) {
+              mesh.position.lerpVectors(connection.outfallPosition, connection.waterwayPosition, cycle / 0.2);
+            } else {
+              const t = Math.min(0.999, connection.waterwayT + ((cycle - 0.2) / 0.8) * (1 - connection.waterwayT));
+              mesh.position.copy(riverCurveRef.current!.getPoint(t));
+            }
+            mesh.position.y += 0.3;
           });
         }
       }

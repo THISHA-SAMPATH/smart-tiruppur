@@ -5,6 +5,13 @@ import {
   HydrologyGISFeature,
   GISSourceType,
 } from "./types";
+import type { IndustrialOutfallConnection } from "./industrial";
+
+export interface SimulatedTransportParticle {
+  mesh: THREE.Mesh;
+  connection: IndustrialOutfallConnection;
+  phase: number;
+}
 
 export interface HydrologyBuilderResult {
   riverGroup: THREE.Group;
@@ -225,21 +232,9 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
     flowParticles.push(arrow);
   }
 
-  // 4. Pollution Plume Particles along active curve
-  const plumeParticleCount = 16;
+  // Pollution transport is created from simulated industrial outfalls by the viewer,
+  // after it has connected those sources to this active waterway curve.
   const plumeParticles: THREE.Mesh[] = [];
-  const plumeGeo = new THREE.SphereGeometry(0.4, 8, 8);
-  const plumeMat = new THREE.MeshBasicMaterial({
-    color: 0xdc2626,
-    transparent: true,
-    opacity: 0.85,
-  });
-
-  for (let p = 0; p < plumeParticleCount; p++) {
-    const particle = new THREE.Mesh(plumeGeo, plumeMat);
-    pollutionPlumeGroup.add(particle);
-    plumeParticles.push(particle);
-  }
 
   return {
     riverGroup,
@@ -251,4 +246,36 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
     plumeParticles,
     isGisLoaded,
   };
+}
+
+/**
+ * Creates a simulated source-to-river transport visualization. It uses relative
+ * synthetic source strength only; this is not a calibrated dispersion model.
+ */
+export function buildSimulatedSourceTransport(connections: IndustrialOutfallConnection[]) {
+  const group = new THREE.Group();
+  group.name = "Layer_Simulated_Pollution_Transport";
+  const particles: SimulatedTransportParticle[] = [];
+  const geometry = new THREE.SphereGeometry(0.18, 8, 8);
+
+  connections.forEach((connection) => {
+    const count = connection.normalizedSourceStrength > 0.66 ? 3 : 2;
+    for (let index = 0; index < count; index++) {
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xdc2626,
+        transparent: true,
+        opacity: 0.45 + connection.normalizedSourceStrength * 0.45,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.userData = {
+        type: "simulated_transport",
+        label: "SIMULATED SOURCE-TO-RIVER TRANSPORT VISUALIZATION",
+        relativeSourceStrength: connection.normalizedSourceStrength,
+      };
+      group.add(mesh);
+      particles.push({ mesh, connection, phase: index / count });
+    }
+  });
+
+  return { group, particles };
 }
