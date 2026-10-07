@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { SelectedNodeInfo } from "../Terrain3DViewer";
 import DataProvenanceCard from "@/components/provenance/DataProvenanceCard";
 import SourceBadge, { SourceType } from "@/components/provenance/SourceBadge";
+import AttributionList from "./AttributionList";
 
 interface InspectorPanelProps {
   selectedNode: SelectedNodeInfo | null;
@@ -133,6 +134,7 @@ export default function InspectorPanel({
             </div>
           </div>
         )}
+        {sensorSelection && <AttributionList stationId={sensorSelection.sensor_id} />}
 
         {/* Synthetic demonstration data: these locations and parameters are model inputs, not observations. */}
         {industrialSelection && unit && outfall && (
