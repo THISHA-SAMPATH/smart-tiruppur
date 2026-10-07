@@ -3,7 +3,7 @@
 import React from "react";
 import { SpatialRiskUnit } from "@/lib/steri/types";
 import { getRiskBadgeStyle } from "./SteriCityOverviewCard";
-import { COMPONENT_LABELS } from "@/lib/steri/calculator";
+import { COMPONENT_LABELS, classifyRiskCategory } from "@/lib/steri/calculator";
 
 interface SteriInspectorModalProps {
   unit: SpatialRiskUnit | null;
@@ -69,7 +69,7 @@ export default function SteriInspectorModal({ unit, onClose }: SteriInspectorMod
             </div>
             <h2 style={{ margin: 0, fontSize: "22px", fontWeight: 700 }}>{unit.name}</h2>
             <p className="muted small" style={{ margin: "2px 0 0 0" }}>
-              Coordinates: <span className="mono">{unit.lat.toFixed(4)}°N, {unit.lon.toFixed(4)}°E</span> · Area: {unit.areaKm2} km² · Est. Pop: {unit.populationEst.toLocaleString()}
+              Coordinates: <span className="mono">{unit.lat.toFixed(4)}°N, {unit.lon.toFixed(4)}°E</span> · Analysis area: {unit.areaKm2} km²
             </p>
           </div>
 
@@ -195,7 +195,7 @@ export default function SteriInspectorModal({ unit, onClose }: SteriInspectorMod
                       {COMPONENT_LABELS[key]} {isDominant && "★"}
                     </span>
                     <span className="mono" style={{ fontWeight: 700, color: barColor }}>
-                      {score.toFixed(2)}
+                      {score.toFixed(2)} · {classifyRiskCategory(score)}
                     </span>
                   </div>
                   <div
@@ -209,10 +209,26 @@ export default function SteriInspectorModal({ unit, onClose }: SteriInspectorMod
                   >
                     <div style={{ height: "100%", width: `${pct}%`, background: barColor }} />
                   </div>
+                  <p className="small muted" style={{ margin: "4px 0 0", fontSize: "10px" }}>
+                    {unit.componentProvenance[key].sourceType} · {unit.componentProvenance[key].sourceDescription}
+                  </p>
+                  {(unit.componentProvenance[key].scenario || unit.componentProvenance[key].fallback) && (
+                    <p className="small muted" style={{ margin: "3px 0 0", fontSize: "10px" }}>
+                      {unit.componentProvenance[key].scenario && `Scenario: ${unit.componentProvenance[key].scenario}. `}
+                      {unit.componentProvenance[key].fallback && `Fallback: ${unit.componentProvenance[key].fallback}`}
+                    </p>
+                  )}
                 </div>
               );
             })}
           </div>
+        </div>
+
+        <div style={{ marginTop: "16px", padding: "12px", border: "1px solid var(--hairline)", borderRadius: "var(--radius-sm)" }}>
+          <strong style={{ fontSize: "13px" }}>Building Exposure</strong>
+          <p className="small muted" style={{ margin: "4px 0 0" }}>
+            {unit.buildingExposure.buildingCount} buildings · {unit.buildingExposure.label}. {unit.buildingExposure.limitation}
+          </p>
         </div>
 
         {/* Data Provenance & Transparency */}
@@ -223,7 +239,7 @@ export default function SteriInspectorModal({ unit, onClose }: SteriInspectorMod
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "12px" }}>
             <div style={{ padding: "10px", background: "rgba(22, 163, 74, 0.05)", borderRadius: "var(--radius-sm)", border: "1px solid rgba(22, 163, 74, 0.2)" }}>
               <span style={{ color: "#16a34a", fontWeight: 700, display: "block", marginBottom: "4px" }}>
-                ● REAL HARDWARE DATA
+                OBSERVED / OPEN DATA
               </span>
               <ul style={{ margin: 0, paddingLeft: "16px", color: "var(--color-slate-text)" }}>
                 {unit.provenance.realDataSources.map((src, i) => (
@@ -234,7 +250,7 @@ export default function SteriInspectorModal({ unit, onClose }: SteriInspectorMod
 
             <div style={{ padding: "10px", background: "rgba(2, 132, 199, 0.05)", borderRadius: "var(--radius-sm)", border: "1px solid rgba(2, 132, 199, 0.2)" }}>
               <span style={{ color: "#0284c7", fontWeight: 700, display: "block", marginBottom: "4px" }}>
-                ◐ SIMULATED PHYSICS MODELS
+                SIMULATED INPUTS
               </span>
               <ul style={{ margin: 0, paddingLeft: "16px", color: "var(--color-slate-text)" }}>
                 {unit.provenance.simulatedDataSources.map((src, i) => (

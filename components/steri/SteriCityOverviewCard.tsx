@@ -69,7 +69,7 @@ export default function SteriCityOverviewCard({
             Smart Tiruppur Environmental Risk Index
           </h2>
           <p className="muted small" style={{ margin: "4px 0 0 0" }}>
-            Unified spatial risk score synthesizing real hardware telemetry, groundwater levels, flood models & citizen reports.
+            Unified spatial risk score synthesizing modelled/simulated sensor inputs, groundwater-category mapping, flood scenarios, and complaint indicators.
           </p>
         </div>
 
@@ -175,7 +175,7 @@ export default function SteriCityOverviewCard({
           <span className="small muted">Data Provenance Mix</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "6px" }}>
             <span className="badge badge-normal" style={{ fontSize: "10px", padding: "1px 6px" }}>
-              ● LIVE Hardware
+              OPEN DATA / REPORTS
             </span>
             <span className="badge badge-normal" style={{ fontSize: "10px", padding: "1px 6px", background: "rgba(14, 165, 233, 0.1)", color: "#0284c7" }}>
               ◐ SIMULATED Monsoon

@@ -10,6 +10,9 @@ interface LayerPanelProps {
   onToggleLayer: (key: keyof LayerToggles) => void;
   onSelectAnalysisMode: (mode: "baseline" | "steri" | "water" | "groundwater" | "flood" | "compliance") => void;
   onChangeLighting: (mode: LightingPreset) => void;
+  compareWithBaseline: boolean;
+  onChangeCompareWithBaseline: (enabled: boolean) => void;
+  steriDataUnavailable: boolean;
 }
 
 export default function LayerPanel({
@@ -19,6 +22,9 @@ export default function LayerPanel({
   onToggleLayer,
   onSelectAnalysisMode,
   onChangeLighting,
+  compareWithBaseline,
+  onChangeCompareWithBaseline,
+  steriDataUnavailable,
 }: LayerPanelProps) {
   return (
     <div className="dt-panel-left">
@@ -26,10 +32,10 @@ export default function LayerPanel({
       <div className="dt-card-surface">
         <div className="dt-section-title">DATA STATUS & PROVENANCE</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "11px" }}>
-          <div style={{ color: "var(--color-green)", fontWeight: 600 }}>● LIVE Telemetry</div>
-          <div style={{ color: "var(--color-teal)", fontWeight: 600 }}>◐ SIMULATED Flood</div>
-          <div style={{ color: "var(--color-amber)", fontWeight: 600 }}>◆ DERIVED AI Attribution</div>
-          <div style={{ color: "var(--color-slate-muted)", fontWeight: 600 }}>◇ BASELINE DEM Geo</div>
+          <div style={{ color: "var(--color-green)", fontWeight: 600 }}>OPEN_DATA GIS Geometry</div>
+          <div style={{ color: "var(--color-teal)", fontWeight: 600 }}>SIMULATED Inputs</div>
+          <div style={{ color: "var(--color-amber)", fontWeight: 600 }}>MODELLED STERI</div>
+          <div style={{ color: "var(--color-slate-muted)", fontWeight: 600 }}>MODELLED Terrain</div>
         </div>
       </div>
 
@@ -93,6 +99,13 @@ export default function LayerPanel({
               {item.label}
             </label>
           ))}
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--color-slate-text)", paddingTop: "4px", borderTop: "1px solid var(--color-slate-border)" }}>
+            <input type="checkbox" checked={compareWithBaseline} onChange={(event) => onChangeCompareWithBaseline(event.target.checked)} style={{ accentColor: "var(--color-cyan)", cursor: "pointer" }} />
+            Compare STERI with Baseline
+          </label>
+          <p style={{ margin: 0, fontSize: "10px", color: steriDataUnavailable ? "var(--color-amber)" : "var(--color-slate-muted)" }}>
+            {steriDataUnavailable ? "Risk data unavailable — other Digital Twin layers remain available." : "Modelled scenario change; not a validated real-world forecast."}
+          </p>
         </div>
       </div>
 

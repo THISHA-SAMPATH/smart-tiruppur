@@ -16,8 +16,10 @@ import TelemetryBar from "@/components/digital-twin/TelemetryBar";
 import DataProvenanceModal from "@/components/digital-twin/DataProvenanceModal";
 import DigitalTwinSearch from "@/components/digital-twin/DigitalTwinSearch";
 import AccessibleTableViewer from "@/components/digital-twin/AccessibleTableViewer";
+import DataModelProvenancePanel from "@/components/digital-twin/DataModelProvenancePanel";
 import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
 import type { LedgerEntry, DppResponse } from "@/lib/types";
+import type { SteriCityOverview, SteriScenarioInput } from "@/lib/steri/types";
 import "@/app/digital-twin.css";
 
 // Interactive Live Event Timeline Items (Fix #18)
@@ -85,6 +87,10 @@ export default function Terrain3DPage() {
   const [riverFlow, setRiverFlow] = useState<number>(110);
   const [groundwaterDraft, setGroundwaterDraft] = useState<number>(110);
   const [floodIntensity, setFloodIntensity] = useState<number>(0.35);
+  const [steriOverview, setSteriOverview] = useState<SteriCityOverview | null>(null);
+  const [steriBaseline, setSteriBaseline] = useState<SteriCityOverview | null>(null);
+  const [steriUnavailable, setSteriUnavailable] = useState(false);
+  const [compareWithBaseline, setCompareWithBaseline] = useState(false);
 
   // Focus Position for Camera Lerp (Fix #19)
   const [focusPosition, setFocusPosition] = useState<{ x: number; y: number; z: number } | null>(null);
@@ -133,6 +139,38 @@ export default function Terrain3DPage() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const scenario: SteriScenarioInput = mode === "SCENARIO" ? {
+      floodPreset: rainfall >= 200 ? "EXTREME_RAIN" : rainfall >= 125 ? "HEAVY_RAIN" : rainfall >= 50 ? "MODERATE_RAIN" : "BASELINE",
+      rainfallPctChange: Math.round(((rainfall - 50) / 50) * 100),
+      industrialLoadPctChange: dischargeLoad - 100,
+      pollutionLoadPctChange: dischargeLoad - 100,
+      groundwaterExtractionPctChange: groundwaterDraft - 100,
+    } : { floodPreset: "BASELINE", rainfallPctChange: 0, industrialLoadPctChange: 0, pollutionLoadPctChange: 0, groundwaterExtractionPctChange: 0 };
+    const postSteri = async (body: object) => {
+      const response = await fetch("/api/steri", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: controller.signal });
+      if (!response.ok) throw new Error("STERI API request failed");
+      return response.json() as Promise<SteriCityOverview>;
+    };
+    void Promise.all([postSteri({ scenario }), postSteri({ scenario: { floodPreset: "BASELINE", rainfallPctChange: 0, industrialLoadPctChange: 0, pollutionLoadPctChange: 0, groundwaterExtractionPctChange: 0 } })])
+      .then(([current, baseline]) => {
+        if (!controller.signal.aborted) {
+          setSteriOverview(current);
+          setSteriBaseline(baseline);
+          setSteriUnavailable(false);
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setSteriOverview(null);
+          setSteriBaseline(null);
+          setSteriUnavailable(true);
+        }
+      });
+    return () => controller.abort();
+  }, [mode, rainfall, dischargeLoad, groundwaterDraft]);
 
   // Fetch Dynamic KPI Data
   useEffect(() => {
@@ -201,7 +239,7 @@ export default function Terrain3DPage() {
         setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: false, pollution: false });
         break;
       case "steri":
-        setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: true, floodRisk: true, pollution: true });
+        setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: true, floodRisk: true, pollution: true, steriRisk: true });
         break;
       case "water":
         setLayers({ terrain: true, contours: true, river: true, units: true, sensors: true, groundwater: false, floodRisk: false, pollution: true });
@@ -345,6 +383,8 @@ export default function Terrain3DPage() {
             role={userRole}
             layers={layers}
             focusPosition={focusPosition}
+            steriOverview={steriOverview}
+            steriBaseline={compareWithBaseline ? steriBaseline : null}
             onSelectNode={setSelectedNode}
           />
 
@@ -357,7 +397,11 @@ export default function Terrain3DPage() {
               onToggleLayer={toggleLayer}
               onSelectAnalysisMode={handleAnalysisModeChange}
               onChangeLighting={setLighting}
+              compareWithBaseline={compareWithBaseline}
+              onChangeCompareWithBaseline={setCompareWithBaseline}
+              steriDataUnavailable={steriUnavailable}
             />
+            <DataModelProvenancePanel steriOverview={steriOverview} />
 
             {/* SCENARIO MODE PANEL (FIX #28 & FIX #29) */}
             {mode === "SCENARIO" && (

@@ -149,7 +149,7 @@ export default function SteriSpatialGrid({ units, onSelectUnit }: SteriSpatialGr
               {/* Provenance Tag Footer */}
               <div style={{ marginTop: "12px", paddingTop: "10px", borderTop: "1px solid var(--hairline)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span className="small muted" style={{ fontSize: "10px" }}>
-                  {(u.confidence * 100).toFixed(0)}% Confidence · {u.provenance.realDataSources.length} Live Sensors
+                  {(u.confidence * 100).toFixed(0)}% model-input confidence · {u.metrics.activeSensors} simulated sensor association
                 </span>
                 <span className="small" style={{ fontSize: "11px", fontWeight: 700, color: "#2563eb" }}>
                   Inspect Sector 🔍

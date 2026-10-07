@@ -267,12 +267,21 @@ export default function InspectorPanel({
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
                 <span style={{ fontSize: "28px", fontWeight: 800, fontFamily: "monospace", color: "var(--color-indigo)" }}>
-                  {selectedNode.steriScore?.toFixed(3) || "0.740"}
+                  {selectedNode.steriScore?.toFixed(3) ?? "—"}
                 </span>
                 <span style={{ fontSize: "12px", color: "var(--color-slate-muted)" }}>/ 1.000</span>
               </div>
               <div style={{ fontSize: "11.5px", color: "var(--color-slate-text)" }}>
                 Dominant Factor: <strong>{selectedNode.dominantFactorLabel}</strong>
+              </div>
+              {selectedNode.baselineSteriScore !== undefined && (
+                <div style={{ fontSize: "11.5px", color: "var(--color-slate-text)", lineHeight: 1.5 }}>
+                  <strong>Modelled scenario change</strong><br />
+                  Baseline: {selectedNode.baselineSteriScore.toFixed(3)} · Scenario: {selectedNode.steriScore?.toFixed(3)} · Δ STERI: {(selectedNode.scenarioDelta || 0) >= 0 ? "+" : ""}{selectedNode.scenarioDelta?.toFixed(3)}
+                </div>
+              )}
+              <div style={{ fontSize: "10.5px", color: "var(--color-slate-muted)" }}>
+                Active scenario: {selectedNode.scenario?.floodPreset || "BASELINE"} · {selectedNode.isSimulated ? "Derived/modelled STERI; simulated source and sensor inputs." : "Derived/modelled STERI."}
               </div>
             </div>
 
@@ -311,6 +320,12 @@ export default function InspectorPanel({
               </div>
             )}
 
+            <div className="dt-card-surface" style={{ fontSize: "11px", color: "var(--color-slate-text)", lineHeight: 1.55 }}>
+              <strong style={{ color: "var(--color-indigo)" }}>Supporting Digital Twin context</strong><br />
+              {selectedNode.industrialUnitCount ?? 0} simulated industrial sources in the analysis footprint · {selectedNode.simulatedSensorAssociations ?? 0} simulated sensor association · Relative simulated source influence: {((selectedNode.componentScores?.pollution || 0) * 100).toFixed(0)}% · {selectedNode.buildingCount ?? 0} OSM building footprints.
+              <br />Building count is an OSM exposure indicator and is not part of the STERI score.
+            </div>
+
             {/* Recommendation & Confidence */}
             <div className="dt-card-surface" style={{ background: "rgba(37, 99, 235, 0.1)", borderColor: "rgba(37, 99, 235, 0.3)" }}>
               <div style={{ fontSize: "11px", fontWeight: 700, color: "#38bdf8", marginBottom: "4px" }}>
@@ -331,7 +346,7 @@ export default function InspectorPanel({
                 <div style={{ fontFamily: "monospace", fontSize: "10px", background: "rgba(0,0,0,0.3)", padding: "6px", borderRadius: "4px", margin: "6px 0", color: "#38bdf8" }}>
                   STERI_i = wp*Pollution + ww*WaterQuality + wf*Flood + wg*Groundwater + wi*Industry + wc*Complaints
                 </div>
-                Aggregates real IoT hardware telemetry, 2D hydrodynamic flood models, Bayesian source attribution, and CGWB piezometer baselines.
+                Component values are derived/modelled from the existing simulated sensor and industrial inputs, terrain-based flood engine, groundwater category mapping, complaint aggregation, and open-data building indicator. Flood risk is a simplified terrain estimate, not a 2D hydraulic model.
               </div>
             </details>
 

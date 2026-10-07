@@ -24,10 +24,10 @@ export interface SteriComponentScores {
 }
 
 export interface SpatialDataProvenance {
-  realDataSources: string[];      // Hardware sensors, CGWB piezometer logs, TNPCB files
-  simulatedDataSources: string[]; // Hydrodynamic monsoon flood model, plume flow engine
-  derivedDataSources: string[];   // Bayesian source attribution, spatial interpolation
-  historicalDataSources: string[];// CGWB 2023 baseline, historical complaint registry
+  realDataSources: string[];
+  simulatedDataSources: string[];
+  derivedDataSources: string[];
+  historicalDataSources: string[];
 }
 
 export interface SpatialMetrics {
@@ -39,6 +39,35 @@ export interface SpatialMetrics {
   elevationMetersASL: number;
 }
 
+/** Shared provenance vocabulary used by the STERI and Digital Twin UIs. */
+export type SteriSourceType = "SIMULATED" | "DERIVED" | "OPEN_DATA" | "MODELLED";
+
+/** Traceable metadata for a calculated STERI component. */
+export interface SteriComponentProvenance {
+  sourceType: SteriSourceType;
+  sourceDescription: string;
+  scenario?: string;
+  assumptions: string[];
+  fallback?: string;
+}
+
+/** Building exposure remains outside the six-component STERI formula. */
+export interface BuildingExposureIndicator {
+  label: "OSM building exposure indicator";
+  buildingCount: number;
+  methodology: string;
+  sourceType: "OPEN_DATA" | "DERIVED";
+  limitation: string;
+}
+
+export interface SteriScenarioInput {
+  floodPreset?: "BASELINE" | "MODERATE_RAIN" | "HEAVY_RAIN" | "EXTREME_RAIN";
+  rainfallPctChange?: number;
+  industrialLoadPctChange?: number;
+  pollutionLoadPctChange?: number;
+  groundwaterExtractionPctChange?: number;
+}
+
 export interface SpatialRiskUnit {
   id: string;                    // e.g., "firka_south", "kasipalayam"
   name: string;                  // e.g., "Tiruppur South FIRKA"
@@ -46,7 +75,6 @@ export interface SpatialRiskUnit {
   lat: number;
   lon: number;
   areaKm2: number;
-  populationEst: number;
   
   // Aggregate Risk Scores
   steriScore: number;            // Normalized 0.00 - 1.00
@@ -57,6 +85,8 @@ export interface SpatialRiskUnit {
   
   // Component Breakdown
   componentScores: SteriComponentScores;
+  componentProvenance: Record<keyof SteriComponentScores, SteriComponentProvenance>;
+  buildingExposure: BuildingExposureIndicator;
   
   // Provenance & Metadata
   confidence: number;            // 0.00 - 1.00 (e.g. 0.89)
@@ -73,6 +103,9 @@ export interface SteriCityOverview {
   weights: SteriWeights;
   units: SpatialRiskUnit[];
   timestamp: string;
+  scenario: Required<SteriScenarioInput>;
+  baselineCitywideScore: number;
+  scenarioDelta: number;
   modelInfo: {
     name: string;
     version: string;

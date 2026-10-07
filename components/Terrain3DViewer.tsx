@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getUnits } from "@/lib/api";
 import type { LedgerUnit } from "@/lib/types";
+import type { SteriCityOverview } from "@/lib/steri/types";
 import { BuildingGISDataset, LayerBuilderContext, HydrologyGISDataset, RoadGISDataset } from "@/lib/digital-twin/types";
 import { buildTerrainLayer } from "@/lib/digital-twin/terrain";
 import { buildHydrologyLayers, buildSimulatedSourceTransport, parseGeoJSONToHydrologyDataset, SimulatedTransportParticle } from "@/lib/digital-twin/hydrology";
@@ -17,6 +18,7 @@ import {
   sampleRealElevationMeters,
   sampleTiruppurElevation,
   vector3DToGeo,
+  WORLD_SCALE,
 } from "@/lib/geo/projection";
 
 // Compatibility exports for terrain page consumers; implementation remains centralized.
@@ -94,6 +96,13 @@ export interface SelectedNodeInfo {
   };
   recommendation?: string;
   timestamp?: string;
+  scenario?: SteriCityOverview["scenario"];
+  baselineSteriScore?: number;
+  scenarioDelta?: number;
+  buildingCount?: number;
+  industrialUnitCount?: number;
+  simulatedSensorAssociations?: number;
+  isSimulated?: boolean;
   raw?: any;
 }
 
@@ -104,6 +113,8 @@ interface Terrain3DViewerProps {
   role?: UserRoleOverlay;
   layers: LayerToggles;
   focusPosition?: { x: number; y: number; z: number } | null;
+  steriOverview?: SteriCityOverview | null;
+  steriBaseline?: SteriCityOverview | null;
   onSelectNode: (node: SelectedNodeInfo | null) => void;
 }
 
@@ -123,7 +134,7 @@ const GROUNDWATER_FIRKAS_GEO = [
   { id: "firka_uthukuli", name: "Uthukuli FIRKA", lat: 11.1620, lon: 77.4380, category: "Safe", draftRatio: "48%", color: 0x10b981 },
 ];
 
-const STERI_SPATIAL_SECTORS_3D = [
+/* Retired static fixture. Dynamic sectors are created from /api/steri below.
   {
     id: "angeripalayam",
     name: "Angeripalayam Fabric Processing Sector",
@@ -250,7 +261,7 @@ const STERI_SPATIAL_SECTORS_3D = [
     },
     recommendation: "Clear municipal stormwater drainage choke points and activate monsoon inundation warning sensors in Mangalam.",
   },
-];
+*/
 
 export default function Terrain3DViewer({
   lighting,
@@ -258,6 +269,8 @@ export default function Terrain3DViewer({
   floodIntensity = 0,
   layers,
   focusPosition,
+  steriOverview,
+  steriBaseline,
   onSelectNode,
 }: Terrain3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -384,6 +397,61 @@ export default function Terrain3DViewer({
     pollutionPlumeGroupRef.current.visible = layers.pollution;
     sourceSensorInfluenceGroupRef.current.visible = Boolean(layers.sourceSensorInfluence);
   }, [layers]);
+
+  // API-fed STERI overlays: one terrain-draped mesh for each existing equivalent-area sector.
+  useEffect(() => {
+    const group = steriRiskGroupRef.current;
+    interactiveObjectsRef.current = interactiveObjectsRef.current.filter((object) => object.userData.type !== "steri_risk");
+    group.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.geometry.dispose();
+        const material = object.material;
+        if (Array.isArray(material)) material.forEach((item) => item.dispose()); else material.dispose();
+      }
+    });
+    group.clear();
+    if (!steriOverview) return;
+
+    const tierColors: Record<string, number> = { LOW: 0x16a34a, MODERATE: 0x0284c7, HIGH: 0xd97706, "VERY HIGH": 0xf97316, CRITICAL: 0xdc2626 };
+    const baselineById = new Map(steriBaseline?.units.map((unit) => [unit.id, unit]) || []);
+    steriOverview.units.forEach((sector) => {
+      const baseline = baselineById.get(sector.id);
+      const scenarioDelta = baseline ? Number((sector.steriScore - baseline.steriScore).toFixed(3)) : 0;
+      const position = geoTo3D(sector.lat, sector.lon, 0.22);
+      const radius = Math.sqrt(sector.areaKm2 / Math.PI) * 1000 * WORLD_SCALE;
+      const geometry = new THREE.CircleGeometry(radius, 32);
+      geometry.rotateX(-Math.PI / 2);
+      const vertices = geometry.attributes.position;
+      for (let index = 0; index < vertices.count; index++) {
+        const { lat, lon } = vector3DToGeo(position.x + vertices.getX(index), position.z + vertices.getZ(index));
+        vertices.setY(index, sampleTiruppurElevation(lat, lon) - position.y + 0.22);
+      }
+      vertices.needsUpdate = true;
+      geometry.computeVertexNormals();
+      const color = tierColors[sector.riskCategory] || 0x64748b;
+      const comparisonEmissive = baseline ? (scenarioDelta > 0 ? 0xef4444 : scenarioDelta < 0 ? 0x16a34a : color) : color;
+      const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, emissive: comparisonEmissive, emissiveIntensity: 0.2 + sector.steriScore * 0.35, transparent: true, opacity: 0.18 + sector.steriScore * 0.22, roughness: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+      mesh.position.copy(position);
+      mesh.userData = {
+        type: "steri_risk",
+        data: {
+          ...sector,
+          sector_id: sector.id,
+          sector_name: sector.name,
+          risk_tier: sector.riskCategory,
+          scenario: steriOverview.scenario,
+          baselineSteriScore: baseline?.steriScore,
+          scenarioDelta,
+          buildingCount: sector.buildingExposure.buildingCount,
+          industrialUnitCount: sector.metrics.industrialUnits,
+          simulatedSensorAssociations: sector.metrics.activeSensors,
+          isSimulated: true,
+        },
+      };
+      interactiveObjectsRef.current.push(mesh);
+      group.add(mesh);
+    });
+  }, [steriOverview, steriBaseline]);
 
   // Flood Intensity Level
   useEffect(() => {
@@ -565,28 +633,6 @@ export default function Terrain3DViewer({
       groundwaterGroupRef.current.add(firkaMesh);
     });
 
-    // 11. STERI Environmental Risk 3D Terrain Overlays
-    steriRiskGroupRef.current.clear();
-    STERI_SPATIAL_SECTORS_3D.forEach((sector) => {
-      const pos = geoTo3D(sector.lat, sector.lon, 0.25);
-      const steriMesh = new THREE.Mesh(
-        new THREE.CylinderGeometry(8, 8, 0.5, 24),
-        new THREE.MeshStandardMaterial({
-          color: sector.color,
-          emissive: sector.color,
-          emissiveIntensity: 0.35,
-          transparent: true,
-          opacity: 0.45,
-          roughness: 0.2,
-        })
-      );
-      steriMesh.position.copy(pos);
-      steriMesh.userData = { type: "steri_risk", data: sector };
-      interactiveObjectsRef.current.push(steriMesh);
-      steriRiskGroupRef.current.add(steriMesh);
-    });
-
-
     // Raycasting Click Listener (Terrain Elevation & Node Inspector - Fix #23)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -681,6 +727,13 @@ export default function Terrain3DViewer({
             timestamp: uData.data.timestamp,
             provenance: uData.data.provenance,
             recommendation: uData.data.recommendation,
+            scenario: uData.data.scenario,
+            baselineSteriScore: uData.data.baselineSteriScore,
+            scenarioDelta: uData.data.scenarioDelta,
+            buildingCount: uData.data.buildingCount,
+            industrialUnitCount: uData.data.industrialUnitCount,
+            simulatedSensorAssociations: uData.data.simulatedSensorAssociations,
+            isSimulated: uData.data.isSimulated,
             raw: uData.data,
           });
         } else if (uData.type === "road") {
