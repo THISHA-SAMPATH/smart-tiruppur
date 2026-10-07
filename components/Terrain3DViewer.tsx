@@ -437,7 +437,7 @@ export default function Terrain3DViewer({
       const scenarioDelta = baseline ? Number((sector.steriScore - baseline.steriScore).toFixed(3)) : 0;
       const position = geoTo3D(sector.lat, sector.lon, 0.22);
       const radius = Math.sqrt(sector.areaKm2 / Math.PI) * 1000 * WORLD_SCALE;
-      const geometry = new THREE.CircleGeometry(radius, 32);
+      const geometry = new THREE.RingGeometry(0, radius, 64);
       geometry.rotateX(-Math.PI / 2);
       const vertices = geometry.attributes.position;
       for (let index = 0; index < vertices.count; index++) {
@@ -447,29 +447,31 @@ export default function Terrain3DViewer({
       vertices.needsUpdate = true;
       geometry.computeVertexNormals();
       const color = tierColors[sector.riskCategory] || 0x86efac;
-      const comparisonEmissive = baseline ? (scenarioDelta > 0 ? 0xb91c1c : scenarioDelta < 0 ? 0x86efac : color) : color;
       
-      // 25-35% opacity from risk ramp (Item #3)
+      // 25-35% opacity flat fill without radial spokes (Item #3)
       const mesh = new THREE.Mesh(
         geometry,
-        new THREE.MeshStandardMaterial({
+        new THREE.MeshBasicMaterial({
           color,
-          emissive: comparisonEmissive,
-          emissiveIntensity: 0.2,
           transparent: true,
-          opacity: 0.25 + Math.min(0.1, sector.steriScore * 0.1),
-          roughness: 0.35,
+          opacity: 0.28,
           side: THREE.DoubleSide,
           depthWrite: false,
         })
       );
       mesh.position.copy(position);
 
-      // Hairline outline border (Item #3)
-      const edgesGeo = new THREE.EdgesGeometry(geometry);
-      const hairlineOutline = new THREE.LineSegments(
-        edgesGeo,
-        new THREE.LineBasicMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.85 })
+      // Perimeter-only outline (no radial spokes - Item #3)
+      const ringPoints: THREE.Vector3[] = [];
+      const segs = 64;
+      for (let s = 0; s <= segs; s++) {
+        const theta = (s / segs) * Math.PI * 2;
+        ringPoints.push(new THREE.Vector3(radius * Math.cos(theta), 0.02, radius * Math.sin(theta)));
+      }
+      const outlineGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
+      const hairlineOutline = new THREE.LineLoop(
+        outlineGeo,
+        new THREE.LineBasicMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.85 })
       );
       mesh.add(hairlineOutline);
 
@@ -510,8 +512,18 @@ export default function Terrain3DViewer({
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf8fafc);
-    scene.fog = new THREE.FogExp2(0x0f172a, 0.008);
+    // Neutral paper fog - NO blue fog (Item #1)
+    scene.fog = new THREE.FogExp2(0xf8fafc, 0.003);
     sceneRef.current = scene;
+
+    // Faded Ground Plane extending under terrain to prevent raw edge cutoffs (Item #5)
+    const groundPlaneMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(300, 300),
+      new THREE.MeshBasicMaterial({ color: 0xf8fafc })
+    );
+    groundPlaneMesh.rotateX(-Math.PI / 2);
+    groundPlaneMesh.position.y = -0.05;
+    scene.add(groundPlaneMesh);
 
     scene.add(terrainGroupRef.current);
     scene.add(contourGroupRef.current);
@@ -531,8 +543,9 @@ export default function Terrain3DViewer({
     scene.add(sourceSensorInfluenceGroupRef.current);
     scene.add(clusterGroupRef.current);
 
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 42, 58);
+    // Narrower FOV 35 to reduce perspective distortion, ~35° tilt angle from vertical (Item #5)
+    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 1000);
+    camera.position.set(0, 50, 35);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -547,19 +560,24 @@ export default function Terrain3DViewer({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2 - 0.05;
-    controls.target.set(0, 2, 0);
+    controls.maxPolarAngle = Math.PI / 2 - 0.08;
+    controls.minDistance = 15;
+    controls.maxDistance = 110;
+    controls.target.set(0, 0, 0);
     controlsRef.current = controls;
 
-    // Lighting
-    const hemiLight = new THREE.HemisphereLight(0x38bdf8, 0x0f172a, 0.9);
+    // Neutral White Lighting - NO sky blue or navy ground lights (Item #1)
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 0.9);
     hemiLight.position.set(0, 50, 0);
     scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
     dirLight.position.set(30, 60, 40);
     dirLight.castShadow = true;
     scene.add(dirLight);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
 
     // Layer Builder Context
     interactiveObjectsRef.current = [];
@@ -632,16 +650,14 @@ export default function Terrain3DViewer({
           colors[i * 3 + 2] = col.b;
         }
         geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-        child.material = new THREE.MeshStandardMaterial({
-          color: 0xffffff,
+        child.material = new THREE.MeshBasicMaterial({
           vertexColors: true,
-          roughness: 0.25,
-          metalness: 0.1,
+          side: THREE.DoubleSide,
         });
       }
     });
 
-    // 2a. Real Station Points on the River (Small Ringed Dots - Item #2)
+    // 2a. Real Station Points on the River (Small Ringed Dots - Item #2 & #8)
     const RIVER_STATION_POINTS = [
       { id: "station_mangalam", name: "Mangalam Telemetry Station", designation: "Upstream Entry Station", lat: 11.10651, lon: 77.26001, ph: 7.4, ec: 1420, turbidity: 18, sourceType: "SIMULATED" as const },
       { id: "station_kasipalayam", name: "Kasipalayam Bridge Telemetry", designation: "Urban/Industrial Exit Station", lat: 11.11975, lon: 77.39716, ph: 6.8, ec: 2850, turbidity: 45, sourceType: "SIMULATED" as const },
@@ -649,24 +665,24 @@ export default function Terrain3DViewer({
     ];
 
     RIVER_STATION_POINTS.forEach((station) => {
-      const pos = geoTo3D(station.lat, station.lon, 0.42);
+      const pos = geoTo3D(station.lat, station.lon, 0.55);
       const ringGroup = new THREE.Group();
       ringGroup.position.copy(pos);
 
-      // Outer ring
-      const ringGeo = new THREE.RingGeometry(0.4, 0.6, 24);
+      // Outer white ring
+      const ringGeo = new THREE.RingGeometry(0.5, 0.7, 32);
       ringGeo.rotateX(-Math.PI / 2);
       const ringMesh = new THREE.Mesh(
         ringGeo,
-        new THREE.MeshBasicMaterial({ color: 0x0d9488, side: THREE.DoubleSide })
+        new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
       );
 
-      // Inner dot core
-      const coreGeo = new THREE.CircleGeometry(0.3, 24);
+      // Inner teal dot core
+      const coreGeo = new THREE.CircleGeometry(0.4, 32);
       coreGeo.rotateX(-Math.PI / 2);
       const coreMesh = new THREE.Mesh(
         coreGeo,
-        new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
+        new THREE.MeshBasicMaterial({ color: 0x0d9488, side: THREE.DoubleSide })
       );
       coreMesh.position.y = 0.02;
 
@@ -744,22 +760,41 @@ export default function Terrain3DViewer({
     floodGeo.rotateX(-Math.PI / 2);
     const floodMesh = new THREE.Mesh(
       floodGeo,
-      new THREE.MeshStandardMaterial({ color: 0x0284c7, transparent: true, opacity: 0.45 })
+      new THREE.MeshBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.25, side: THREE.DoubleSide })
     );
-    floodMesh.position.y = 0.6;
+    floodMesh.position.y = 0.4;
     floodMesh.visible = layers.floodRisk;
     scene.add(floodMesh);
     floodMeshRef.current = floodMesh;
 
-    // 10. Groundwater FIRKA Zones
+    // 10. Groundwater FIRKA Zones - Flat Planar Fill with Perimeter-only Outline (Item #3 & #6)
     groundwaterGroupRef.current.clear();
     GROUNDWATER_FIRKAS_GEO.forEach((firka) => {
-      const pos = geoTo3D(firka.lat, firka.lon, 0.1);
+      const pos = geoTo3D(firka.lat, firka.lon, 0.18);
+      const firkaRadius = 5.5;
+      const fillGeo = new THREE.RingGeometry(0, firkaRadius, 64);
+      fillGeo.rotateX(-Math.PI / 2);
+
       const firkaMesh = new THREE.Mesh(
-        new THREE.CylinderGeometry(6, 6, 0.4, 24),
-        new THREE.MeshStandardMaterial({ color: firka.color, transparent: true, opacity: 0.35 })
+        fillGeo,
+        new THREE.MeshBasicMaterial({ color: firka.color, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false })
       );
       firkaMesh.position.copy(pos);
+
+      // Perimeter-only outline ring
+      const ringPts: THREE.Vector3[] = [];
+      const numSegs = 64;
+      for (let s = 0; s <= numSegs; s++) {
+        const theta = (s / numSegs) * Math.PI * 2;
+        ringPts.push(new THREE.Vector3(firkaRadius * Math.cos(theta), 0.02, firkaRadius * Math.sin(theta)));
+      }
+      const outlineGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
+      const hairlineOutline = new THREE.LineLoop(
+        outlineGeo,
+        new THREE.LineBasicMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.85 })
+      );
+      firkaMesh.add(hairlineOutline);
+
       firkaMesh.userData = { type: "groundwater", data: firka };
       interactiveObjectsRef.current.push(firkaMesh);
       groundwaterGroupRef.current.add(firkaMesh);

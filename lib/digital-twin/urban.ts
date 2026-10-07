@@ -40,9 +40,9 @@ export function parseGeoJSONToBuildingDataset(geojson: any): BuildingGISDataset 
   };
 }
 
-const DEFAULT_BUILDING_HEIGHT_3D = 0.7;
+const DEFAULT_BUILDING_HEIGHT_3D = 0.3;
 const LEVEL_HEIGHT_METERS = 3;
-const HEIGHT_3D_PER_METER = 0.1;
+const HEIGHT_3D_PER_METER = 0.04;
 
 function parseNumericValue(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -99,11 +99,11 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
   const buildingsGroup = new THREE.Group();
   buildingsGroup.name = "Layer_Urban_Fabric";
   const material = new THREE.MeshStandardMaterial({
-    color: 0x64748b,
-    roughness: 0.82,
-    metalness: 0.05,
+    color: 0xcbd5e1,
+    roughness: 0.9,
+    metalness: 0.02,
     transparent: true,
-    opacity: 0.78,
+    opacity: 0.45,
   });
   let featureCount = 0;
 

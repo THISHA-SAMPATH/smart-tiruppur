@@ -122,9 +122,9 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
       const roadGeometry = new THREE.BufferGeometry();
       roadGeometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
       const roadMaterial = new THREE.LineBasicMaterial({
-        color: config.color,
+        color: 0xcbd5e1,
         transparent: true,
-        opacity: 0.82,
+        opacity: 0.12,
         depthWrite: false,
       });
       const roadLine = new THREE.LineSegments(roadGeometry, roadMaterial);

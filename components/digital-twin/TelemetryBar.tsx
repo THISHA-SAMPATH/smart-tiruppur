@@ -43,7 +43,7 @@ export default function TelemetryBar({
             INDUSTRIAL SCENARIO <SourceBadge type="SIMULATED" />
           </div>
           <div style={{ fontWeight: 600, color: "var(--ink)", fontSize: "11.5px" }}>
-            <span className="dt-telemetry-num">{unitCount}</span> units · <span className="dt-telemetry-num">{avgReuse}%</span> reuse
+            <span className="dt-telemetry-num">{unitCount}</span> {unitCount === 1 ? "unit" : "units"} · <span className="dt-telemetry-num">{avgReuse}%</span> reuse
           </div>
         </div>
       </div>
@@ -54,7 +54,7 @@ export default function TelemetryBar({
             GROUNDWATER STRESS <SourceBadge type="MODELLED" />
           </div>
           <div style={{ fontWeight: 600, color: "var(--ink)", fontSize: "11.5px" }}>
-            <span className="dt-telemetry-num">{criticalZones}</span> FIRKA zones
+            <span className="dt-telemetry-num">{criticalZones}</span> {criticalZones === 1 ? "FIRKA zone" : "FIRKA zones"}
           </div>
         </div>
       </div>
@@ -65,7 +65,7 @@ export default function TelemetryBar({
             ALERT LEDGER <SourceBadge type="MODELLED" />
           </div>
           <div style={{ fontWeight: 600, color: ledgerValid ? "var(--teal)" : "var(--risk-5)", fontSize: "11.5px" }}>
-            <span className="dt-telemetry-num">{activeAlerts}</span> alerts
+            <span className="dt-telemetry-num">{activeAlerts}</span> {activeAlerts === 1 ? "alert" : "alerts"}
           </div>
         </div>
       </div>

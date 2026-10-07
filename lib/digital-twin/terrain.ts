@@ -145,12 +145,15 @@ export function buildTerrainLayer(ctx: LayerBuilderContext): TerrainBuilderResul
   terrainGroup.add(terrainMesh);
   ctx.interactiveObjects.push(terrainMesh);
 
-  // Contour Line Rings
-  const contourLevels = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+  // Faint Topographical Elevation Plane Contours (Item #4)
+  const contourLevels = [1.0, 2.5, 4.0];
   contourLevels.forEach((level) => {
-    const contourGrid = new THREE.GridHelper(140, 35, 0x0d9488, 0xcbd5e1);
-    contourGrid.position.y = level;
-    contourGroup.add(contourGrid);
+    const planeRingGeo = new THREE.RingGeometry(20 * level, 20.2 * level, 64);
+    planeRingGeo.rotateX(-Math.PI / 2);
+    const contourMat = new THREE.MeshBasicMaterial({ color: 0xcbd5e1, side: THREE.DoubleSide, transparent: true, opacity: 0.12 });
+    const ringMesh = new THREE.Mesh(planeRingGeo, contourMat);
+    ringMesh.position.y = level;
+    contourGroup.add(ringMesh);
   });
 
   return {

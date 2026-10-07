@@ -113,8 +113,8 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
             isGisLoaded = true;
           }
 
-          const tubeRadius = feat.properties.type === "river" ? 0.5 : 0.25;
-          const tubeGeo = new THREE.TubeGeometry(curve, Math.max(20, vecPoints.length * 2), tubeRadius, 8, false);
+          const tubeRadius = feat.properties.type === "river" ? 0.2 : 0.1;
+          const tubeGeo = new THREE.TubeGeometry(curve, Math.max(160, vecPoints.length * 4), tubeRadius, 12, false);
 
           const tubeMat = new THREE.MeshStandardMaterial({
             color: feat.properties.type === "river" ? 0x0284c7 : 0x0d9488,
@@ -195,7 +195,7 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
     }
     activeRiverCurve = new THREE.CatmullRomCurve3(riverPoints);
 
-    const tubeGeo = new THREE.TubeGeometry(activeRiverCurve, 80, 0.5, 8, false);
+    const tubeGeo = new THREE.TubeGeometry(activeRiverCurve, 180, 0.2, 12, false);
     const riverMesh = new THREE.Mesh(
       tubeGeo,
       new THREE.MeshStandardMaterial({

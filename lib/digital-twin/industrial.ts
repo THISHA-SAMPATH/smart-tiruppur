@@ -111,7 +111,7 @@ export function buildIndustrialLayer(ctx: LayerBuilderContext): IndustrialBuilde
   const maxStrength = Math.max(...strengths, 1);
 
   INDUSTRIAL_UNITS_GEO.forEach((unit, index) => {
-    const facilityPosition = ctx.geoTo3D(unit.lat, unit.lon, 0.18);
+    const facilityPosition = ctx.geoTo3D(unit.lat, unit.lon, 0.55);
     const group = new THREE.Group();
     group.position.copy(facilityPosition);
 

@@ -17,6 +17,7 @@ import DigitalTwinSearch from "@/components/digital-twin/DigitalTwinSearch";
 import AccessibleTableViewer from "@/components/digital-twin/AccessibleTableViewer";
 import DataModelProvenancePanel from "@/components/digital-twin/DataModelProvenancePanel";
 import SourceBadge from "@/components/provenance/SourceBadge";
+import { Layers, Beaker, Sliders, FileText } from "lucide-react";
 import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
 import type { SteriCityOverview, SteriScenarioInput } from "@/lib/steri/types";
 import "@/app/digital-twin.css";
@@ -367,7 +368,7 @@ export default function Terrain3DPage() {
               aria-label="View Layers"
               aria-expanded={activeRailTab === "layers"}
             >
-              🥞
+              <Layers size={20} />
             </button>
             <button
               type="button"
@@ -377,7 +378,7 @@ export default function Terrain3DPage() {
               aria-label="Analysis Modes"
               aria-expanded={activeRailTab === "analysis"}
             >
-              🧪
+              <Beaker size={20} />
             </button>
             <button
               type="button"
@@ -387,7 +388,7 @@ export default function Terrain3DPage() {
               aria-label="Scenario Simulator"
               aria-expanded={activeRailTab === "scenario"}
             >
-              ⚙️
+              <Sliders size={20} />
             </button>
             <button
               type="button"
@@ -397,7 +398,7 @@ export default function Terrain3DPage() {
               aria-label="Data Provenance"
               aria-expanded={activeRailTab === "provenance"}
             >
-              📜
+              <FileText size={20} />
             </button>
           </nav>
 
