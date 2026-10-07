@@ -33,14 +33,14 @@ export default function AccessibleTableViewer() {
   const filtered = filter === "ALL" ? TABLE_UNITS : TABLE_UNITS.filter((u) => u.status === filter);
 
   return (
-    <div style={{ width: "100%", height: "100%", background: "#0f172a", color: "#f8fafc", padding: "24px", overflowY: "auto" }}>
+    <div style={{ width: "100%", height: "100%", background: "var(--paper)", color: "var(--ink)", padding: "24px", overflowY: "auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <div>
-          <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#ffffff", margin: 0 }}>
+          <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--ink)", margin: 0 }}>
             ACCESSIBLE DATA TABLE VIEW
           </h2>
-          <p style={{ fontSize: "12px", color: "#94a3b8", margin: "4px 0 0" }}>
-            Structured, high-contrast HTML data grid for screen readers & civic accessibility (Fix #44).
+          <p style={{ fontSize: "12.5px", color: "var(--ink-soft)", margin: "4px 0 0" }}>
+            Structured, high-contrast HTML data grid for screen readers & civic accessibility.
           </p>
         </div>
 
@@ -50,17 +50,8 @@ export default function AccessibleTableViewer() {
               key={status}
               type="button"
               onClick={() => setFilter(status)}
-              style={{
-                background: filter === status ? "#0d9488" : "#1e293b",
-                color: filter === status ? "#ffffff" : "#94a3b8",
-                border: "1px solid",
-                borderColor: filter === status ? "#0d9488" : "#334155",
-                padding: "6px 12px",
-                borderRadius: "6px",
-                fontSize: "12px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
+              className={`dt-btn ${filter === status ? "active" : ""}`}
+              style={{ fontSize: "12px", padding: "6px 12px" }}
             >
               {status}
             </button>
@@ -68,43 +59,44 @@ export default function AccessibleTableViewer() {
         </div>
       </div>
 
-      <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", overflow: "hidden" }}>
+      <div style={{ background: "var(--paper-raised)", border: "1px solid var(--hairline)", borderRadius: "var(--radius-md)", overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
           <thead>
-            <tr style={{ background: "#0f172a", borderBottom: "1px solid #334155" }}>
-              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "#94a3b8" }}>Facility ID & Name</th>
-              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "#94a3b8" }}>Facility Category</th>
-              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "#94a3b8" }}>ZLD Status</th>
-              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "#94a3b8" }}>Water Reuse %</th>
-              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "#94a3b8" }}>Flow Rate (L/s)</th>
-              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "#94a3b8" }}>Action</th>
+            <tr style={{ background: "var(--paper)", borderBottom: "1px solid var(--hairline)" }}>
+              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "var(--ink-soft)" }}>Facility ID & Name</th>
+              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "var(--ink-soft)" }}>Facility Category</th>
+              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "var(--ink-soft)" }}>ZLD Status</th>
+              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "var(--ink-soft)" }}>Water Reuse %</th>
+              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "var(--ink-soft)" }}>Flow Rate (L/s)</th>
+              <th style={{ padding: "12px 16px", textTransform: "uppercase", fontSize: "11px", color: "var(--ink-soft)" }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((unit) => (
-              <tr key={unit.id} style={{ borderBottom: "1px solid #334155" }}>
+              <tr key={unit.id} data-unit-id={unit.id} tabIndex={0} style={{ borderBottom: "1px solid var(--hairline)" }}>
                 <td style={{ padding: "12px 16px", fontWeight: 600 }}>{unit.name} ({unit.id})</td>
-                <td style={{ padding: "12px 16px", color: "#94a3b8" }}>{unit.type}</td>
+                <td style={{ padding: "12px 16px", color: "var(--ink-soft)" }}>{unit.type}</td>
                 <td style={{ padding: "12px 16px" }}>
                   <span
                     style={{
                       fontWeight: 700,
-                      color: unit.status === "INVESTIGATE" ? "#ef4444" : unit.status === "WARNING" ? "#f59e0b" : "#10b981",
+                      color: unit.status === "INVESTIGATE" ? "var(--risk-5)" : unit.status === "WARNING" ? "var(--risk-3)" : "var(--teal)",
                     }}
                   >
                     {unit.status === "INVESTIGATE" ? "! INVESTIGATE" : unit.status === "WARNING" ? "▲ WARNING" : "● COMPLIANT"}
                   </span>
                 </td>
-                <td style={{ padding: "12px 16px", color: "#10b981", fontWeight: 700 }}>{unit.reuse}%</td>
-                <td style={{ padding: "12px 16px" }}>{unit.flow} L/s</td>
+                <td style={{ padding: "12px 16px", color: "var(--teal)", fontWeight: 700, fontFamily: "JetBrains Mono, monospace" }}>{unit.reuse}%</td>
+                <td style={{ padding: "12px 16px", fontFamily: "JetBrains Mono, monospace" }}>{unit.flow} L/s</td>
                 <td style={{ padding: "12px 16px" }}>
                   <Link
                     href={`/units/${unit.id}`}
                     style={{
-                      background: "#2563eb",
-                      color: "white",
+                      background: "var(--indigo-soft)",
+                      color: "var(--indigo)",
+                      border: "1px solid var(--hairline)",
                       padding: "4px 10px",
-                      borderRadius: "4px",
+                      borderRadius: "var(--radius-sm)",
                       fontSize: "12px",
                       textDecoration: "none",
                       fontWeight: 600,

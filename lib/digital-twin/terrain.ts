@@ -134,9 +134,9 @@ export function buildTerrainLayer(ctx: LayerBuilderContext): TerrainBuilderResul
   geometry.computeVertexNormals();
 
   const terrainMat = new THREE.MeshStandardMaterial({
-    color: 0x1e293b,
+    color: 0xe2e8f0,
     roughness: 0.85,
-    metalness: 0.15,
+    metalness: 0.05,
   });
   const terrainMesh = new THREE.Mesh(geometry, terrainMat);
   terrainMesh.receiveShadow = true;
@@ -148,7 +148,7 @@ export function buildTerrainLayer(ctx: LayerBuilderContext): TerrainBuilderResul
   // Contour Line Rings
   const contourLevels = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
   contourLevels.forEach((level) => {
-    const contourGrid = new THREE.GridHelper(140, 35, 0x0d9488, 0x1e293b);
+    const contourGrid = new THREE.GridHelper(140, 35, 0x0d9488, 0xcbd5e1);
     contourGrid.position.y = level;
     contourGroup.add(contourGrid);
   });

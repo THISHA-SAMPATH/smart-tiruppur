@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import Terrain3DViewer, {
   LightingPreset,
   SelectedNodeInfo,
@@ -17,12 +16,12 @@ import DataProvenanceModal from "@/components/digital-twin/DataProvenanceModal";
 import DigitalTwinSearch from "@/components/digital-twin/DigitalTwinSearch";
 import AccessibleTableViewer from "@/components/digital-twin/AccessibleTableViewer";
 import DataModelProvenancePanel from "@/components/digital-twin/DataModelProvenancePanel";
+import SourceBadge from "@/components/provenance/SourceBadge";
 import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
-import type { LedgerEntry, DppResponse } from "@/lib/types";
 import type { SteriCityOverview, SteriScenarioInput } from "@/lib/steri/types";
 import "@/app/digital-twin.css";
 
-// Interactive Live Event Timeline Items (Fix #18)
+// Interactive Live Event Timeline Items
 const SCENARIO_TIMELINE_EVENTS = [
   {
     id: "evt_001",
@@ -75,13 +74,16 @@ export default function Terrain3DPage() {
   const [autoRotate, setAutoRotate] = useState(false);
   const [userRole, setUserRole] = useState<UserRoleOverlay>("REGULATOR");
 
-  // Dual View Mode (Fix #44): 3D View vs Accessible Table View
-  const [viewMode, setViewMode] = useState<"3D" | "TABLE">("3D");
+  // View Mode: 2.5D | 3D | Table
+  const [viewMode, setViewMode] = useState<"2.5D" | "3D" | "TABLE">("2.5D");
 
-  // Mode Switch (Fix #28): LIVE vs SCENARIO
+  // Mode Switch: BASELINE vs SCENARIO
   const [mode, setMode] = useState<"BASELINE" | "SCENARIO">("BASELINE");
 
-  // Scenario Mode Parameters (Fix #28)
+  // Left Rail & Panel State
+  const [activeRailTab, setActiveRailTab] = useState<"layers" | "analysis" | "scenario" | "provenance" | null>("layers");
+
+  // Scenario Mode Parameters
   const [rainfall, setRainfall] = useState<number>(120);
   const [dischargeLoad, setDischargeLoad] = useState<number>(100);
   const [riverFlow, setRiverFlow] = useState<number>(110);
@@ -92,7 +94,7 @@ export default function Terrain3DPage() {
   const [steriUnavailable, setSteriUnavailable] = useState(false);
   const [compareWithBaseline, setCompareWithBaseline] = useState(false);
 
-  // Focus Position for Camera Lerp (Fix #19)
+  // Focus Position for Camera Lerp
   const [focusPosition, setFocusPosition] = useState<{ x: number; y: number; z: number } | null>(null);
 
   // Analysis Modes State
@@ -197,7 +199,6 @@ export default function Terrain3DPage() {
   };
 
   const handleLocateMe = () => {
-    // Locate nearest landmark (Tiruppur Corporation Center / Kasipalayam Station)
     const pos = geoTo3D(11.11975, 77.39716, 0);
     setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
   };
@@ -251,215 +252,222 @@ export default function Terrain3DPage() {
   };
 
   return (
-    <div className="dt-container">
+    <div className="twin-page dt-container">
       {/* -------------------------------------------------------------------- */}
-      {/* HEADER WITH SEARCH, VIEW MODES & ROLE SELECTOR                       */}
+      {/* SINGLE COMPACT FLOATING TOOLBAR OVER MAP (Top-Left to Top-Right)      */}
       {/* -------------------------------------------------------------------- */}
-      <header className="dt-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <div className="dt-badge-brand">SMART TIRUPPUR</div>
-
-          <div>
-            <h1 style={{ margin: 0, fontSize: "15px", color: "#ffffff", fontWeight: 700 }}>
-              3D Environmental Digital Twin
-            </h1>
-            <p style={{ margin: 0, fontSize: "11px", color: "var(--color-slate-muted)" }}>
-              Procedural Terrain · OPEN_DATA GIS · Modelled groundwater assessment
-            </p>
-          </div>
+      <div className="dt-toolbar" role="toolbar" aria-label="Digital Twin Controls Toolbar">
+        {/* Title */}
+        <div className="dt-toolbar-title">
+          <div className="dt-badge-brand">DIGITAL TWIN</div>
+          <h1>Environmental Digital Twin</h1>
         </div>
 
-        {/* SEARCH BAR (FIX #40 & FIX #41) */}
+        {/* Compact Search Bar */}
         <DigitalTwinSearch
           onSelectResult={handleSearchResult}
           onLocateMe={handleLocateMe}
         />
 
-        {/* DUAL VIEW MODE SWITCHER: 3D VIEW | TABLE VIEW (FIX #44) */}
-        <div style={{ display: "flex", background: "var(--color-slate-surface)", padding: "3px", borderRadius: "8px", border: "1px solid var(--color-slate-border)" }}>
+        {/* View Mode Switcher: 2.5D | 3D | Table */}
+        <div className="dt-toolbar-group">
+          <button
+            type="button"
+            className={`dt-btn ${viewMode === "2.5D" ? "active" : ""}`}
+            style={{ padding: "4px 10px", fontSize: "11px" }}
+            onClick={() => setViewMode("2.5D")}
+          >
+            🗺️ 2.5D
+          </button>
           <button
             type="button"
             className={`dt-btn ${viewMode === "3D" ? "active" : ""}`}
-            style={{ padding: "4px 12px", fontSize: "11.5px" }}
+            style={{ padding: "4px 10px", fontSize: "11px" }}
             onClick={() => setViewMode("3D")}
           >
-            🌐 3D VIEW
+            🌐 3D
           </button>
           <button
             type="button"
             className={`dt-btn ${viewMode === "TABLE" ? "active" : ""}`}
-            style={{ padding: "4px 12px", fontSize: "11.5px" }}
+            style={{ padding: "4px 10px", fontSize: "11px" }}
             onClick={() => setViewMode("TABLE")}
           >
-            📋 TABLE VIEW
+            📋 Table
           </button>
         </div>
 
-        {/* LIVE MODE vs SCENARIO MODE SWITCH (FIX #28) */}
-        <div style={{ display: "flex", background: "var(--color-slate-surface)", padding: "3px", borderRadius: "8px", border: "1px solid var(--color-slate-border)" }}>
+        {/* Live / Scenario Mode Switch */}
+        <div className="dt-toolbar-group">
           <button
             type="button"
             className={`dt-btn ${mode === "BASELINE" ? "active" : ""}`}
-            style={{ padding: "4px 12px", fontSize: "11.5px" }}
+            style={{ padding: "4px 10px", fontSize: "11px" }}
             onClick={() => setMode("BASELINE")}
           >
-            ● BASELINE
+            ● Baseline
           </button>
           <button
             type="button"
             className={`dt-btn ${mode === "SCENARIO" ? "active" : ""}`}
-            style={{ padding: "4px 12px", fontSize: "11.5px" }}
-            onClick={() => setMode("SCENARIO")}
+            style={{ padding: "4px 10px", fontSize: "11px" }}
+            onClick={() => {
+              setMode("SCENARIO");
+              setActiveRailTab("scenario");
+            }}
           >
-            ⚙ SCENARIO
+            ⚙ Scenario
           </button>
         </div>
 
-        {/* ROLE VIEW SELECTOR (FIX #38) */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <select
-            value={userRole}
-            onChange={(e) => handleRoleChange(e.target.value as UserRoleOverlay)}
-            style={{
-              background: "var(--color-slate-surface)",
-              color: "var(--color-teal)",
-              border: "1px solid var(--color-slate-border)",
-              padding: "4px 10px",
-              borderRadius: "6px",
-              fontSize: "12px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            <option value="REGULATOR">Regulator View</option>
-            <option value="GROUNDWATER_OFFICER">Groundwater Officer View</option>
-            <option value="INDUSTRY">Industry View</option>
-            <option value="CITIZEN">Public Citizen View</option>
-          </select>
-
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              background: "var(--color-slate-surface)",
-              border: "1px solid var(--color-slate-border)",
-              padding: "5px 12px",
-              borderRadius: "999px",
-              fontSize: "12px",
-              fontWeight: 600,
-              color: "var(--color-green)",
-            }}
-          >
-            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-green)", boxShadow: "0 0 8px var(--color-green)" }} />
-            SIMULATION ● MODELLED
-          </div>
-        </div>
-      </header>
+        {/* Role Selector */}
+        <select
+          value={userRole}
+          onChange={(e) => handleRoleChange(e.target.value as UserRoleOverlay)}
+          className="dt-toolbar-select"
+          aria-label="Select User Role View"
+        >
+          <option value="REGULATOR">Regulator View</option>
+          <option value="GROUNDWATER_OFFICER">GW Officer View</option>
+          <option value="INDUSTRY">Industry View</option>
+          <option value="CITIZEN">Citizen View</option>
+        </select>
+      </div>
 
       {/* -------------------------------------------------------------------- */}
-      {/* VIEWPORT CONTENT (3D OR ACCESSIBLE TABLE VIEW - FIX #44)            */}
+      {/* VIEWPORT CONTENT (MAP OR TABLE)                                      */}
       {/* -------------------------------------------------------------------- */}
       {viewMode === "TABLE" ? (
         <AccessibleTableViewer />
       ) : (
         <div className="dt-viewport">
+          {/* 3D / 2.5D Map Canvas Viewer */}
           <Terrain3DViewer
             lighting={lighting}
             autoRotate={autoRotate}
             floodIntensity={floodIntensity}
             role={userRole}
             layers={layers}
+            viewMode={viewMode}
             focusPosition={focusPosition}
             steriOverview={steriOverview}
             steriBaseline={compareWithBaseline ? steriBaseline : null}
             onSelectNode={setSelectedNode}
           />
 
-          {/* LEFT PANEL */}
-          <div style={{ position: "absolute", top: "16px", left: "16px", zIndex: 20, width: "310px", display: "flex", flexDirection: "column", gap: "10px", maxHeight: "calc(100% - 32px)", overflowY: "auto" }}>
-            <LayerPanel
-              layers={layers}
-              lighting={lighting}
-              activeAnalysisMode={activeAnalysisMode}
-              onToggleLayer={toggleLayer}
-              onSelectAnalysisMode={handleAnalysisModeChange}
-              onChangeLighting={setLighting}
-              compareWithBaseline={compareWithBaseline}
-              onChangeCompareWithBaseline={setCompareWithBaseline}
-              steriDataUnavailable={steriUnavailable}
-            />
-            <DataModelProvenancePanel steriOverview={steriOverview} />
+          {/* -------------------------------------------------------------------- */}
+          {/* LEFT 48PX ICON RAIL                                                  */}
+          {/* -------------------------------------------------------------------- */}
+          <nav className="dt-icon-rail" aria-label="Layer Navigation Rail">
+            <button
+              type="button"
+              className={`dt-rail-btn ${activeRailTab === "layers" ? "active" : ""}`}
+              onClick={() => setActiveRailTab(activeRailTab === "layers" ? null : "layers")}
+              title="View Layers"
+              aria-label="View Layers"
+              aria-expanded={activeRailTab === "layers"}
+            >
+              🥞
+            </button>
+            <button
+              type="button"
+              className={`dt-rail-btn ${activeRailTab === "analysis" ? "active" : ""}`}
+              onClick={() => setActiveRailTab(activeRailTab === "analysis" ? null : "analysis")}
+              title="Analysis Modes"
+              aria-label="Analysis Modes"
+              aria-expanded={activeRailTab === "analysis"}
+            >
+              🧪
+            </button>
+            <button
+              type="button"
+              className={`dt-rail-btn ${activeRailTab === "scenario" ? "active" : ""}`}
+              onClick={() => setActiveRailTab(activeRailTab === "scenario" ? null : "scenario")}
+              title="Scenario Simulator"
+              aria-label="Scenario Simulator"
+              aria-expanded={activeRailTab === "scenario"}
+            >
+              ⚙️
+            </button>
+            <button
+              type="button"
+              className={`dt-rail-btn ${activeRailTab === "provenance" ? "active" : ""}`}
+              onClick={() => setActiveRailTab(activeRailTab === "provenance" ? null : "provenance")}
+              title="Data Provenance"
+              aria-label="Data Provenance"
+              aria-expanded={activeRailTab === "provenance"}
+            >
+              📜
+            </button>
+          </nav>
 
-            {/* SCENARIO MODE PANEL (FIX #28 & FIX #29) */}
-            {mode === "SCENARIO" && (
-              <ScenarioModePanel
-                rainfall={rainfall}
-                dischargeLoad={dischargeLoad}
-                riverFlow={riverFlow}
-                groundwaterDraft={groundwaterDraft}
-                onChangeRainfall={setRainfall}
-                onChangeDischargeLoad={setDischargeLoad}
-                onChangeRiverFlow={setRiverFlow}
-                onChangeGroundwaterDraft={setGroundwaterDraft}
-                onRunScenario={handleRunScenario}
+          {/* -------------------------------------------------------------------- */}
+          {/* EXPANDABLE 320PX LEFT PANEL                                           */}
+          {/* -------------------------------------------------------------------- */}
+          {activeRailTab !== null && (
+            <div style={{ position: "relative" }}>
+              <LayerPanel
+                layers={layers}
+                lighting={lighting}
+                activeAnalysisMode={activeAnalysisMode}
+                onToggleLayer={toggleLayer}
+                onSelectAnalysisMode={handleAnalysisModeChange}
+                onChangeLighting={setLighting}
+                compareWithBaseline={compareWithBaseline}
+                onChangeCompareWithBaseline={setCompareWithBaseline}
+                steriDataUnavailable={steriUnavailable}
+                onClose={() => setActiveRailTab(null)}
               />
-            )}
 
-            {/* LIVE EVENT TIMELINE DRAWER (FIX #18) */}
-            <div className="dt-card-surface">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                <div style={{ fontSize: "11px", fontWeight: 800, color: "var(--color-teal)", letterSpacing: "0.05em" }}>
-                  SCENARIO TIMELINE
+              {/* FLOATING SUB-PANELS ACCORDING TO ACTIVE RAIL TAB */}
+              <div style={{ position: "absolute", top: "68px", left: "68px", zIndex: 26, width: "320px", display: "flex", flexDirection: "column", gap: "10px", pointerEvents: "none" }}>
+                <div style={{ pointerEvents: "auto" }}>
+                  {mode === "SCENARIO" && activeRailTab === "scenario" && (
+                    <ScenarioModePanel
+                      rainfall={rainfall}
+                      dischargeLoad={dischargeLoad}
+                      riverFlow={riverFlow}
+                      groundwaterDraft={groundwaterDraft}
+                      onChangeRainfall={setRainfall}
+                      onChangeDischargeLoad={setDischargeLoad}
+                      onChangeRiverFlow={setRiverFlow}
+                      onChangeGroundwaterDraft={setGroundwaterDraft}
+                      onRunScenario={handleRunScenario}
+                    />
+                  )}
+
+                  {activeRailTab === "provenance" && (
+                    <DataModelProvenancePanel steriOverview={steriOverview} />
+                  )}
                 </div>
-                <span style={{ fontSize: "10px", color: "var(--color-amber)", fontWeight: 700 }}>● SIMULATION</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "160px", overflowY: "auto" }}>
-                {SCENARIO_TIMELINE_EVENTS.map((evt) => (
-                  <div
-                    key={evt.id}
-                    onClick={() => handleTimelineClick(evt)}
-                    style={{
-                      background: "var(--color-slate-bg)",
-                      padding: "8px 10px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      borderLeft: `3px solid ${
-                        evt.status === "INVESTIGATE" ? "var(--color-red)" : evt.status === "WARNING" ? "var(--color-amber)" : "var(--color-green)"
-                      }`,
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: 700, color: "#ffffff" }}>
-                      <span>{evt.symbol} {evt.title}</span>
-                      <span style={{ color: "var(--color-slate-muted)" }}>{evt.time}</span>
-                    </div>
-                    <div style={{ fontSize: "10.5px", color: "var(--color-teal)", marginTop: "2px" }}>
-                      {evt.location} · {evt.confidence}
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* RIGHT INSPECTOR PANEL */}
+          {/* -------------------------------------------------------------------- */}
+          {/* RIGHT INSPECTOR PANEL (Slide-in 360px, ONLY when entity selected)    */}
+          {/* -------------------------------------------------------------------- */}
           <InspectorPanel
             selectedNode={selectedNode}
+            viewMode={viewMode}
             onClose={() => setSelectedNode(null)}
             onOpenProvenance={() => setIsProvenanceOpen(true)}
           />
         </div>
       )}
 
-      {/* FOOTER TELEMETRY STRIP (FIX #17 & FIX #34) */}
+      {/* -------------------------------------------------------------------- */}
+      {/* BOTTOM TELEMETRY STRIP WITH SCENARIO SCRUBBER CONTROLS               */}
+      {/* -------------------------------------------------------------------- */}
       <TelemetryBar
         unitCount={unitCount}
         avgReuse={avgReuse}
         criticalZones={criticalZones}
         activeAlerts={activeAlerts}
+        isScenarioMode={mode === "SCENARIO"}
       />
 
-      {/* DATA PROVENANCE MODAL (FIX #36 & FIX #37) */}
+      {/* DATA PROVENANCE MODAL */}
       <DataProvenanceModal
         isOpen={isProvenanceOpen}
         unitId={selectedNode?.id}

@@ -199,9 +199,9 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
     const riverMesh = new THREE.Mesh(
       tubeGeo,
       new THREE.MeshStandardMaterial({
-        color: 0x0284c7,
-        emissive: 0x0284c7,
-        emissiveIntensity: 0.4,
+        color: 0x0d9488,
+        emissive: 0x0d9488,
+        emissiveIntensity: 0.45,
         roughness: 0.1,
       })
     );

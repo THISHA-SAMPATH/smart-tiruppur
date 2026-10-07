@@ -230,7 +230,7 @@ nav.topnav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 68px;
+  height: 56px;
   padding: 0 28px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);

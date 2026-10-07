@@ -100,7 +100,7 @@ function nearestPointOnCurve(curve: THREE.CatmullRomCurve3, point: THREE.Vector3
   return { position: nearest, t: nearestT };
 }
 
-/** Builds simulated facilities, model-input outfalls, and explicitly simulated discharge paths. */
+/** Builds simulated facilities (flat circular markers with white ring) and discharge paths. */
 export function buildIndustrialLayer(ctx: LayerBuilderContext): IndustrialBuilderResult {
   const unitsGroup = new THREE.Group();
   unitsGroup.name = "Layer_Industrial_Units_Simulated";
@@ -111,38 +111,51 @@ export function buildIndustrialLayer(ctx: LayerBuilderContext): IndustrialBuilde
   const maxStrength = Math.max(...strengths, 1);
 
   INDUSTRIAL_UNITS_GEO.forEach((unit, index) => {
-    const facilityPosition = ctx.geoTo3D(unit.lat, unit.lon, 0);
-    const buildingHeight = 2.0 + (index % 3) * 0.8;
+    const facilityPosition = ctx.geoTo3D(unit.lat, unit.lon, 0.18);
     const group = new THREE.Group();
     group.position.copy(facilityPosition);
-    const building = new THREE.Mesh(new THREE.BoxGeometry(2.2, buildingHeight, 2.2), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.4, roughness: 0.6 }));
-    building.position.y = buildingHeight / 2;
-    group.add(building);
 
-    const outfall = INDUSTRIAL_OUTFALLS[index];
-    const statusColor = unit.status === "INVESTIGATE" ? 0xdc2626 : unit.status === "WARNING" ? 0xf59e0b : 0x10b981;
-    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), new THREE.MeshStandardMaterial({ color: statusColor, emissive: statusColor, emissiveIntensity: 0.8 }));
-    beacon.position.y = buildingHeight + 0.6;
-    beacon.userData = {
+    // Risk Ramp Hex Colors
+    // COMPLIANT -> 0x86efac (LOW/Safe), WARNING -> 0xfdba74 (HIGH), INVESTIGATE -> 0xb91c1c (CRITICAL)
+    const statusColor = unit.status === "INVESTIGATE" ? 0xb91c1c : unit.status === "WARNING" ? 0xfdba74 : 0x0d9488;
+
+    // Flat circular disk marker with white ring outer border (Requirement #9)
+    const ringMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.7, 0.7, 0.08, 24),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
+    );
+    ringMesh.position.y = 0.04;
+    group.add(ringMesh);
+
+    const innerDot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.5, 0.1, 24),
+      new THREE.MeshStandardMaterial({ color: statusColor, roughness: 0.3 })
+    );
+    innerDot.position.y = 0.06;
+    innerDot.userData = {
       type: "unit",
       data: {
         unit,
-        outfall,
+        outfall: INDUSTRIAL_OUTFALLS[index],
         sourceStrength: strengths[index],
         normalizedSourceStrength: strengths[index] / maxStrength,
         connectionLabel: "SIMULATED DISCHARGE PATH",
       },
     };
-    group.add(beacon);
-    ctx.interactiveObjects.push(beacon);
+    group.add(innerDot);
+    ctx.interactiveObjects.push(innerDot);
     unitsGroup.add(group);
 
+    const outfall = INDUSTRIAL_OUTFALLS[index];
     const outfallPosition = ctx.geoTo3D(outfall.lat, outfall.lon, 0.15);
-    const marker = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 10), new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xf97316, emissiveIntensity: 0.6 }));
-    marker.position.copy(outfallPosition);
-    marker.userData = { type: "outfall", data: { unit, outfall, sourceStrength: strengths[index], normalizedSourceStrength: strengths[index] / maxStrength } };
-    dischargePathsGroup.add(marker);
-    ctx.interactiveObjects.push(marker);
+    const outfallMarker = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.3, 0.3, 0.08, 16),
+      new THREE.MeshStandardMaterial({ color: 0xfdba74, roughness: 0.3 })
+    );
+    outfallMarker.position.copy(outfallPosition);
+    outfallMarker.userData = { type: "outfall", data: { unit, outfall, sourceStrength: strengths[index], normalizedSourceStrength: strengths[index] / maxStrength } };
+    dischargePathsGroup.add(outfallMarker);
+    ctx.interactiveObjects.push(outfallMarker);
 
     if (ctx.activeWaterwayCurve) {
       const nearest = nearestPointOnCurve(ctx.activeWaterwayCurve, outfallPosition);
@@ -153,7 +166,7 @@ export function buildIndustrialLayer(ctx: LayerBuilderContext): IndustrialBuilde
       };
       connections.push(connection);
       const geometry = new THREE.BufferGeometry().setFromPoints([outfallPosition, nearest.position]);
-      const path = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.7 }));
+      const path = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x0d9488, transparent: true, opacity: 0.5 }));
       path.userData = { type: "outfall", data: { unit, outfall, sourceStrength: connection.sourceStrength, normalizedSourceStrength: connection.normalizedSourceStrength, connectionLabel: connection.connectionLabel } };
       dischargePathsGroup.add(path);
       ctx.interactiveObjects.push(path);

@@ -1,202 +1,412 @@
 /* ==========================================================================
-   SMART TIRUPPUR — DIGITAL TWIN UNIFIED DESIGN SYSTEM & CSS (FIX #30 & #31)
+   DIGITAL TWIN PAGE LIGHT MINIMALIST SYSTEM (.twin-page / .dt-container)
    ========================================================================== */
 
-:root {
-  /* Unified Color Tokens */
-  --color-indigo: #2563eb;
-  --color-indigo-soft: rgba(37, 99, 235, 0.15);
-  --color-cyan: #0d9488;
-  --color-teal: #0284c7;
-  --color-teal-soft: rgba(2, 132, 199, 0.15);
-  --color-green: #10b981;
-  --color-amber: #f59e0b;
-  --color-red: #ef4444;
-  --color-slate-bg: #0f172a;
-  --color-slate-card: rgba(15, 23, 42, 0.9);
-  --color-slate-surface: #1e293b;
-  --color-slate-border: #334155;
-  --color-slate-text: #f8fafc;
-  --color-slate-muted: #94a3b8;
-  --color-gray-offline: #64748b;
+.twin-page,
+.dt-container {
+  /* Sequential Light-Friendly Risk Ramp (LOW -> CRITICAL) */
+  --risk-1: #86efac; /* LOW (Green) */
+  --risk-2: #fde68a; /* MODERATE (Yellow) */
+  --risk-3: #fdba74; /* HIGH (Orange) */
+  --risk-4: #f87171; /* VERY HIGH (Light Red) */
+  --risk-5: #b91c1c; /* CRITICAL (Dark Red) */
+
+  /* Palette Mapping to Site Global Tokens */
+  --color-indigo: var(--indigo);
+  --color-indigo-soft: var(--indigo-soft);
+  --color-teal: var(--teal);
+  --color-teal-soft: var(--teal-soft);
+  --color-slate-bg: var(--paper);
+  --color-slate-card: var(--paper-raised);
+  --color-slate-surface: var(--paper-raised);
+  --color-slate-border: var(--hairline);
+  --color-slate-text: var(--ink);
+  --color-slate-muted: var(--ink-soft);
 }
 
 .dt-container {
   width: 100%;
-  height: calc(100vh - 65px);
+  height: calc(100vh - 56px);
   position: relative;
-  background: var(--color-slate-bg);
-  color: var(--color-slate-text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.dt-header {
-  padding: 8px 24px;
-  background: rgba(15, 23, 42, 0.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--color-slate-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* -------------------------------------------------------------------------- */
+/* FLOATING TOP TOOLBAR (Replacing duplicate second header row)              */
+/* -------------------------------------------------------------------------- */
+.dt-toolbar {
+  position: absolute;
   z-index: 30;
-  flex-shrink: 0;
+  top: 12px;
+  left: 68px;
+  right: 16px;
+  height: 48px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dt-toolbar-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dt-toolbar-title h1 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 14px !important;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  white-space: nowrap;
 }
 
 .dt-badge-brand {
-  background: linear-gradient(135deg, var(--color-cyan) 0%, var(--color-indigo) 100%);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 800;
-  padding: 4px 12px;
-  border-radius: 999px;
-  letter-spacing: 0.08em;
-  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+  color: var(--teal);
+  background: var(--teal-soft);
+  border: 1px solid rgba(13, 148, 136, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
+/* Toolbar Control Groups */
+.dt-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--paper);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hairline);
+}
+
+.dt-toolbar-select {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.dt-toolbar-select:hover,
+.dt-toolbar-select:focus-visible {
+  border-color: var(--teal);
+}
+
+/* -------------------------------------------------------------------------- */
+/* MAP VIEWPORT & CANVAS                                                      */
+/* -------------------------------------------------------------------------- */
 .dt-viewport {
   flex: 1;
   position: relative;
-  width: 100%;
-  height: 100%;
   overflow: hidden;
+  background: var(--paper);
 }
 
+.dt-viewport canvas {
+  background: var(--paper) !important;
+  display: block;
+}
+
+/* -------------------------------------------------------------------------- */
+/* LEFT 48PX ICON RAIL                                                       */
+/* -------------------------------------------------------------------------- */
+.dt-icon-rail {
+  position: absolute;
+  z-index: 28;
+  top: 68px;
+  left: 12px;
+  bottom: 60px;
+  width: 48px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 6px;
+}
+
+.dt-rail-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.dt-rail-btn:hover {
+  background: #f1f5f9;
+  color: var(--ink);
+}
+
+.dt-rail-btn.active {
+  background: var(--teal-soft);
+  color: var(--teal);
+  border-color: var(--teal);
+}
+
+.dt-rail-btn:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* FLOATING LAYER & INSPECTOR PANELS (320px left / 360px right)               */
+/* -------------------------------------------------------------------------- */
 .dt-panel-left {
   position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 20;
-  width: 310px;
-  background: var(--color-slate-card);
+  z-index: 25;
+  top: 68px;
+  left: 68px;
+  width: 320px;
+  max-height: calc(100vh - 56px - 52px - 32px);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-slate-border);
-  border-radius: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: calc(100% - 32px);
-  overflow-y: auto;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
 }
 
 .dt-panel-right {
   position: absolute;
-  top: 16px;
+  z-index: 25;
+  top: 68px;
   right: 16px;
-  z-index: 20;
-  width: 340px;
-  background: var(--color-slate-card);
+  width: 360px;
+  max-height: calc(100vh - 56px - 52px - 32px);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-slate-border);
-  border-radius: 12px;
-  padding: 18px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-  max-height: calc(100% - 32px);
   overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
 }
 
+/* Sticky Section Titles */
 .dt-section-title {
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--color-teal);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 4px 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  color: var(--ink-soft);
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
+/* Card Surface inside Panels */
 .dt-card-surface {
-  background: var(--color-slate-surface);
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
 }
 
+/* Buttons */
 .dt-btn {
-  background: var(--color-slate-surface);
-  color: var(--color-slate-muted);
-  border: 1px solid var(--color-slate-border);
+  background: var(--paper-raised);
+  color: var(--ink-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
   padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .dt-btn:hover {
-  color: var(--color-slate-text);
-  border-color: #475569;
+  border-color: var(--teal);
+  color: var(--teal);
+  background: var(--teal-soft);
 }
 
 .dt-btn.active {
-  background: var(--color-cyan);
+  background: var(--teal);
+  border-color: var(--teal);
   color: #ffffff;
-  border-color: var(--color-cyan);
-  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+  box-shadow: none;
 }
 
+.dt-btn:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* BOTTOM TELEMETRY STRIP (52px height)                                      */
+/* -------------------------------------------------------------------------- */
 .dt-footer-strip {
-  padding: 10px 24px;
-  background: rgba(15, 23, 42, 0.96);
-  backdrop-filter: blur(12px);
-  border-top: 1px solid var(--color-slate-border);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  font-size: 12px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
   z-index: 30;
-  flex-shrink: 0;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid var(--hairline);
+  box-shadow: 0 -1px 4px rgba(15, 23, 42, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 12px;
 }
 
-/* ==========================================================================
-   MOBILE RESPONSIVE BOTTOM SHEET LAYOUT (FIX #42)
-   ========================================================================== */
+.dt-telemetry-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--hairline);
+}
+
+.dt-telemetry-chip:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.dt-telemetry-num {
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* -------------------------------------------------------------------------- */
+/* ACCESSIBILITY & PREFERS-REDUCED-MOTION                                    */
+/* -------------------------------------------------------------------------- */
+.dt-container button:focus-visible,
+.dt-container summary:focus-visible,
+.dt-container input:focus-visible,
+.dt-container select:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dt-panel-left,
+  .dt-panel-right,
+  .dt-btn,
+  .dt-rail-btn {
+    transition: none !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* RESPONSIVE & MOBILE ADAPTATION                                            */
+/* -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  .dt-header {
-    padding: 8px 12px;
+  .dt-toolbar {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    height: auto;
+    min-height: 44px;
+    flex-wrap: wrap;
+    padding: 8px;
+  }
+
+  .dt-icon-rail {
+    top: 60px;
+    bottom: 56px;
+    left: 8px;
+  }
+
+  .dt-panel-left,
+  .dt-panel-right {
+    position: fixed;
+    z-index: 100;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 52px;
+    width: 100%;
+    max-height: 55vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+    box-shadow: 0 -8px 30px rgba(15, 23, 42, 0.15);
+  }
+
+  .dt-footer-strip {
+    height: auto;
+    min-height: 52px;
+    padding: 8px;
     flex-wrap: wrap;
     gap: 8px;
   }
 
-  .dt-panel-left {
-    position: fixed;
-    top: auto;
-    bottom: 60px;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-height: 45vh;
-    border-radius: 16px 16px 0 0;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-  }
-
-  .dt-panel-right {
-    position: fixed;
-    top: auto;
-    bottom: 60px;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-height: 50vh;
-    border-radius: 16px 16px 0 0;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-  }
-
-  .dt-footer-strip {
-    padding: 8px 12px;
-    grid-template-columns: 1fr 1fr;
-    font-size: 11px;
+  .dt-telemetry-chip {
+    padding-left: 6px;
+    font-size: 10.5px;
   }
 }
-

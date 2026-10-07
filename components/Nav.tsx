@@ -135,14 +135,6 @@ export default function Nav() {
             Digital Twin
           </Link>
 
-          {/* GIS (Direct) */}
-          <Link
-            href="/map"
-            className={`nav-link-item ${isActive("/map") ? "active" : ""}`}
-          >
-            GIS
-          </Link>
-
           {/* INTELLIGENCE Dropdown */}
           <div
             className="nav-dropdown"
@@ -274,13 +266,19 @@ export default function Nav() {
           >
             <button
               type="button"
-              className={`nav-link-item ${isDropdownActive(["/scenarios", "/about"]) ? "active" : ""}`}
+              className={`nav-link-item ${isDropdownActive(["/map", "/scenarios", "/about"]) ? "active" : ""}`}
               onClick={() => toggleDropdown("more")}
             >
               More ▾
             </button>
             {activeDropdown === "more" && (
               <div className="nav-dropdown-menu">
+                <Link
+                  href="/map"
+                  className={`nav-dropdown-item ${isActive("/map") ? "active" : ""}`}
+                >
+                  GIS Map
+                </Link>
                 <Link
                   href="/scenarios"
                   className={`nav-dropdown-item ${isActive("/scenarios") ? "active" : ""}`}

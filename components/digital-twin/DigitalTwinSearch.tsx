@@ -50,11 +50,12 @@ export default function DigitalTwinSearch({
   };
 
   return (
-    <div style={{ position: "relative", width: "100%", maxWidth: "320px" }}>
+    <div style={{ position: "relative", width: "100%", maxWidth: "300px" }}>
       <div style={{ display: "flex", gap: "6px" }}>
         <input
           type="text"
-          placeholder="Search Tiruppur (Unit 007, Kasipalayam...)"
+          placeholder="Search (Unit 007, Kasipalayam...)"
+          aria-label="Search Digital Twin locations"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -63,13 +64,14 @@ export default function DigitalTwinSearch({
           onFocus={() => setIsOpen(true)}
           style={{
             flex: 1,
-            background: "#1e293b",
-            color: "#ffffff",
-            border: "1px solid #334155",
-            padding: "6px 12px",
-            borderRadius: "6px",
+            background: "var(--paper-raised)",
+            color: "var(--ink)",
+            border: "1px solid var(--hairline)",
+            padding: "5px 10px",
+            borderRadius: "var(--radius-sm)",
             fontSize: "12px",
             outline: "none",
+            boxShadow: "var(--shadow-sm)",
           }}
         />
 
@@ -77,15 +79,18 @@ export default function DigitalTwinSearch({
           type="button"
           onClick={onLocateMe}
           title="Locate nearest sensor & river landmark"
+          aria-label="Locate nearest landmark"
           style={{
-            background: "#1e293b",
-            color: "#38bdf8",
-            border: "1px solid #334155",
-            padding: "6px 10px",
-            borderRadius: "6px",
+            background: "var(--paper-raised)",
+            color: "var(--teal)",
+            border: "1px solid var(--hairline)",
+            padding: "5px 10px",
+            borderRadius: "var(--radius-sm)",
             fontSize: "12px",
             cursor: "pointer",
             fontWeight: 600,
+            whiteSpace: "nowrap",
+            boxShadow: "var(--shadow-sm)",
           }}
         >
           📍 Locate
@@ -96,14 +101,13 @@ export default function DigitalTwinSearch({
         <div
           style={{
             position: "absolute",
-            top: "100%",
+            top: "calc(100% + 4px)",
             left: 0,
             right: 0,
-            marginTop: "4px",
-            background: "#1e293b",
-            border: "1px solid #0d9488",
-            borderRadius: "8px",
-            boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
+            background: "#ffffff",
+            border: "1px solid var(--hairline)",
+            borderRadius: "var(--radius-md)",
+            boxShadow: "var(--shadow-md)",
             zIndex: 999,
             maxHeight: "220px",
             overflowY: "auto",
@@ -115,13 +119,14 @@ export default function DigitalTwinSearch({
               onClick={() => handleSelect(item)}
               style={{
                 padding: "8px 12px",
-                borderBottom: "1px solid #334155",
+                borderBottom: "1px solid var(--hairline)",
                 cursor: "pointer",
                 transition: "background 0.15s ease",
               }}
+              className="dt-search-item"
             >
-              <div style={{ fontSize: "12px", fontWeight: 700, color: "#ffffff" }}>{item.name}</div>
-              <div style={{ fontSize: "10.5px", color: "#38bdf8", marginTop: "2px" }}>{item.subtext}</div>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink)" }}>{item.name}</div>
+              <div style={{ fontSize: "10.5px", color: "var(--teal)", marginTop: "2px" }}>{item.subtext}</div>
             </div>
           ))}
         </div>

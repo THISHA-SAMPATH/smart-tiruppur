@@ -13,6 +13,7 @@ import { buildIndustrialLayer } from "@/lib/digital-twin/industrial";
 import { buildSensorLayer } from "@/lib/digital-twin/sensors";
 import { buildInfrastructureLayer } from "@/lib/digital-twin/infrastructure";
 import { buildVegetationLayer } from "@/lib/digital-twin/vegetation";
+import SourceBadge, { SourceType } from "@/components/provenance/SourceBadge";
 import {
   geoTo3D,
   sampleRealElevationMeters,
@@ -112,6 +113,7 @@ interface Terrain3DViewerProps {
   floodIntensity?: number; // 0 to 1
   role?: UserRoleOverlay;
   layers: LayerToggles;
+  viewMode?: "2.5D" | "3D" | "TABLE";
   focusPosition?: { x: number; y: number; z: number } | null;
   steriOverview?: SteriCityOverview | null;
   steriBaseline?: SteriCityOverview | null;
@@ -297,10 +299,19 @@ export default function Terrain3DViewer({
   const pollutionPlumeGroupRef = useRef<THREE.Group>(new THREE.Group());
   const sourceSensorInfluenceGroupRef = useRef<THREE.Group>(new THREE.Group());
   const riverFlowArrowsGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const clusterGroupRef = useRef<THREE.Group>(new THREE.Group());
 
   const interactiveObjectsRef = useRef<THREE.Object3D[]>([]);
   const terrainMeshRef = useRef<THREE.Mesh | null>(null);
   const riverCurveRef = useRef<THREE.CatmullRomCurve3 | null>(null);
+
+  const [hoveredTooltip, setHoveredTooltip] = useState<{
+    x: number;
+    y: number;
+    name: string;
+    value: string;
+    badgeType: SourceType;
+  } | null>(null);
 
   // Lerp Camera Animation Target
   const targetCamPosRef = useRef<THREE.Vector3 | null>(null);
@@ -412,7 +423,14 @@ export default function Terrain3DViewer({
     group.clear();
     if (!steriOverview) return;
 
-    const tierColors: Record<string, number> = { LOW: 0x16a34a, MODERATE: 0x0284c7, HIGH: 0xd97706, "VERY HIGH": 0xf97316, CRITICAL: 0xdc2626 };
+    // Sequential Risk Ramp Tier Colors (LOW -> CRITICAL)
+    const tierColors: Record<string, number> = {
+      LOW: 0x86efac,
+      MODERATE: 0xfde68a,
+      HIGH: 0xfdba74,
+      "VERY HIGH": 0xf87171,
+      CRITICAL: 0xb91c1c,
+    };
     const baselineById = new Map(steriBaseline?.units.map((unit) => [unit.id, unit]) || []);
     steriOverview.units.forEach((sector) => {
       const baseline = baselineById.get(sector.id);
@@ -428,10 +446,33 @@ export default function Terrain3DViewer({
       }
       vertices.needsUpdate = true;
       geometry.computeVertexNormals();
-      const color = tierColors[sector.riskCategory] || 0x64748b;
-      const comparisonEmissive = baseline ? (scenarioDelta > 0 ? 0xef4444 : scenarioDelta < 0 ? 0x16a34a : color) : color;
-      const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, emissive: comparisonEmissive, emissiveIntensity: 0.2 + sector.steriScore * 0.35, transparent: true, opacity: 0.18 + sector.steriScore * 0.22, roughness: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+      const color = tierColors[sector.riskCategory] || 0x86efac;
+      const comparisonEmissive = baseline ? (scenarioDelta > 0 ? 0xb91c1c : scenarioDelta < 0 ? 0x86efac : color) : color;
+      
+      // 25-35% opacity from risk ramp (Item #3)
+      const mesh = new THREE.Mesh(
+        geometry,
+        new THREE.MeshStandardMaterial({
+          color,
+          emissive: comparisonEmissive,
+          emissiveIntensity: 0.2,
+          transparent: true,
+          opacity: 0.25 + Math.min(0.1, sector.steriScore * 0.1),
+          roughness: 0.35,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        })
+      );
       mesh.position.copy(position);
+
+      // Hairline outline border (Item #3)
+      const edgesGeo = new THREE.EdgesGeometry(geometry);
+      const hairlineOutline = new THREE.LineSegments(
+        edgesGeo,
+        new THREE.LineBasicMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.85 })
+      );
+      mesh.add(hairlineOutline);
+
       mesh.userData = {
         type: "steri_risk",
         data: {
@@ -468,7 +509,7 @@ export default function Terrain3DViewer({
     const height = container.clientHeight || window.innerHeight;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f172a);
+    scene.background = new THREE.Color(0xf8fafc);
     scene.fog = new THREE.FogExp2(0x0f172a, 0.008);
     sceneRef.current = scene;
 
@@ -488,6 +529,7 @@ export default function Terrain3DViewer({
     scene.add(steriRiskGroupRef.current);
     scene.add(pollutionPlumeGroupRef.current);
     scene.add(sourceSensorInfluenceGroupRef.current);
+    scene.add(clusterGroupRef.current);
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(0, 42, 58);
@@ -553,6 +595,96 @@ export default function Terrain3DViewer({
     pollutionPlumeGroupRef.current.add(hydroRes.pollutionPlumeGroup);
     riverCurveRef.current = hydroRes.riverCurve;
     const flowParticles = hydroRes.flowParticles;
+
+    // Per-Segment Risk Ramp Coloring for Noyyal River (Item #1)
+    // Smoothly interpolates water-quality values along length mapped to --risk-1..5
+    riverGroupRef.current.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.geometry instanceof THREE.BufferGeometry) {
+        const geo = child.geometry;
+        const posAttr = geo.attributes.position;
+        const colors = new Float32Array(posAttr.count * 3);
+        const c1 = new THREE.Color(0x86efac); // LOW (--risk-1)
+        const c2 = new THREE.Color(0xfde68a); // MODERATE (--risk-2)
+        const c3 = new THREE.Color(0xfdba74); // HIGH (--risk-3)
+        const c4 = new THREE.Color(0xf87171); // VERY HIGH (--risk-4)
+        const c5 = new THREE.Color(0xb91c1c); // CRITICAL (--risk-5)
+
+        for (let i = 0; i < posAttr.count; i++) {
+          const z = posAttr.getZ(i);
+          const t = Math.min(1, Math.max(0, (z + 55) / 110));
+          // Sample interpolated water quality risk along river:
+          // t ~ 0.1: Mangalam (low risk)
+          // t ~ 0.5: Kasipalayam urban exit (critical risk)
+          // t ~ 0.85: Orathapalayam exit (high risk)
+          let riskScore = 0.15;
+          if (t <= 0.5) riskScore = 0.15 + (t / 0.5) * 0.7;
+          else if (t <= 0.85) riskScore = 0.85 - ((t - 0.5) / 0.35) * 0.3;
+          else riskScore = 0.55 - ((t - 0.85) / 0.15) * 0.3;
+
+          let col: THREE.Color;
+          if (riskScore <= 0.25) col = c1.clone().lerp(c2, riskScore / 0.25);
+          else if (riskScore <= 0.5) col = c2.clone().lerp(c3, (riskScore - 0.25) / 0.25);
+          else if (riskScore <= 0.75) col = c3.clone().lerp(c4, (riskScore - 0.5) / 0.25);
+          else col = c4.clone().lerp(c5, Math.min(1, (riskScore - 0.75) / 0.25));
+
+          colors[i * 3] = col.r;
+          colors[i * 3 + 1] = col.g;
+          colors[i * 3 + 2] = col.b;
+        }
+        geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+        child.material = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          vertexColors: true,
+          roughness: 0.25,
+          metalness: 0.1,
+        });
+      }
+    });
+
+    // 2a. Real Station Points on the River (Small Ringed Dots - Item #2)
+    const RIVER_STATION_POINTS = [
+      { id: "station_mangalam", name: "Mangalam Telemetry Station", designation: "Upstream Entry Station", lat: 11.10651, lon: 77.26001, ph: 7.4, ec: 1420, turbidity: 18, sourceType: "SIMULATED" as const },
+      { id: "station_kasipalayam", name: "Kasipalayam Bridge Telemetry", designation: "Urban/Industrial Exit Station", lat: 11.11975, lon: 77.39716, ph: 6.8, ec: 2850, turbidity: 45, sourceType: "SIMULATED" as const },
+      { id: "station_orathapalayam", name: "Orathapalayam Reservoir Exit", designation: "Downstream Reservoir Station", lat: 11.11084, lon: 77.53981, ph: 7.8, ec: 3100, turbidity: 62, sourceType: "SIMULATED" as const },
+    ];
+
+    RIVER_STATION_POINTS.forEach((station) => {
+      const pos = geoTo3D(station.lat, station.lon, 0.42);
+      const ringGroup = new THREE.Group();
+      ringGroup.position.copy(pos);
+
+      // Outer ring
+      const ringGeo = new THREE.RingGeometry(0.4, 0.6, 24);
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMesh = new THREE.Mesh(
+        ringGeo,
+        new THREE.MeshBasicMaterial({ color: 0x0d9488, side: THREE.DoubleSide })
+      );
+
+      // Inner dot core
+      const coreGeo = new THREE.CircleGeometry(0.3, 24);
+      coreGeo.rotateX(-Math.PI / 2);
+      const coreMesh = new THREE.Mesh(
+        coreGeo,
+        new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
+      );
+      coreMesh.position.y = 0.02;
+
+      ringGroup.add(ringMesh);
+      ringGroup.add(coreMesh);
+      ringGroup.userData = { type: "river_station", data: station };
+
+      // Invisible hit sphere for easy clicking/hovering
+      const hitMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1.2, 8, 8),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      hitMesh.userData = { type: "river_station", data: station };
+      ringGroup.add(hitMesh);
+
+      riverGroupRef.current.add(ringGroup);
+      interactiveObjectsRef.current.push(hitMesh);
+    });
 
     // 3. Roads Layer Builder
     const roadsRes = buildRoadsLayer(builderCtx);
@@ -633,6 +765,37 @@ export default function Terrain3DViewer({
       groundwaterGroupRef.current.add(firkaMesh);
     });
 
+    // 11. Low-Zoom Marker Cluster Bubbles (Item #3)
+    // Renders high-level count bubbles that expand when zoomed in (camera.position.y <= 65)
+    clusterGroupRef.current.clear();
+    const indClusterPos = geoTo3D(11.115, 77.342, 1.2);
+    const indClusterGroup = new THREE.Group();
+    indClusterGroup.position.copy(indClusterPos);
+
+    const clusterBgMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.2, 2.2, 0.4, 32),
+      new THREE.MeshStandardMaterial({ color: 0x0d9488, emissive: 0x0f766e, emissiveIntensity: 0.5, roughness: 0.2 })
+    );
+    const clusterRingMesh = new THREE.Mesh(
+      new THREE.RingGeometry(2.4, 2.7, 32),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
+    );
+    clusterRingMesh.rotateX(-Math.PI / 2);
+    clusterRingMesh.position.y = 0.22;
+
+    indClusterGroup.add(clusterBgMesh);
+    indClusterGroup.add(clusterRingMesh);
+    indClusterGroup.userData = {
+      type: "cluster",
+      data: {
+        name: "Industrial Unit Cluster (12 Facilities)",
+        count: 12,
+        label: "12 Industrial Facilities · Click or zoom in to expand markers",
+      },
+    };
+    clusterGroupRef.current.add(indClusterGroup);
+    interactiveObjectsRef.current.push(clusterBgMesh);
+
     // Raycasting Click Listener (Terrain Elevation & Node Inspector - Fix #23)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -649,7 +812,27 @@ export default function Terrain3DViewer({
         const hit = intersects[0];
         const uData = hit.object.userData;
 
-        if (uData.type === "sensor") {
+        if (uData.type === "river_station") {
+          onSelectNode({
+            id: uData.data.id,
+            name: uData.data.name,
+            type: "sensor",
+            designation: uData.data.designation,
+            latitude: uData.data.lat,
+            longitude: uData.data.lon,
+            ph: uData.data.ph,
+            ec: uData.data.ec,
+            turbidity: uData.data.turbidity,
+            status: "COMPLIANT",
+            statusSymbol: "●",
+            raw: uData.data,
+          });
+        } else if (uData.type === "cluster") {
+          if (hit.point) {
+            targetCamPosRef.current = new THREE.Vector3(hit.point.x, 35, hit.point.z + 18);
+            targetLookAtRef.current = new THREE.Vector3(hit.point.x, 0, hit.point.z);
+          }
+        } else if (uData.type === "sensor") {
           onSelectNode({
             id: uData.data.sensor_id,
             name: uData.data.name,
@@ -781,7 +964,83 @@ export default function Terrain3DViewer({
       }
     };
 
+    // Throttle Hover Raycast with requestAnimationFrame (Item #4)
+    let hoverAnimationFrameId: number | null = null;
+    let pendingMouseEvent: MouseEvent | null = null;
+
+    const handlePointerMove = (event: MouseEvent) => {
+      pendingMouseEvent = event;
+      if (hoverAnimationFrameId !== null) return;
+
+      hoverAnimationFrameId = requestAnimationFrame(() => {
+        hoverAnimationFrameId = null;
+        if (!pendingMouseEvent || !rendererRef.current || !cameraRef.current) return;
+        const evt = pendingMouseEvent;
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, cameraRef.current);
+        const intersects = raycaster.intersectObjects(interactiveObjectsRef.current, false);
+
+        if (intersects.length > 0 && intersects[0].object !== terrainMeshRef.current) {
+          const hit = intersects[0];
+          const uData = hit.object.userData;
+          let name = "";
+          let value = "";
+          let badgeType: SourceType = "SIMULATED";
+
+          if (uData.type === "sensor") {
+            name = uData.data.name;
+            value = `pH ${uData.data.ph} · EC ${uData.data.ec} µS/cm`;
+            badgeType = "SIMULATED";
+          } else if (uData.type === "river_station") {
+            name = uData.data.name;
+            value = `River Station Point · pH ${uData.data.ph} · EC ${uData.data.ec} µS/cm`;
+            badgeType = "SIMULATED";
+          } else if (uData.type === "hydrology") {
+            name = "Noyyal River Stretch (Interpolated WQI)";
+            value = "Interpolated WQI stretch between station points";
+            badgeType = "MODELLED";
+          } else if (uData.type === "cluster") {
+            name = uData.data.name;
+            value = uData.data.label;
+            badgeType = "SIMULATED";
+          } else if (uData.type === "unit") {
+            name = uData.data.unit.name;
+            value = `${uData.data.unit.reuse}% Reuse · ${uData.data.unit.flow} L/s`;
+            badgeType = "SIMULATED";
+          } else if (uData.type === "steri_risk") {
+            name = uData.data.name;
+            value = `STERI Score: ${uData.data.steriScore?.toFixed(3)} (${uData.data.riskCategory})`;
+            badgeType = "MODELLED";
+          } else if (uData.type === "groundwater") {
+            name = uData.data.name;
+            value = `Draft Ratio: ${uData.data.draftRatio} (${uData.data.category})`;
+            badgeType = "HISTORICAL";
+          } else if (uData.type === "road" || uData.type === "building") {
+            name = uData.roadName || uData.data?.name || "GIS Feature";
+            value = uData.roadClass || "OpenData GIS";
+            badgeType = "HISTORICAL";
+          }
+
+          if (name) {
+            setHoveredTooltip({
+              x: evt.clientX - rect.left,
+              y: evt.clientY - rect.top,
+              name,
+              value,
+              badgeType,
+            });
+            return;
+          }
+        }
+        setHoveredTooltip(null);
+      });
+    };
+
     renderer.domElement.addEventListener("click", handlePointerDown);
+    renderer.domElement.addEventListener("mousemove", handlePointerMove);
 
     // Animation Loop
     let animId: number;
@@ -791,13 +1050,19 @@ export default function Terrain3DViewer({
       animId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      if (controlsRef.current) {
+      if (controlsRef.current && cameraRef.current) {
         controlsRef.current.autoRotate = autoRotate;
 
-        // Smooth Camera Fly-To Lerp (Fix #19)
+        // Marker clustering at low zoom (Item #3)
+        const isZoomedOut = camera.position.y > 65;
+        if (clusterGroupRef.current) clusterGroupRef.current.visible = isZoomedOut;
+        if (unitsGroupRef.current) unitsGroupRef.current.visible = layers.units && !isZoomedOut;
+        if (sensorsGroupRef.current) sensorsGroupRef.current.visible = layers.sensors && !isZoomedOut;
+
+        // Smooth Camera Fly-To Lerp
         if (targetCamPosRef.current && targetLookAtRef.current) {
-          camera.position.lerp(targetCamPosRef.current, 0.05);
-          controls.target.lerp(targetLookAtRef.current, 0.05);
+          camera.position.lerp(targetCamPosRef.current, 0.08);
+          controls.target.lerp(targetLookAtRef.current, 0.08);
 
           if (camera.position.distanceTo(targetCamPosRef.current) < 0.5) {
             targetCamPosRef.current = null;
@@ -808,8 +1073,9 @@ export default function Terrain3DViewer({
         controls.update();
       }
 
-      // Animate River Flow Particles (Fix #21)
-      if (riverCurveRef.current) {
+      // Animate River Flow Particles (Static under prefers-reduced-motion)
+      const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!prefersReducedMotion && riverCurveRef.current) {
         flowParticles.forEach((arrow, idx) => {
           const t = ((elapsedTime * 0.08 + idx / (flowParticles.length || 12)) % 1);
           const pPos = riverCurveRef.current!.getPoint(t);
@@ -819,7 +1085,7 @@ export default function Terrain3DViewer({
           arrow.lookAt(pPos.clone().add(tangent));
         });
 
-        // SIMULATED SOURCE-TO-RIVER TRANSPORT VISUALIZATION (not a dispersion model).
+        // SIMULATED SOURCE-TO-RIVER TRANSPORT VISUALIZATION
         if (layers.pollution) {
           simulatedTransportParticles.forEach(({ mesh, connection, phase }) => {
             const cycle = (elapsedTime * 0.12 + phase) % 1;
@@ -852,8 +1118,10 @@ export default function Terrain3DViewer({
 
     return () => {
       cancelAnimationFrame(animId);
+      if (hoverAnimationFrameId !== null) cancelAnimationFrame(hoverAnimationFrameId);
       window.removeEventListener("resize", handleResize);
       renderer.domElement.removeEventListener("click", handlePointerDown);
+      renderer.domElement.removeEventListener("mousemove", handlePointerMove);
       renderer.dispose();
     };
   }, [autoRotate, onSelectNode, hydroGisDataset, roadsGisDataset, buildingsGisDataset]);
@@ -865,8 +1133,40 @@ export default function Terrain3DViewer({
         width: "100%",
         height: "100%",
         position: "relative",
-        background: "#0f172a",
+        background: "#f8fafc",
       }}
-    />
+    >
+      {/* Hover Tooltip Overlay (Item #2) */}
+      {hoveredTooltip && (
+        <div
+          style={{
+            position: "absolute",
+            top: hoveredTooltip.y + 12,
+            left: hoveredTooltip.x + 12,
+            pointerEvents: "none",
+            zIndex: 100,
+            background: "rgba(255, 255, 255, 0.96)",
+            border: "1px solid var(--hairline)",
+            borderRadius: "var(--radius-sm)",
+            boxShadow: "var(--shadow-md)",
+            backdropFilter: "blur(8px)",
+            padding: "6px 10px",
+            fontSize: "11px",
+            color: "var(--ink)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "2px",
+          }}
+        >
+          <div style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
+            <span>{hoveredTooltip.name}</span>
+            <SourceBadge type={hoveredTooltip.badgeType} />
+          </div>
+          <div style={{ color: "var(--ink-soft)", fontSize: "10px", fontFamily: "JetBrains Mono, monospace" }}>
+            {hoveredTooltip.value}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

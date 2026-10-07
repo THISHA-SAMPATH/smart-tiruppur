@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import SourceBadge from "@/components/provenance/SourceBadge";
 
 interface ScenarioModePanelProps {
   rainfall: number;
@@ -32,28 +33,26 @@ export default function ScenarioModePanel({
     onRunScenario();
   };
 
-  // Calculate Scenario Impact Comparison (Fix #29)
+  // Calculate Scenario Impact Comparison
   const floodImpact = Math.round(((rainfall - 50) / 250) * 45);
   const pollutionImpact = Math.round(((dischargeLoad - 70) / 80) * 38);
   const gwImpact = Math.round(((groundwaterDraft - 100) / 50) * -18);
 
   return (
-    <div className="dt-card-surface" style={{ marginTop: "12px", border: "1.5px solid var(--color-indigo)" }}>
+    <div className="dt-card-surface" style={{ marginTop: "10px", border: "1px solid var(--hairline)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-        <div style={{ fontSize: "11.5px", fontWeight: 800, color: "var(--color-indigo)", letterSpacing: "0.05em" }}>
-          SCENARIO SIMULATOR (DECISION SUPPORT)
+        <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink)" }}>
+          Scenario Simulator
         </div>
-        <span style={{ fontSize: "10px", background: "var(--color-indigo-soft)", color: "var(--color-indigo)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
-          SIMULATED MODE
-        </span>
+        <SourceBadge type="SIMULATED" />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "11.5px" }}>
         {/* Rainfall Slider */}
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--color-slate-muted)", marginBottom: "2px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--ink-soft)", marginBottom: "2px" }}>
             <span>MONSOON RAINFALL</span>
-            <strong style={{ color: "var(--color-slate-text)" }}>{rainfall} mm</strong>
+            <strong style={{ color: "var(--ink)", fontFamily: "JetBrains Mono, monospace" }}>{rainfall} mm</strong>
           </div>
           <input
             type="range"
@@ -62,15 +61,15 @@ export default function ScenarioModePanel({
             step="10"
             value={rainfall}
             onChange={(e) => onChangeRainfall(parseInt(e.target.value))}
-            style={{ width: "100%", accentColor: "var(--color-teal)" }}
+            style={{ width: "100%", accentColor: "var(--teal)" }}
           />
         </div>
 
         {/* Discharge Load Slider */}
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--color-slate-muted)", marginBottom: "2px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--ink-soft)", marginBottom: "2px" }}>
             <span>INDUSTRIAL DISCHARGE LOAD</span>
-            <strong style={{ color: "var(--color-slate-text)" }}>{dischargeLoad}%</strong>
+            <strong style={{ color: "var(--ink)", fontFamily: "JetBrains Mono, monospace" }}>{dischargeLoad}%</strong>
           </div>
           <input
             type="range"
@@ -79,15 +78,15 @@ export default function ScenarioModePanel({
             step="5"
             value={dischargeLoad}
             onChange={(e) => onChangeDischargeLoad(parseInt(e.target.value))}
-            style={{ width: "100%", accentColor: "var(--color-amber)" }}
+            style={{ width: "100%", accentColor: "var(--teal)" }}
           />
         </div>
 
         {/* River Flow Slider */}
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--color-slate-muted)", marginBottom: "2px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--ink-soft)", marginBottom: "2px" }}>
             <span>NOYYAL RIVER FLOW</span>
-            <strong style={{ color: "var(--color-slate-text)" }}>{riverFlow} L/s</strong>
+            <strong style={{ color: "var(--ink)", fontFamily: "JetBrains Mono, monospace" }}>{riverFlow} L/s</strong>
           </div>
           <input
             type="range"
@@ -96,15 +95,15 @@ export default function ScenarioModePanel({
             step="10"
             value={riverFlow}
             onChange={(e) => onChangeRiverFlow(parseInt(e.target.value))}
-            style={{ width: "100%", accentColor: "var(--color-indigo)" }}
+            style={{ width: "100%", accentColor: "var(--teal)" }}
           />
         </div>
 
         {/* Groundwater Draft Slider */}
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--color-slate-muted)", marginBottom: "2px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--ink-soft)", marginBottom: "2px" }}>
             <span>GROUNDWATER EXTRACTION</span>
-            <strong style={{ color: "var(--color-slate-text)" }}>{groundwaterDraft}% Base</strong>
+            <strong style={{ color: "var(--ink)", fontFamily: "JetBrains Mono, monospace" }}>{groundwaterDraft}% Base</strong>
           </div>
           <input
             type="range"
@@ -113,7 +112,7 @@ export default function ScenarioModePanel({
             step="5"
             value={groundwaterDraft}
             onChange={(e) => onChangeGroundwaterDraft(parseInt(e.target.value))}
-            style={{ width: "100%", accentColor: "var(--color-red)" }}
+            style={{ width: "100%", accentColor: "var(--teal)" }}
           />
         </div>
 
@@ -123,31 +122,31 @@ export default function ScenarioModePanel({
           style={{ width: "100%", marginTop: "6px", textAlign: "center", padding: "8px" }}
           onClick={handleRun}
         >
-          ▶ RUN SCENARIO SIMULATION
+          ▶ Run Scenario Simulation
         </button>
 
-        {/* SCENARIO COMPARISON IMPACT (FIX #29) */}
+        {/* SCENARIO COMPARISON IMPACT */}
         {hasRun && (
-          <div style={{ background: "var(--color-slate-bg)", padding: "10px", borderRadius: "6px", marginTop: "8px", border: "1px solid var(--color-slate-border)" }}>
-            <div style={{ fontSize: "10.5px", fontWeight: 800, color: "var(--color-amber)", marginBottom: "6px" }}>
+          <div style={{ background: "var(--paper)", padding: "10px", borderRadius: "var(--radius-sm)", marginTop: "6px", border: "1px solid var(--hairline)" }}>
+            <div style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--ink-soft)", marginBottom: "6px" }}>
               SCENARIO COMPARISON vs BASELINE
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px", textAlign: "center", fontSize: "11px" }}>
               <div>
-                <div style={{ color: "var(--color-slate-muted)", fontSize: "9.5px" }}>FLOOD RISK</div>
-                <div style={{ fontWeight: 700, color: floodImpact > 0 ? "var(--color-red)" : "var(--color-green)" }}>
+                <div style={{ color: "var(--ink-soft)", fontSize: "9.5px" }}>FLOOD RISK</div>
+                <div style={{ fontWeight: 700, fontFamily: "JetBrains Mono, monospace", color: floodImpact > 0 ? "var(--risk-4)" : "var(--teal)" }}>
                   {floodImpact > 0 ? `+${floodImpact}%` : `${floodImpact}%`}
                 </div>
               </div>
               <div>
-                <div style={{ color: "var(--color-slate-muted)", fontSize: "9.5px" }}>POLLUTION</div>
-                <div style={{ fontWeight: 700, color: pollutionImpact > 0 ? "var(--color-amber)" : "var(--color-green)" }}>
+                <div style={{ color: "var(--ink-soft)", fontSize: "9.5px" }}>POLLUTION</div>
+                <div style={{ fontWeight: 700, fontFamily: "JetBrains Mono, monospace", color: pollutionImpact > 0 ? "var(--risk-3)" : "var(--teal)" }}>
                   {pollutionImpact > 0 ? `+${pollutionImpact}%` : `${pollutionImpact}%`}
                 </div>
               </div>
               <div>
-                <div style={{ color: "var(--color-slate-muted)", fontSize: "9.5px" }}>GW TABLE</div>
-                <div style={{ fontWeight: 700, color: gwImpact < 0 ? "var(--color-red)" : "var(--color-green)" }}>
+                <div style={{ color: "var(--ink-soft)", fontSize: "9.5px" }}>GW TABLE</div>
+                <div style={{ fontWeight: 700, fontFamily: "JetBrains Mono, monospace", color: gwImpact < 0 ? "var(--risk-4)" : "var(--teal)" }}>
                   {gwImpact}%
                 </div>
               </div>

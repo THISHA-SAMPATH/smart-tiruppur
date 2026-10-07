@@ -1,10 +1,123 @@
 "use client";
-import React from "react";
+
+import React, { useState } from "react";
 import SourceBadge from "@/components/provenance/SourceBadge";
 import { verifyChain } from "@/lib/evidence/ledger";
-interface TelemetryBarProps { unitCount: number; avgReuse: number; criticalZones: number; activeAlerts: number; }
-export default function TelemetryBar({ unitCount, avgReuse, criticalZones, activeAlerts }: TelemetryBarProps) {
-  const ledgerValid = verifyChain([]); // Empty until persisted alerts are loaded; never a hard-coded verification result.
-  const item = (label:string, type:"MODELLED"|"SIMULATED", value:string) => <div style={{display:"flex",alignItems:"center",gap:10}}><div><div style={{color:"var(--color-slate-muted)",fontSize:10.5,fontWeight:700}}>{label} <SourceBadge type={type}/></div><div style={{fontWeight:600,color:"var(--color-slate-text)"}}>{value}</div></div></div>;
-  return <footer className="dt-footer-strip">{item("WATER-QUALITY MODEL (NOYYAL)","SIMULATED","Synthetic demonstration values")}{item("INDUSTRIAL SCENARIO","SIMULATED",`${unitCount} simulated units · ${avgReuse}% modelled reuse indicator`)}{item("GROUNDWATER STRESS","MODELLED",`${criticalZones} modelled FIRKA zones`)}<div style={{display:"flex",alignItems:"center",gap:10}}><div><div style={{color:"var(--color-slate-muted)",fontSize:10.5,fontWeight:700}}>ALERT LEDGER <SourceBadge type="MODELLED"/></div><div style={{fontWeight:600,color:ledgerValid?"var(--color-green)":"var(--color-red)"}}>{ledgerValid ? "Chain valid (no loaded entries)" : "Chain verification failed"} · {activeAlerts} modelled alert{activeAlerts===1?"":"s"}</div></div></div></footer>;
+
+interface TelemetryBarProps {
+  unitCount: number;
+  avgReuse: number;
+  criticalZones: number;
+  activeAlerts: number;
+  isScenarioMode?: boolean;
+}
+
+export default function TelemetryBar({
+  unitCount,
+  avgReuse,
+  criticalZones,
+  activeAlerts,
+  isScenarioMode = false,
+}: TelemetryBarProps) {
+  const ledgerValid = verifyChain([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState("1x");
+
+  return (
+    <footer className="dt-footer-strip" role="region" aria-label="Telemetry and Controls Strip">
+      {/* 4 TELEMETRY CHIPS */}
+      <div className="dt-telemetry-chip">
+        <div>
+          <div style={{ color: "var(--ink-soft)", fontSize: "10px", fontWeight: 700, display: "flex", gap: "4px", alignItems: "center" }}>
+            NOYYAL RIVER <SourceBadge type="SIMULATED" />
+          </div>
+          <div style={{ fontWeight: 600, color: "var(--ink)", fontSize: "11.5px" }}>
+            Synthetic demo flow & plume
+          </div>
+        </div>
+      </div>
+
+      <div className="dt-telemetry-chip">
+        <div>
+          <div style={{ color: "var(--ink-soft)", fontSize: "10px", fontWeight: 700, display: "flex", gap: "4px", alignItems: "center" }}>
+            INDUSTRIAL SCENARIO <SourceBadge type="SIMULATED" />
+          </div>
+          <div style={{ fontWeight: 600, color: "var(--ink)", fontSize: "11.5px" }}>
+            <span className="dt-telemetry-num">{unitCount}</span> units · <span className="dt-telemetry-num">{avgReuse}%</span> reuse
+          </div>
+        </div>
+      </div>
+
+      <div className="dt-telemetry-chip">
+        <div>
+          <div style={{ color: "var(--ink-soft)", fontSize: "10px", fontWeight: 700, display: "flex", gap: "4px", alignItems: "center" }}>
+            GROUNDWATER STRESS <SourceBadge type="MODELLED" />
+          </div>
+          <div style={{ fontWeight: 600, color: "var(--ink)", fontSize: "11.5px" }}>
+            <span className="dt-telemetry-num">{criticalZones}</span> FIRKA zones
+          </div>
+        </div>
+      </div>
+
+      <div className="dt-telemetry-chip">
+        <div>
+          <div style={{ color: "var(--ink-soft)", fontSize: "10px", fontWeight: 700, display: "flex", gap: "4px", alignItems: "center" }}>
+            ALERT LEDGER <SourceBadge type="MODELLED" />
+          </div>
+          <div style={{ fontWeight: 600, color: ledgerValid ? "var(--teal)" : "var(--risk-5)", fontSize: "11.5px" }}>
+            <span className="dt-telemetry-num">{activeAlerts}</span> alerts
+          </div>
+        </div>
+      </div>
+
+      {/* SCENARIO SCRUBBER CONTROLS (IF SCENARIO MODE ACTIVE) */}
+      {isScenarioMode && (
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", borderLeft: "2px solid var(--hairline)", paddingLeft: "12px" }}>
+          <button
+            type="button"
+            className="dt-btn"
+            style={{ padding: "3px 8px", fontSize: "11px" }}
+            aria-label="Step Backward"
+          >
+            ⏮
+          </button>
+          <button
+            type="button"
+            className={`dt-btn ${isPlaying ? "active" : ""}`}
+            style={{ padding: "3px 10px", fontSize: "11px" }}
+            onClick={() => setIsPlaying(!isPlaying)}
+            aria-label={isPlaying ? "Pause Scenario" : "Play Scenario"}
+          >
+            {isPlaying ? "⏸ Pause" : "▶ Play"}
+          </button>
+          <button
+            type="button"
+            className="dt-btn"
+            style={{ padding: "3px 8px", fontSize: "11px" }}
+            aria-label="Step Forward"
+          >
+            ⏭
+          </button>
+          <select
+            value={playbackSpeed}
+            onChange={(e) => setPlaybackSpeed(e.target.value)}
+            aria-label="Playback Speed"
+            style={{
+              background: "var(--paper-raised)",
+              color: "var(--ink)",
+              border: "1px solid var(--hairline)",
+              borderRadius: "var(--radius-sm)",
+              padding: "2px 6px",
+              fontSize: "11px",
+              fontWeight: 600,
+            }}
+          >
+            <option value="1x">1x</option>
+            <option value="2x">2x</option>
+            <option value="5x">5x</option>
+          </select>
+        </div>
+      )}
+    </footer>
+  );
 }

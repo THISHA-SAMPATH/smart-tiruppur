@@ -17,13 +17,6 @@ interface DataModelProvenancePanelProps {
   steriOverview: SteriCityOverview | null;
 }
 
-const typeColor: Record<ProvenanceType, string> = {
-  MEASURED: "#38bdf8",
-  HISTORICAL: "#a78bfa",
-  SIMULATED: "#f59e0b",
-  MODELLED: "#f472b6",
-};
-
 export default function DataModelProvenancePanel({ steriOverview }: DataModelProvenancePanelProps) {
   const complaintProvenance = steriOverview?.units[0]?.componentProvenance.complaintIntensity;
   const rows: ProvenanceRow[] = [
@@ -43,21 +36,21 @@ export default function DataModelProvenancePanel({ steriOverview }: DataModelPro
 
   return (
     <details className="dt-card-surface" style={{ marginTop: "10px" }}>
-      <summary style={{ cursor: "pointer", fontSize: "11px", fontWeight: 800, color: "var(--color-teal)", letterSpacing: "0.04em" }}>
+      <summary style={{ cursor: "pointer", fontSize: "11px", fontWeight: 800, color: "var(--teal)", letterSpacing: "0.04em" }}>
         DATA & MODEL PROVENANCE
       </summary>
-      <p style={{ margin: "8px 0", fontSize: "10px", color: "var(--color-slate-muted)", lineHeight: 1.45 }}>
+      <p style={{ margin: "8px 0", fontSize: "10px", color: "var(--ink-soft)", lineHeight: 1.45 }}>
         Status applies to the current Digital Twin implementation; it does not imply real-time measurement or validated prediction.
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {rows.map((row) => (
-          <div key={row.component} style={{ padding: "7px", borderRadius: "5px", background: "rgba(15, 23, 42, 0.55)", borderLeft: `2px solid ${typeColor[row.type]}` }}>
+          <div key={row.component} style={{ padding: "7px", borderRadius: "5px", background: "var(--paper)", border: "1px solid var(--hairline)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: "6px", alignItems: "baseline" }}>
-              <strong style={{ fontSize: "10.5px", color: "var(--color-slate-text)" }}>{row.component}</strong>
+              <strong style={{ fontSize: "10.5px", color: "var(--ink)" }}>{row.component}</strong>
               <SourceBadge type={row.type} />
             </div>
-            <div style={{ marginTop: "2px", fontSize: "9.5px", color: "var(--color-slate-muted)", lineHeight: 1.35 }}>Source: {row.source}</div>
-            <div style={{ marginTop: "2px", fontSize: "9.5px", color: "#fbbf24", lineHeight: 1.35 }}>Limit: {row.limitation}</div>
+            <div style={{ marginTop: "2px", fontSize: "9.5px", color: "var(--ink-soft)", lineHeight: 1.35 }}>Source: {row.source}</div>
+            <div style={{ marginTop: "2px", fontSize: "9.5px", color: "var(--risk-3)", lineHeight: 1.35 }}>Limit: {row.limitation}</div>
           </div>
         ))}
       </div>
