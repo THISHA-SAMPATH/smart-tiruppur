@@ -16,8 +16,9 @@ import DataProvenanceModal from "@/components/digital-twin/DataProvenanceModal";
 import DigitalTwinSearch from "@/components/digital-twin/DigitalTwinSearch";
 import AccessibleTableViewer from "@/components/digital-twin/AccessibleTableViewer";
 import DataModelProvenancePanel from "@/components/digital-twin/DataModelProvenancePanel";
+import DigitalTwinLegend from "@/components/digital-twin/DigitalTwinLegend";
 import SourceBadge from "@/components/provenance/SourceBadge";
-import { Layers, Beaker, Sliders, FileText } from "lucide-react";
+import { Layers, Beaker, Sliders, FileText, Camera } from "lucide-react";
 import { getGlobalEvents, getUnits, getGroundwaterZones } from "@/lib/api";
 import type { SteriCityOverview, SteriScenarioInput } from "@/lib/steri/types";
 import "@/app/digital-twin.css";
@@ -321,18 +322,30 @@ export default function Terrain3DPage() {
           </button>
         </div>
 
-        {/* Role Selector */}
-        <select
-          value={userRole}
-          onChange={(e) => handleRoleChange(e.target.value as UserRoleOverlay)}
-          className="dt-toolbar-select"
-          aria-label="Select User Role View"
-        >
-          <option value="REGULATOR">Regulator View</option>
-          <option value="GROUNDWATER_OFFICER">GW Officer View</option>
-          <option value="INDUSTRY">Industry View</option>
-          <option value="CITIZEN">Citizen View</option>
-        </select>
+        {/* Role Selector & Figure PNG Download Button (Item #8) */}
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          <select
+            value={userRole}
+            onChange={(e) => handleRoleChange(e.target.value as UserRoleOverlay)}
+            className="dt-toolbar-select"
+            aria-label="Select User Role View"
+          >
+            <option value="REGULATOR">Regulator View</option>
+            <option value="GROUNDWATER_OFFICER">GW Officer View</option>
+            <option value="INDUSTRY">Industry View</option>
+            <option value="CITIZEN">Citizen View</option>
+          </select>
+          <button
+            type="button"
+            className="dt-btn"
+            style={{ padding: "5px 10px", fontSize: "11px" }}
+            onClick={() => window.dispatchEvent(new CustomEvent("export-dt-figure"))}
+            title="Download Scientific PNG Figure with Burned-In Legend & Label"
+            aria-label="Download Figure PNG"
+          >
+            <Camera size={14} /> Figure
+          </button>
+        </div>
       </div>
 
       {/* -------------------------------------------------------------------- */}
@@ -355,6 +368,9 @@ export default function Terrain3DPage() {
             steriBaseline={compareWithBaseline ? steriBaseline : null}
             onSelectNode={setSelectedNode}
           />
+
+          {/* Compact On-Map Legend Card (Item #7) */}
+          <DigitalTwinLegend />
 
           {/* -------------------------------------------------------------------- */}
           {/* LEFT 48PX ICON RAIL                                                  */}

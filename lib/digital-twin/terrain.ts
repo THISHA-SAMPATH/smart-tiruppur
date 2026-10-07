@@ -134,9 +134,9 @@ export function buildTerrainLayer(ctx: LayerBuilderContext): TerrainBuilderResul
   geometry.computeVertexNormals();
 
   const terrainMat = new THREE.MeshStandardMaterial({
-    color: 0xe2e8f0,
-    roughness: 0.85,
-    metalness: 0.05,
+    color: 0xf1f5f9,
+    roughness: 0.9,
+    metalness: 0.02,
   });
   const terrainMesh = new THREE.Mesh(geometry, terrainMat);
   terrainMesh.receiveShadow = true;

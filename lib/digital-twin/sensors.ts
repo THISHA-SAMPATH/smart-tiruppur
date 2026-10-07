@@ -167,15 +167,28 @@ export function buildSensorLayer(
   }));
 
   sensors.forEach((sensor) => {
-    const marker = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.3, 0.6, 2.5, 8),
-      new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.6 }),
+    const group = new THREE.Group();
+    group.position.copy(ctx.geoTo3D(sensor.lat, sensor.lon, 0.55));
+
+    // Outer white ring
+    const ringMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.7, 0.7, 0.08, 24),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
     );
-    marker.position.copy(ctx.geoTo3D(sensor.lat, sensor.lon, 0.5));
-    marker.castShadow = true;
-    marker.userData = { type: "sensor", data: sensor };
-    sensorsGroup.add(marker);
-    ctx.interactiveObjects.push(marker);
+    ringMesh.position.y = 0.04;
+    group.add(ringMesh);
+
+    // Inner teal core fill
+    const innerDot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.5, 0.1, 24),
+      new THREE.MeshStandardMaterial({ color: 0x0d9488, roughness: 0.3 })
+    );
+    innerDot.position.y = 0.06;
+    innerDot.userData = { type: "sensor", data: sensor };
+    group.add(innerDot);
+
+    sensorsGroup.add(group);
+    ctx.interactiveObjects.push(innerDot);
   });
 
   return { sensorsGroup, sourceSensorInfluenceGroup, sensors, sourceSensorLinks };

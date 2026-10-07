@@ -548,10 +548,11 @@ export default function Terrain3DViewer({
     camera.position.set(0, 50, 35);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     while (container.firstChild) container.removeChild(container.firstChild);
     container.appendChild(renderer.domElement);
@@ -627,13 +628,29 @@ export default function Terrain3DViewer({
         const c4 = new THREE.Color(0xf87171); // VERY HIGH (--risk-4)
         const c5 = new THREE.Color(0xb91c1c); // CRITICAL (--risk-5)
 
+        // 10-Point Color Sampling along Noyyal River Curve (Item #1)
+        const sampledPoints: Array<{ t: number; risk: number; hex: string }> = [];
+        for (let s = 0; s <= 9; s++) {
+          const sampleT = Number((s / 9).toFixed(2));
+          let rScore = 0.15;
+          if (sampleT <= 0.5) rScore = 0.15 + (sampleT / 0.5) * 0.7;
+          else if (sampleT <= 0.85) rScore = 0.85 - ((sampleT - 0.5) / 0.35) * 0.3;
+          else rScore = 0.55 - ((sampleT - 0.85) / 0.15) * 0.3;
+
+          let sCol: THREE.Color;
+          if (rScore <= 0.25) sCol = c1.clone().lerp(c2, rScore / 0.25);
+          else if (rScore <= 0.5) sCol = c2.clone().lerp(c3, (rScore - 0.25) / 0.25);
+          else if (rScore <= 0.75) sCol = c3.clone().lerp(c4, (rScore - 0.5) / 0.25);
+          else sCol = c4.clone().lerp(c5, Math.min(1, (rScore - 0.75) / 0.25));
+
+          sampledPoints.push({ t: sampleT, risk: Number(rScore.toFixed(3)), hex: `#${sCol.getHexString()}` });
+        }
+        console.log("[River Gradient Sampling]", sampledPoints);
+
         for (let i = 0; i < posAttr.count; i++) {
-          const z = posAttr.getZ(i);
-          const t = Math.min(1, Math.max(0, (z + 55) / 110));
-          // Sample interpolated water quality risk along river:
-          // t ~ 0.1: Mangalam (low risk)
-          // t ~ 0.5: Kasipalayam urban exit (critical risk)
-          // t ~ 0.85: Orathapalayam exit (high risk)
+          const x = posAttr.getX(i);
+          // River runs West to East across Tiruppur (x from -45 to +55)
+          const t = Math.min(1, Math.max(0, (x + 45) / 100));
           let riskScore = 0.15;
           if (t <= 0.5) riskScore = 0.15 + (t / 0.5) * 0.7;
           else if (t <= 0.85) riskScore = 0.85 - ((t - 0.5) / 0.35) * 0.3;
@@ -1140,6 +1157,72 @@ export default function Terrain3DViewer({
 
     animate();
 
+    const handleExportFigure = () => {
+      if (!rendererRef.current) return;
+      const webglCanvas = rendererRef.current.domElement;
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = webglCanvas.width;
+      exportCanvas.height = webglCanvas.height;
+      const ctx = exportCanvas.getContext("2d");
+      if (!ctx) return;
+
+      // 1. Draw WebGL 3D Canvas
+      ctx.drawImage(webglCanvas, 0, 0);
+
+      // 2. Burn in Header Label (Top Left)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.94)";
+      ctx.fillRect(20, 20, 480, 56);
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(20, 20, 480, 56);
+
+      ctx.fillStyle = "#0f172a";
+      ctx.font = "bold 15px sans-serif";
+      ctx.fillText("TIRUPPUR ENVIRONMENTAL DIGITAL TWIN", 34, 44);
+      ctx.fillStyle = "#0d9488";
+      ctx.font = "bold 11px monospace";
+      ctx.fillText("[SIMULATED DEMO INPUTS · SCIENTIFIC FIGURE EXPORT]", 34, 62);
+
+      // 3. Burn in Legend Box (Bottom Left)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.94)";
+      ctx.fillRect(20, exportCanvas.height - 130, 380, 110);
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(20, exportCanvas.height - 130, 380, 110);
+
+      ctx.fillStyle = "#0f172a";
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillText("NOYYAL RIVER WATER QUALITY RISK RAMP", 34, exportCanvas.height - 110);
+
+      // Gradient Ramp Bar
+      const grad = ctx.createLinearGradient(34, 0, 360, 0);
+      grad.addColorStop(0, "#86efac");
+      grad.addColorStop(0.25, "#fde68a");
+      grad.addColorStop(0.5, "#fdba74");
+      grad.addColorStop(0.75, "#f87171");
+      grad.addColorStop(1, "#b91c1c");
+      ctx.fillStyle = grad;
+      ctx.fillRect(34, exportCanvas.height - 102, 330, 10);
+
+      ctx.fillStyle = "#475569";
+      ctx.font = "10px sans-serif";
+      ctx.fillText("Low (0.0)", 34, exportCanvas.height - 78);
+      ctx.fillText("Moderate", 110, exportCanvas.height - 78);
+      ctx.fillText("High", 190, exportCanvas.height - 78);
+      ctx.fillText("Critical (1.0)", 290, exportCanvas.height - 78);
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = "10px sans-serif";
+      ctx.fillText("● Station Point (Measured/Simulated)  ── Interpolated Stretch", 34, exportCanvas.height - 42);
+
+      // 4. Trigger PNG Download
+      const dataUrl = exportCanvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `Tiruppur_Digital_Twin_Figure_${new Date().toISOString().slice(0, 10)}.png`;
+      a.click();
+    };
+
     const handleResize = () => {
       if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
       const w = containerRef.current.clientWidth;
@@ -1150,11 +1233,13 @@ export default function Terrain3DViewer({
     };
 
     window.addEventListener("resize", handleResize);
+    window.addEventListener("export-dt-figure", handleExportFigure);
 
     return () => {
       cancelAnimationFrame(animId);
       if (hoverAnimationFrameId !== null) cancelAnimationFrame(hoverAnimationFrameId);
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("export-dt-figure", handleExportFigure);
       renderer.domElement.removeEventListener("click", handlePointerDown);
       renderer.domElement.removeEventListener("mousemove", handlePointerMove);
       renderer.dispose();

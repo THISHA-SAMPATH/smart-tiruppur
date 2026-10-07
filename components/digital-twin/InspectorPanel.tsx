@@ -87,27 +87,28 @@ export default function InspectorPanel({
       ? "HISTORICAL"
       : "SIMULATED";
 
-  const getStatusColor = (status?: string) => {
+  const getStatusChipStyle = (status?: string) => {
     switch (status) {
       case "INVESTIGATE":
       case "CRITICAL":
-        return "var(--risk-5)";
+        return { color: "#b91c1c", background: "#fee2e2", border: "1px solid #fca5a5" };
       case "WARNING":
       case "VERY HIGH":
       case "HIGH":
-        return "var(--risk-4)";
       case "MODERATE":
       case "SEMI-CRITICAL":
       case "OVER-EXPLOITED":
-        return "var(--risk-3)";
+        return { color: "#b45309", background: "#fef3c7", border: "1px solid #fde68a" };
       case "SAFE":
       case "COMPLIANT":
       case "NORMAL":
-        return "var(--risk-1)";
+        return { color: "#15803d", background: "#dcfce7", border: "1px solid #86efac" };
       default:
-        return "var(--teal)";
+        return { color: "#0f766e", background: "#ccfbf1", border: "1px solid #99f6e4" };
     }
   };
+
+  const getStatusColor = (status?: string) => getStatusChipStyle(status).color;
 
   return (
     <aside
@@ -136,18 +137,20 @@ export default function InspectorPanel({
           </div>
         </div>
 
-        {/* Status Badge - ONLY for real entities (stations, units, firkas, sectors), NOT terrain points */}
+        {/* Status Badge - Accessible WCAG AA Contrast Chip (Item #5) */}
         {selectedNode.type !== "terrain" && selectedNode.type !== "road" && selectedNode.type !== "building" && (
           <div className="dt-card-surface" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "11px", color: "var(--ink-soft)", fontWeight: 600 }}>STATUS</span>
             <span
               style={{
-                fontSize: "12px",
+                fontSize: "11.5px",
                 fontWeight: 700,
-                color: getStatusColor(selectedNode.status),
+                padding: "3px 8px",
+                borderRadius: "var(--radius-sm)",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
+                ...getStatusChipStyle(selectedNode.status),
               }}
             >
               <span>{selectedNode.statusSymbol || "●"}</span>
