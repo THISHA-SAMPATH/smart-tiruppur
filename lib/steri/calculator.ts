@@ -1,5 +1,5 @@
 import { RiskCategory, SteriWeights, SteriComponentScores, SpatialRiskUnit, SteriCityOverview, SteriModelComparison, SteriScenarioInput } from "./types";
-import { calculateDynamicSectorInputs, DEFAULT_DYNAMIC_SCENARIO, STERI_SECTORS, SteriComplaintPoint } from "./dynamic";
+import { calculateDynamicSectorInputs, DEFAULT_DYNAMIC_SCENARIO, resolveDynamicScenario, STERI_SECTORS, SteriComplaintPoint } from "./dynamic";
 
 export const DEFAULT_STERI_WEIGHTS: SteriWeights = { pollution: 0.20, waterQuality: 0.20, flood: 0.15, groundwater: 0.15, industrialPressure: 0.15, complaintIntensity: 0.15 };
 
@@ -31,7 +31,7 @@ function recommendation(dominant: keyof SteriComponentScores, name: string): str
 
 function calculateOverview(customWeights: Partial<SteriWeights> = {}, scenarioInput: SteriScenarioInput = DEFAULT_DYNAMIC_SCENARIO, realComplaintPoints?: SteriComplaintPoint[]): SteriCityOverview {
   const weights = normalizeWeights(customWeights);
-  const scenario = { ...DEFAULT_DYNAMIC_SCENARIO, ...scenarioInput };
+  const scenario = resolveDynamicScenario(scenarioInput);
   const units: SpatialRiskUnit[] = STERI_SECTORS.map((sector) => {
     const dynamic = calculateDynamicSectorInputs(sector, scenario, realComplaintPoints);
     const scores = dynamic.componentScores;
@@ -40,7 +40,7 @@ function calculateOverview(customWeights: Partial<SteriWeights> = {}, scenarioIn
     return {
       ...sector, ...dynamic, steriScore, riskCategory: classifyRiskCategory(steriScore), dominantFactor, dominantFactorLabel: COMPONENT_LABELS[dominantFactor], recommendation: recommendation(dominantFactor, sector.name), timestamp: new Date().toISOString(),
       provenance: {
-        realDataSources: [],
+        realDataSources: ["public/geo/tnpcb-noyyal-stations.json (station metadata only)", "public/geo/tiruppur-buildings.geojson (OSM building footprints)", "public/geo/tiruppur-roads.geojson (road geometry)", "public/geo/tiruppur-firka-boundaries.geojson (FIRKA geometry)"],
         simulatedDataSources: ["Synthetic demonstration sensor network", "Simulated industrial outfalls and source influence", "Flood-engine scenario inputs"],
         derivedDataSources: ["Spatial normalization and sector aggregation", "OSM building-count indicator"],
         historicalDataSources: ["Groundwater category baseline represented by existing sector metadata", "Seeded/demo citizen complaint dataset"],

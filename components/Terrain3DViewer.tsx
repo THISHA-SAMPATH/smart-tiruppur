@@ -310,7 +310,7 @@ export default function Terrain3DViewer({
   const [roadsGisDataset, setRoadsGisDataset] = useState<RoadGISDataset | null>(null);
   const [buildingsGisDataset, setBuildingsGisDataset] = useState<BuildingGISDataset | null>(null);
 
-  // Fetch verified Noyyal River GeoJSON if present in public/geo/
+  // Load the bundled open-data Noyyal River geometry when present.
   useEffect(() => {
     let isMounted = true;
     fetch("/geo/noyyal-river.geojson")
@@ -763,20 +763,19 @@ export default function Terrain3DViewer({
             raw: uData.originalProperties,
           });
         } else if (hit.object === terrainMeshRef.current && hit.point) {
-          // Terrain Elevation Inspector (Fix #23)
+          // Procedural terrain inspector.
           const { lat, lon } = vector3DToGeo(hit.point.x, hit.point.z);
           const elevM = sampleRealElevationMeters(lat, lon);
           onSelectNode({
             id: `terrain_${lat.toFixed(3)}_${lon.toFixed(3)}`,
-            name: "Tiruppur Terrain Point",
+            name: "Tiruppur Modelled Terrain Point",
             type: "terrain",
-            designation: "Topographic Elevation DEM Surface",
+            designation: "Procedural Terrain / Modelled Elevation Surface",
             latitude: lat,
             longitude: lon,
             elevationMeters: elevM,
             firkaName: lat > 11.11 ? "Tiruppur North FIRKA" : "Tiruppur South FIRKA",
             drainageBasin: "Noyyal River Catchment Sub-Basin",
-            status: "SAFE",
           });
         }
       }

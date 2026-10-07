@@ -23,24 +23,24 @@ import type { SteriCityOverview, SteriScenarioInput } from "@/lib/steri/types";
 import "@/app/digital-twin.css";
 
 // Interactive Live Event Timeline Items (Fix #18)
-const LIVE_TIMELINE_EVENTS = [
+const SCENARIO_TIMELINE_EVENTS = [
   {
     id: "evt_001",
     time: "19:20",
     status: "INVESTIGATE",
     symbol: "!",
-    title: "Unit 007 Discharge Anomaly",
+    title: "Unit 007 Scenario Anomaly",
     location: "Angeripalayam Processing 007",
     lat: 11.1420,
     lon: 77.3310,
-    confidence: "87% AI Confidence",
+    confidence: "Synthetic scenario event",
   },
   {
     id: "evt_002",
     time: "19:15",
     status: "NORMAL",
     symbol: "●",
-    title: "Kasipalayam Telemetry Verified",
+    title: "Kasipalayam Model Input",
     location: "Kasipalayam Bridge Station",
     lat: 11.11975,
     lon: 77.39716,
@@ -51,7 +51,7 @@ const LIVE_TIMELINE_EVENTS = [
     time: "19:10",
     status: "WARNING",
     symbol: "▲",
-    title: "Groundwater Stress Alert",
+    title: "Groundwater Stress Scenario",
     location: "Tiruppur South FIRKA",
     lat: 11.0820,
     lon: 77.3550,
@@ -62,11 +62,11 @@ const LIVE_TIMELINE_EVENTS = [
     time: "19:02",
     status: "COMPLIANT",
     symbol: "●",
-    title: "ZLD Mandate Certified",
+    title: "Reuse Scenario Indicator",
     location: "Kasipalayam Unit 004",
     lat: 11.1190,
     lon: 77.3950,
-    confidence: "SHA-256 Ledger Minted",
+    confidence: "Synthetic demonstration event",
   },
 ];
 
@@ -79,7 +79,7 @@ export default function Terrain3DPage() {
   const [viewMode, setViewMode] = useState<"3D" | "TABLE">("3D");
 
   // Mode Switch (Fix #28): LIVE vs SCENARIO
-  const [mode, setMode] = useState<"LIVE" | "SCENARIO">("LIVE");
+  const [mode, setMode] = useState<"BASELINE" | "SCENARIO">("BASELINE");
 
   // Scenario Mode Parameters (Fix #28)
   const [rainfall, setRainfall] = useState<number>(120);
@@ -123,22 +123,10 @@ export default function Terrain3DPage() {
   const [activeAlerts, setActiveAlerts] = useState<number>(1);
   const [avgReuse, setAvgReuse] = useState<number>(91);
   const [criticalZones, setCriticalZones] = useState<number>(3);
-  const [currentTime, setCurrentTime] = useState<string>("");
 
   // Inspector & Data Provenance Modal State
   const [selectedNode, setSelectedNode] = useState<SelectedNodeInfo | null>(null);
   const [isProvenanceOpen, setIsProvenanceOpen] = useState<boolean>(false);
-
-  // Live Clock
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -198,7 +186,7 @@ export default function Terrain3DPage() {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleTimelineClick = (evt: typeof LIVE_TIMELINE_EVENTS[0]) => {
+  const handleTimelineClick = (evt: typeof SCENARIO_TIMELINE_EVENTS[0]) => {
     const pos = geoTo3D(evt.lat, evt.lon, 0);
     setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
   };
@@ -276,7 +264,7 @@ export default function Terrain3DPage() {
               3D Environmental Digital Twin
             </h1>
             <p style={{ margin: 0, fontSize: "11px", color: "var(--color-slate-muted)" }}>
-              Physics DEM Terrain · Noyyal River Telemetry · FIRKA Groundwater Assessment
+              Procedural Terrain · OPEN_DATA GIS · Modelled groundwater assessment
             </p>
           </div>
         </div>
@@ -311,11 +299,11 @@ export default function Terrain3DPage() {
         <div style={{ display: "flex", background: "var(--color-slate-surface)", padding: "3px", borderRadius: "8px", border: "1px solid var(--color-slate-border)" }}>
           <button
             type="button"
-            className={`dt-btn ${mode === "LIVE" ? "active" : ""}`}
+            className={`dt-btn ${mode === "BASELINE" ? "active" : ""}`}
             style={{ padding: "4px 12px", fontSize: "11.5px" }}
-            onClick={() => setMode("LIVE")}
+            onClick={() => setMode("BASELINE")}
           >
-            ● LIVE
+            ● BASELINE
           </button>
           <button
             type="button"
@@ -364,7 +352,7 @@ export default function Terrain3DPage() {
             }}
           >
             <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-green)", boxShadow: "0 0 8px var(--color-green)" }} />
-            LIVE ● {currentTime || "19:32"}
+            SIMULATION ● MODELLED
           </div>
         </div>
       </header>
@@ -422,12 +410,12 @@ export default function Terrain3DPage() {
             <div className="dt-card-surface">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                 <div style={{ fontSize: "11px", fontWeight: 800, color: "var(--color-teal)", letterSpacing: "0.05em" }}>
-                  LIVE EVENT TIMELINE
+                  SCENARIO TIMELINE
                 </div>
-                <span style={{ fontSize: "10px", color: "var(--color-green)", fontWeight: 700 }}>● REAL-TIME</span>
+                <span style={{ fontSize: "10px", color: "var(--color-amber)", fontWeight: 700 }}>● SIMULATION</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "160px", overflowY: "auto" }}>
-                {LIVE_TIMELINE_EVENTS.map((evt) => (
+                {SCENARIO_TIMELINE_EVENTS.map((evt) => (
                   <div
                     key={evt.id}
                     onClick={() => handleTimelineClick(evt)}

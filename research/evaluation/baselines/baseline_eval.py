@@ -1,83 +1,19 @@
-"""
-Baseline Comparison Evaluation Script for Smart Tiruppur Scientific Paper.
-Evaluates:
-- Single-Source Model
-- Naive Rule-Based Model
-- Random Forest ML Baseline
-- Proposed STERI Multi-Source Model
-"""
-
-import json
-import math
-import random
+import sys
 from pathlib import Path
-
-def run_baseline_evaluation(config_path: str = None):
-    if config_path is None:
-        config_path = str(Path(__file__).parent.parent / "config.json")
-    with open(config_path, "r") as f:
-        config = json.load(f)
-
-    seed = config.get("random_seed", 42)
-    random.seed(seed)
-
-    results = {
-        "experiment_id": config["experiment_id"],
-        "dataset_version": config["dataset_version"],
-        "model_version": config["model_version"],
-        "random_seed": seed,
-        "timestamp": config["timestamp"],
-        "baseline_comparison": {
-            "Single-Source Telemetry Model": {
-                "MAE": 0.184,
-                "RMSE": 0.221,
-                "R2": 0.612,
-                "Accuracy": 0.735,
-                "Precision": 0.712,
-                "Recall": 0.740,
-                "F1": 0.726,
-                "ROC_AUC": 0.785,
-            },
-            "Rule-Based Naive Scoring": {
-                "MAE": 0.152,
-                "RMSE": 0.189,
-                "R2": 0.704,
-                "Accuracy": 0.792,
-                "Precision": 0.775,
-                "Recall": 0.810,
-                "F1": 0.792,
-                "ROC_AUC": 0.832,
-            },
-            "Random Forest ML Baseline": {
-                "MAE": 0.115,
-                "RMSE": 0.148,
-                "R2": 0.825,
-                "Accuracy": 0.864,
-                "Precision": 0.850,
-                "Recall": 0.875,
-                "F1": 0.862,
-                "ROC_AUC": 0.905,
-            },
-            "Proposed STERI Multi-Source Model": {
-                "MAE": 0.054,
-                "RMSE": 0.072,
-                "R2": 0.942,
-                "Accuracy": 0.938,
-                "Precision": 0.925,
-                "Recall": 0.945,
-                "F1": 0.935,
-                "ROC_AUC": 0.968,
-            },
-        },
-    }
-
-    out_dir = Path(__file__).parent.parent / "results"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_file = out_dir / "baseline_comparison_results.json"
-    with open(out_file, "w") as f:
-        json.dump(results, f, indent=2)
-
-    print(f"[OK] Baseline comparison evaluation completed. Results written to {out_file}")
-
-if __name__ == "__main__":
-    run_baseline_evaluation()
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from evaluator import load_data,evaluate,rf,metrics,steri_score,write,WEIGHTS
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import TimeSeriesSplit
+def linear(seed): return LogisticRegression(random_state=seed,max_iter=1000)
+def steri_cv(rows,y):
+ f=[metrics(y[t],[steri_score(rows[i]) for i in t]) for _,t in TimeSeriesSplit(n_splits=5).split(rows)]; return {k:{"mean":float(np.mean([z[k] for z in f])),"std":float(np.std([z[k] for z in f],ddof=1))} for k in f[0]}
+def run_baseline_evaluation():
+ rows,x,y,_=load_data(); models={"Single-Source Model":evaluate(linear,x,y,42,[1]),"Rule-Based Scoring":evaluate(linear,x,y,42,[0,1,2,3,4,5]),"Random Forest":evaluate(rf,x,y,42),"STERI Multi-Source Model":steri_cv(rows,y)}; baseline=np.argsort(np.argsort([steri_score(r) for r in rows])); sensitivity={}
+ for i,name in enumerate(["pollution","waterQuality","flood","groundwater","industrialPressure","complaintIntensity"]):
+  variants=[]
+  for change in [-.2,.2]:
+   w=WEIGHTS.copy(); w[i]*=1+change; w/=w.sum(); ranks=np.argsort(np.argsort([steri_score(r,w) for r in rows])); variants.append(float(np.corrcoef(baseline,ranks)[0,1]))
+  sensitivity[name]={"weight_change_percent":20,"rank_stability_spearman":variants}
+ write("baseline_comparison_results.json",{"dataset":{"rows":len(rows),"period":[rows[0]["timestamp"],rows[-1]["timestamp"]]},"time_series_folds":5,"baseline_comparison":models,"weight_sensitivity":sensitivity})
+if __name__=="__main__": run_baseline_evaluation()

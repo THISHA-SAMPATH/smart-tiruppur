@@ -2,8 +2,9 @@
 
 import React from "react";
 import type { SteriCityOverview } from "@/lib/steri/types";
+import SourceBadge, { SourceType } from "@/components/provenance/SourceBadge";
 
-type ProvenanceType = "OPEN_DATA" | "DERIVED" | "SIMULATED" | "MODELLED";
+type ProvenanceType = SourceType;
 
 interface ProvenanceRow {
   component: string;
@@ -17,8 +18,8 @@ interface DataModelProvenancePanelProps {
 }
 
 const typeColor: Record<ProvenanceType, string> = {
-  OPEN_DATA: "#38bdf8",
-  DERIVED: "#a78bfa",
+  MEASURED: "#38bdf8",
+  HISTORICAL: "#a78bfa",
   SIMULATED: "#f59e0b",
   MODELLED: "#f472b6",
 };
@@ -27,17 +28,17 @@ export default function DataModelProvenancePanel({ steriOverview }: DataModelPro
   const complaintProvenance = steriOverview?.units[0]?.componentProvenance.complaintIntensity;
   const rows: ProvenanceRow[] = [
     { component: "Terrain", type: "MODELLED", source: "Existing procedural elevation model / loaded terrain grid where available.", limitation: "Procedural fallback is not a surveyed DEM." },
-    { component: "Noyyal River", type: "OPEN_DATA", source: "Existing OpenStreetMap Noyyal River GeoJSON.", limitation: "Geometry only; not water-quality monitoring." },
-    { component: "Roads", type: "OPEN_DATA", source: "Existing TNGIS road GeoJSON.", limitation: "GIS geometry only." },
-    { component: "Buildings", type: "OPEN_DATA", source: "Existing OpenStreetMap building footprints.", limitation: "No occupancy or population is inferred." },
+    { component: "Noyyal River", type: "HISTORICAL", source: "Existing OpenStreetMap Noyyal River GeoJSON.", limitation: "Geometry only; not water-quality monitoring." },
+    { component: "Roads", type: "HISTORICAL", source: "Existing TNGIS road GeoJSON.", limitation: "GIS geometry only." },
+    { component: "Buildings", type: "HISTORICAL", source: "Existing OpenStreetMap building footprints.", limitation: "No occupancy or population is inferred." },
     { component: "Industrial Sources", type: "SIMULATED", source: "Existing 12-unit synthetic demonstration dataset.", limitation: "Not an industrial facility registry." },
     { component: "Industrial Outfalls", type: "SIMULATED", source: "Existing synthetic outfall model inputs.", limitation: "Flow and indicator values are not observations." },
     { component: "Sensor Network", type: "SIMULATED", source: "Existing synthetic demonstration sensor network.", limitation: "Not a live monitoring network." },
     { component: "Pollution Transport", type: "MODELLED", source: "Existing simulated source-to-river transport visualization.", limitation: "Not calibrated dispersion or measured concentration." },
     { component: "STERI", type: "MODELLED", source: "Dynamic /api/steri calculation using existing component engines and scenario inputs.", limitation: "Decision support only; not a validated forecast." },
     { component: "Flood Model", type: "MODELLED", source: "Existing terrain-based flood engine.", limitation: "Simplified terrain estimate, not a 2D hydraulic model." },
-    { component: "Groundwater", type: "DERIVED", source: "Existing groundwater category mapping used by STERI.", limitation: "No new groundwater observations are fetched." },
-    { component: "Citizen Reports", type: complaintProvenance?.sourceType === "DERIVED" ? "DERIVED" : "SIMULATED", source: complaintProvenance?.sourceDescription || "Existing seeded geocoded complaint hotspot fallback.", limitation: complaintProvenance?.fallback || "Seeded/demo reports are not public complaints." },
+    { component: "Groundwater", type: "HISTORICAL", source: "Existing groundwater category mapping used by STERI.", limitation: "No new groundwater observations are fetched." },
+    { component: "Citizen Reports", type: complaintProvenance?.sourceType === "DERIVED" ? "HISTORICAL" : "SIMULATED", source: complaintProvenance?.sourceDescription || "Existing seeded geocoded complaint hotspot fallback.", limitation: complaintProvenance?.fallback || "Seeded/demo reports are not public complaints." },
   ];
 
   return (
@@ -53,7 +54,7 @@ export default function DataModelProvenancePanel({ steriOverview }: DataModelPro
           <div key={row.component} style={{ padding: "7px", borderRadius: "5px", background: "rgba(15, 23, 42, 0.55)", borderLeft: `2px solid ${typeColor[row.type]}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: "6px", alignItems: "baseline" }}>
               <strong style={{ fontSize: "10.5px", color: "var(--color-slate-text)" }}>{row.component}</strong>
-              <span style={{ fontSize: "9px", color: typeColor[row.type], fontWeight: 800 }}>{row.type}</span>
+              <SourceBadge type={row.type} />
             </div>
             <div style={{ marginTop: "2px", fontSize: "9.5px", color: "var(--color-slate-muted)", lineHeight: 1.35 }}>Source: {row.source}</div>
             <div style={{ marginTop: "2px", fontSize: "9.5px", color: "#fbbf24", lineHeight: 1.35 }}>Limit: {row.limitation}</div>

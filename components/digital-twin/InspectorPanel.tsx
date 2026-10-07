@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import type { SelectedNodeInfo } from "../Terrain3DViewer";
 import DataProvenanceCard from "@/components/provenance/DataProvenanceCard";
+import SourceBadge, { SourceType } from "@/components/provenance/SourceBadge";
 
 interface InspectorPanelProps {
   selectedNode: SelectedNodeInfo | null;
@@ -24,7 +25,7 @@ export default function InspectorPanel({
           <div style={{ fontSize: "32px", marginBottom: "8px" }}>🌐</div>
           <div style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--color-slate-text)" }}>Select any Object or Terrain</div>
           <div style={{ fontSize: "12px", marginTop: "4px", lineHeight: 1.5 }}>
-            Click an industrial facility, river station, groundwater zone, or terrain surface for instant elevation & GIS telemetry.
+            Click an industrial facility, modelled sensor, groundwater zone, or terrain surface for source and scenario context.
           </div>
         </div>
       </div>
@@ -40,6 +41,7 @@ export default function InspectorPanel({
   const sourceStrength = industrialSelection?.sourceStrength;
   const normalizedSourceStrength = industrialSelection?.normalizedSourceStrength;
   const sensorSelection = selectedNode.type === "sensor" ? selectedNode.raw : null;
+  const sourceType: SourceType = selectedNode.type === "terrain" || selectedNode.type === "steri_risk" ? "MODELLED" : selectedNode.type === "road" || selectedNode.type === "building" ? "HISTORICAL" : "SIMULATED";
 
   return (
     <div className="dt-panel-right">
@@ -57,11 +59,11 @@ export default function InspectorPanel({
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <div>
           <div style={{ fontSize: "16px", fontWeight: 700, color: "#ffffff" }}>{selectedNode.name}</div>
-          <div style={{ fontSize: "12px", color: "var(--color-teal)", marginTop: "2px" }}>{selectedNode.designation}</div>
+          <div style={{ fontSize: "12px", color: "var(--color-teal)", marginTop: "2px", display: "flex", gap: 6, alignItems: "center" }}>{selectedNode.designation} <SourceBadge type={sourceType} /></div>
         </div>
 
         {/* Status Badge */}
-        <div className="dt-card-surface" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {selectedNode.type !== "terrain" && <div className="dt-card-surface" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: "11px", color: "var(--color-slate-muted)", fontWeight: 600 }}>STATUS</span>
           <span
             style={{
@@ -77,7 +79,7 @@ export default function InspectorPanel({
           >
             {selectedNode.statusSymbol || "●"} {selectedNode.status || "NORMAL"}
           </span>
-        </div>
+        </div>}
 
         {/* Coordinates */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
@@ -94,7 +96,7 @@ export default function InspectorPanel({
         {/* TERRAIN ELEVATION INSPECTOR (FIX #23) */}
         {selectedNode.type === "terrain" && (
           <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-teal)" }}>TOPOGRAPHIC ELEVATION DATA</div>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-teal)" }}>MODELLED ELEVATION SURFACE</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "12px" }}>
               <div>Elevation: <strong style={{ color: "var(--color-green)" }}>~{selectedNode.elevationMeters} m ASL</strong></div>
               <div>FIRKA: <strong style={{ color: "var(--color-slate-text)" }}>{selectedNode.firkaName}</strong></div>
@@ -262,7 +264,7 @@ export default function InspectorPanel({
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-indigo)" }}>STERI AGGREGATE SCORE</span>
                 <span style={{ fontSize: "10px", color: "var(--color-slate-muted)" }}>
-                  Updated {selectedNode.timestamp ? new Date(selectedNode.timestamp).toLocaleTimeString() : "Live"}
+                  Calculated {selectedNode.timestamp ? new Date(selectedNode.timestamp).toLocaleTimeString() : "on selection"}
                 </span>
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
@@ -332,7 +334,7 @@ export default function InspectorPanel({
                 💡 DECISION SUPPORT RECOMMENDATION ({(selectedNode.confidence ? selectedNode.confidence * 100 : 90).toFixed(0)}% Confidence)
               </div>
               <div style={{ fontSize: "11.5px", color: "var(--color-slate-text)", lineHeight: 1.5 }}>
-                {selectedNode.recommendation || "Maintain continuous environmental monitoring and routine GIS telemetry surveillance."}
+                {selectedNode.recommendation || "Review the modelled scenario inputs and supporting GIS context."}
               </div>
             </div>
 

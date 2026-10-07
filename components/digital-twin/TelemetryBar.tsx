@@ -1,63 +1,10 @@
 "use client";
-
 import React from "react";
-
-interface TelemetryBarProps {
-  unitCount: number;
-  avgReuse: number;
-  criticalZones: number;
-  activeAlerts: number;
-}
-
-export default function TelemetryBar({
-  unitCount,
-  avgReuse,
-  criticalZones,
-  activeAlerts,
-}: TelemetryBarProps) {
-  return (
-    <footer className="dt-footer-strip">
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <div style={{ fontSize: "16px" }}>💧</div>
-        <div>
-          <div style={{ color: "var(--color-slate-muted)", fontSize: "10.5px", fontWeight: 700 }}>
-            WATER QUALITY (NOYYAL) <span style={{ color: "var(--color-green)", marginLeft: "4px" }}>✓ LIVE</span>
-          </div>
-          <div style={{ fontWeight: 600, color: "var(--color-slate-text)" }}>pH 7.2 · EC 1420 µS/cm · Normal</div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <div style={{ fontSize: "16px" }}>🏭</div>
-        <div>
-          <div style={{ color: "var(--color-slate-muted)", fontSize: "10.5px", fontWeight: 700 }}>
-            INDUSTRIAL COMPLIANCE <span style={{ color: "var(--color-green)", marginLeft: "4px" }}>✓ {unitCount} UNITS</span>
-          </div>
-          <div style={{ fontWeight: 600, color: "var(--color-slate-text)" }}>{avgReuse}% Avg Reuse · 100% ZLD</div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <div style={{ fontSize: "16px" }}>🌐</div>
-        <div>
-          <div style={{ color: "var(--color-slate-muted)", fontSize: "10.5px", fontWeight: 700 }}>
-            GROUNDWATER STRESS <span style={{ color: "var(--color-amber)", marginLeft: "4px" }}>⚠ {criticalZones} CRITICAL</span>
-          </div>
-          <div style={{ fontWeight: 600, color: "var(--color-slate-text)" }}>6 FIRKA Zones · 62% Extraction</div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <div style={{ fontSize: "16px" }}>📜</div>
-        <div>
-          <div style={{ color: "var(--color-slate-muted)", fontSize: "10.5px", fontWeight: 700 }}>
-            GREEN LEDGER INTEGRITY <span style={{ color: "var(--color-green)", marginLeft: "4px" }}>✓ VERIFIED</span>
-          </div>
-          <div style={{ fontWeight: 600, color: activeAlerts > 0 ? "var(--color-red)" : "var(--color-green)" }}>
-            SHA-256 Active · {activeAlerts} Anomaly
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
+import SourceBadge from "@/components/provenance/SourceBadge";
+import { verifyChain } from "@/lib/evidence/ledger";
+interface TelemetryBarProps { unitCount: number; avgReuse: number; criticalZones: number; activeAlerts: number; }
+export default function TelemetryBar({ unitCount, avgReuse, criticalZones, activeAlerts }: TelemetryBarProps) {
+  const ledgerValid = verifyChain([]); // Empty until persisted alerts are loaded; never a hard-coded verification result.
+  const item = (label:string, type:"MODELLED"|"SIMULATED", value:string) => <div style={{display:"flex",alignItems:"center",gap:10}}><div><div style={{color:"var(--color-slate-muted)",fontSize:10.5,fontWeight:700}}>{label} <SourceBadge type={type}/></div><div style={{fontWeight:600,color:"var(--color-slate-text)"}}>{value}</div></div></div>;
+  return <footer className="dt-footer-strip">{item("WATER-QUALITY MODEL (NOYYAL)","SIMULATED","Synthetic demonstration values")}{item("INDUSTRIAL SCENARIO","SIMULATED",`${unitCount} simulated units · ${avgReuse}% modelled reuse indicator`)}{item("GROUNDWATER STRESS","MODELLED",`${criticalZones} modelled FIRKA zones`)}<div style={{display:"flex",alignItems:"center",gap:10}}><div><div style={{color:"var(--color-slate-muted)",fontSize:10.5,fontWeight:700}}>ALERT LEDGER <SourceBadge type="MODELLED"/></div><div style={{fontWeight:600,color:ledgerValid?"var(--color-green)":"var(--color-red)"}}>{ledgerValid ? "Chain valid (no loaded entries)" : "Chain verification failed"} · {activeAlerts} modelled alert{activeAlerts===1?"":"s"}</div></div></div></footer>;
 }

@@ -21,6 +21,17 @@ export const DEFAULT_DYNAMIC_SCENARIO: Required<SteriScenarioInput> = {
   groundwaterExtractionPctChange: 0,
 };
 
+/** Applies optional API/UI scenario fields without allowing `undefined` to erase defaults. */
+export function resolveDynamicScenario(scenarioInput?: SteriScenarioInput): Required<SteriScenarioInput> {
+  return {
+    floodPreset: scenarioInput?.floodPreset ?? DEFAULT_DYNAMIC_SCENARIO.floodPreset,
+    rainfallPctChange: scenarioInput?.rainfallPctChange ?? DEFAULT_DYNAMIC_SCENARIO.rainfallPctChange,
+    industrialLoadPctChange: scenarioInput?.industrialLoadPctChange ?? DEFAULT_DYNAMIC_SCENARIO.industrialLoadPctChange,
+    pollutionLoadPctChange: scenarioInput?.pollutionLoadPctChange ?? DEFAULT_DYNAMIC_SCENARIO.pollutionLoadPctChange,
+    groundwaterExtractionPctChange: scenarioInput?.groundwaterExtractionPctChange ?? DEFAULT_DYNAMIC_SCENARIO.groundwaterExtractionPctChange,
+  };
+}
+
 export interface SteriSectorDefinition {
   id: string;
   name: string;
@@ -78,7 +89,7 @@ function buildingExposure(sector: SteriSectorDefinition): BuildingExposureIndica
 }
 
 export function calculateDynamicSectorInputs(sector: SteriSectorDefinition, scenarioInput?: SteriScenarioInput, realComplaintPoints?: SteriComplaintPoint[]) {
-  const scenario = { ...DEFAULT_DYNAMIC_SCENARIO, ...scenarioInput };
+  const scenario = resolveDynamicScenario(scenarioInput);
   const sensor = nearestSensor(sector);
   const loadMultiplier = Math.max(0, 1 + scenario.industrialLoadPctChange / 100);
   const pollutionMultiplier = Math.max(0, 1 + scenario.pollutionLoadPctChange / 100);
