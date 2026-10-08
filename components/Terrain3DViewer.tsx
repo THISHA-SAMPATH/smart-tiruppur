@@ -403,39 +403,31 @@ export default function Terrain3DViewer({
 
   // Handle View Mode Toggling (2.5D Flat Footprints & Mapped River Corridor vs 3D Focused Extrusions)
   useEffect(() => {
-    if (buildingsGroupRef.current) {
-      if (viewMode === "2.5D") {
-        buildingsGroupRef.current.scale.set(1.0, 0.08, 1.0);
-      } else {
-        buildingsGroupRef.current.scale.set(1.0, 1.0, 1.0);
-      }
+    if (!cameraRef.current || !controlsRef.current || !buildingsGroupRef.current || !riverGroupRef.current) return;
+
+    if (viewMode === "2.5D") {
+      buildingsGroupRef.current.scale.set(1.0, 0.08, 1.0);
+      riverGroupRef.current.scale.set(0.40, 1.0, 0.40);
+    } else {
+      buildingsGroupRef.current.scale.set(1.0, 1.0, 1.0);
+      riverGroupRef.current.scale.set(1.0, 1.0, 1.0);
     }
 
-    if (riverGroupRef.current) {
-      if (viewMode === "2.5D") {
-        riverGroupRef.current.scale.set(0.40, 1.0, 0.40);
-      } else {
-        riverGroupRef.current.scale.set(1.0, 1.0, 1.0);
-      }
+    const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
+    const center = new THREE.Vector3(0.5, 0.5, -2.5);
+    if (!urbanBox.isEmpty()) {
+      urbanBox.getCenter(center);
     }
+    const targetX = center.x;
+    const targetY = center.y;
+    const targetZ = center.z;
 
-    if (cameraRef.current && controlsRef.current) {
-      const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
-      const center = new THREE.Vector3(0.5, 0.5, -2.5);
-      if (!urbanBox.isEmpty()) {
-        urbanBox.getCenter(center);
-      }
-      const targetX = center.x;
-      const targetY = center.y;
-      const targetZ = center.z;
-
-      if (viewMode === "2.5D") {
-        targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 28.0, targetZ + 8.0);
-        targetLookAtRef.current = new THREE.Vector3(targetX, targetY, targetZ);
-      } else if (viewMode === "3D") {
-        targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 9.5, targetZ + 11.5);
-        targetLookAtRef.current = new THREE.Vector3(targetX, targetY + 0.3, targetZ);
-      }
+    if (viewMode === "2.5D") {
+      targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 28.0, targetZ + 8.0);
+      targetLookAtRef.current = new THREE.Vector3(targetX, targetY, targetZ);
+    } else if (viewMode === "3D") {
+      targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 9.5, targetZ + 11.5);
+      targetLookAtRef.current = new THREE.Vector3(targetX, targetY + 0.3, targetZ);
     }
   }, [viewMode]);
 

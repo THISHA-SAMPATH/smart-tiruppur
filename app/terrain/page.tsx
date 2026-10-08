@@ -1,13 +1,27 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Terrain3DViewer, {
+import dynamic from "next/dynamic";
+import type {
   LightingPreset,
   SelectedNodeInfo,
   LayerToggles,
   UserRoleOverlay,
-  geoTo3D,
 } from "@/components/Terrain3DViewer";
+import { geoTo3D } from "@/lib/geo/projection";
+
+const Terrain3DViewer = dynamic(
+  () => import("@/components/Terrain3DViewer"),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="dt-viewport"
+        style={{ background: "#f8fafc" }}
+      />
+    ),
+  }
+);
 import LayerPanel from "@/components/digital-twin/LayerPanel";
 import ScenarioModePanel from "@/components/digital-twin/ScenarioModePanel";
 import InspectorPanel from "@/components/digital-twin/InspectorPanel";
