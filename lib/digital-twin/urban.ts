@@ -40,9 +40,9 @@ export function parseGeoJSONToBuildingDataset(geojson: any): BuildingGISDataset 
   };
 }
 
-const DEFAULT_BUILDING_HEIGHT_3D = 0.3;
+const DEFAULT_BUILDING_HEIGHT_3D = 1.5;
 const LEVEL_HEIGHT_METERS = 3;
-const HEIGHT_3D_PER_METER = 0.04;
+const HEIGHT_3D_PER_METER = 0.18;
 
 function parseNumericValue(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -99,9 +99,9 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
   const buildingsGroup = new THREE.Group();
   buildingsGroup.name = "Layer_Urban_Fabric";
   const material = new THREE.MeshStandardMaterial({
-    color: 0xe2e8f0,
-    roughness: 0.6,
-    metalness: 0.04,
+    color: 0x94a3b8,
+    roughness: 0.45,
+    metalness: 0.1,
     transparent: false,
     opacity: 1.0,
   });
@@ -125,7 +125,7 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
       const mesh = new THREE.Mesh(geometry, material);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      mesh.position.y = ctx.sampleElevation(footprint.latitude, footprint.longitude) + 0.08;
+      mesh.position.y = ctx.sampleElevation(footprint.latitude, footprint.longitude) + 0.1;
       mesh.name = `OSM_Building_${String(feature.properties.featureId)}`;
       mesh.userData = {
         type: "building",

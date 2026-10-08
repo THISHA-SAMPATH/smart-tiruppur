@@ -465,10 +465,10 @@ export default function Terrain3DViewer({
       const color = tierColors[sector.riskCategory] || 0x86efac;
       const isSelected = selectedSectorId === sector.id;
 
-      // Soft risk intensity scaling (high-risk areas visually stronger, low-risk quieter)
-      let targetOpacity = sector.steriScore * 0.18 + 0.05;
+      // Soft risk intensity scaling (subtle spatial overlay, non-intrusive)
+      let targetOpacity = sector.steriScore * 0.04 + 0.04;
       if (isAnySectorSelected) {
-        targetOpacity = isSelected ? 0.32 : 0.06;
+        targetOpacity = isSelected ? 0.22 : 0.02;
       }
 
       const mesh = new THREE.Mesh(
@@ -714,9 +714,9 @@ export default function Terrain3DViewer({
     scene.add(traceHighlightGroupRef.current);
     scene.add(selectionRingGroupRef.current);
 
-    // Elevated Oblique City-Level Perspective (~40° tilt angle from vertical)
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 1000);
-    camera.position.set(0, 42, 58);
+    // Oblique Urban View Perspective framing Tiruppur City Core
+    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
+    camera.position.set(0, 24, 30);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -733,19 +733,19 @@ export default function Terrain3DViewer({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2 - 0.08;
-    controls.minDistance = 12;
-    controls.maxDistance = 120;
-    controls.target.set(0, 0, 0);
+    controls.maxPolarAngle = Math.PI / 2 - 0.12;
+    controls.minDistance = 8;
+    controls.maxDistance = 65;
+    controls.target.set(0, 1.2, -3.5);
     controlsRef.current = controls;
 
-    // Soft Scientific Environment Lighting
+    // Soft Scientific Environment Lighting with Directional Shadow Contrast
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0xe2e8f0, 0.85);
     hemiLight.position.set(0, 50, 0);
     scene.add(hemiLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.25);
-    dirLight.position.set(35, 65, 45);
+    dirLight.position.set(45, 55, 30);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
@@ -796,64 +796,46 @@ export default function Terrain3DViewer({
     riverCurveRef.current = hydroRes.riverCurve;
     const flowParticles = hydroRes.flowParticles;
 
-    // Per-Segment Risk Ramp Coloring for Noyyal River (Item #1)
-    // Smoothly interpolates water-quality values along length mapped to --risk-1..5
-    riverGroupRef.current.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.geometry instanceof THREE.BufferGeometry) {
-        const geo = child.geometry;
-        const posAttr = geo.attributes.position;
-        const colors = new Float32Array(posAttr.count * 3);
-        const c1 = new THREE.Color(0x86efac); // LOW (--risk-1)
-        const c2 = new THREE.Color(0xfde68a); // MODERATE (--risk-2)
-        const c3 = new THREE.Color(0xfdba74); // HIGH (--risk-3)
-        const c4 = new THREE.Color(0xf87171); // VERY HIGH (--risk-4)
-        const c5 = new THREE.Color(0xb91c1c); // CRITICAL (--risk-5)
+    // Per-Segment Risk Ramp Coloring for Noyyal River
+    // Applies analytical risk ramp only when pollution or risk overlay layers are enabled.
+    if (layers.pollution || layers.steriRisk || interactionMode === "RISK") {
+      riverGroupRef.current.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.geometry instanceof THREE.BufferGeometry) {
+          const geo = child.geometry;
+          const posAttr = geo.attributes.position;
+          const colors = new Float32Array(posAttr.count * 3);
+          const c1 = new THREE.Color(0x86efac);
+          const c2 = new THREE.Color(0xfde68a);
+          const c3 = new THREE.Color(0xfdba74);
+          const c4 = new THREE.Color(0xf87171);
+          const c5 = new THREE.Color(0xb91c1c);
 
-        // 10-Point Color Sampling along Noyyal River Curve (Item #1)
-        const sampledPoints: Array<{ t: number; risk: number; hex: string }> = [];
-        for (let s = 0; s <= 9; s++) {
-          const sampleT = Number((s / 9).toFixed(2));
-          let rScore = 0.15;
-          if (sampleT <= 0.5) rScore = 0.15 + (sampleT / 0.5) * 0.7;
-          else if (sampleT <= 0.85) rScore = 0.85 - ((sampleT - 0.5) / 0.35) * 0.3;
-          else rScore = 0.55 - ((sampleT - 0.85) / 0.15) * 0.3;
+          for (let i = 0; i < posAttr.count; i++) {
+            const x = posAttr.getX(i);
+            const t = Math.min(1, Math.max(0, (x + 45) / 100));
+            let riskScore = 0.15;
+            if (t <= 0.5) riskScore = 0.15 + (t / 0.5) * 0.7;
+            else if (t <= 0.85) riskScore = 0.85 - ((t - 0.5) / 0.35) * 0.3;
+            else riskScore = 0.55 - ((t - 0.85) / 0.15) * 0.3;
 
-          let sCol: THREE.Color;
-          if (rScore <= 0.25) sCol = c1.clone().lerp(c2, rScore / 0.25);
-          else if (rScore <= 0.5) sCol = c2.clone().lerp(c3, (rScore - 0.25) / 0.25);
-          else if (rScore <= 0.75) sCol = c3.clone().lerp(c4, (rScore - 0.5) / 0.25);
-          else sCol = c4.clone().lerp(c5, Math.min(1, (rScore - 0.75) / 0.25));
+            let col: THREE.Color;
+            if (riskScore <= 0.25) col = c1.clone().lerp(c2, riskScore / 0.25);
+            else if (riskScore <= 0.5) col = c2.clone().lerp(c3, (riskScore - 0.25) / 0.25);
+            else if (riskScore <= 0.75) col = c3.clone().lerp(c4, (riskScore - 0.5) / 0.25);
+            else col = c4.clone().lerp(c5, Math.min(1, (riskScore - 0.75) / 0.25));
 
-          sampledPoints.push({ t: sampleT, risk: Number(rScore.toFixed(3)), hex: `#${sCol.getHexString()}` });
+            colors[i * 3] = col.r;
+            colors[i * 3 + 1] = col.g;
+            colors[i * 3 + 2] = col.b;
+          }
+          geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+          child.material = new THREE.MeshBasicMaterial({
+            vertexColors: true,
+            side: THREE.DoubleSide,
+          });
         }
-        console.log("[River Gradient Sampling]", sampledPoints);
-
-        for (let i = 0; i < posAttr.count; i++) {
-          const x = posAttr.getX(i);
-          // River runs West to East across Tiruppur (x from -45 to +55)
-          const t = Math.min(1, Math.max(0, (x + 45) / 100));
-          let riskScore = 0.15;
-          if (t <= 0.5) riskScore = 0.15 + (t / 0.5) * 0.7;
-          else if (t <= 0.85) riskScore = 0.85 - ((t - 0.5) / 0.35) * 0.3;
-          else riskScore = 0.55 - ((t - 0.85) / 0.15) * 0.3;
-
-          let col: THREE.Color;
-          if (riskScore <= 0.25) col = c1.clone().lerp(c2, riskScore / 0.25);
-          else if (riskScore <= 0.5) col = c2.clone().lerp(c3, (riskScore - 0.25) / 0.25);
-          else if (riskScore <= 0.75) col = c3.clone().lerp(c4, (riskScore - 0.5) / 0.25);
-          else col = c4.clone().lerp(c5, Math.min(1, (riskScore - 0.75) / 0.25));
-
-          colors[i * 3] = col.r;
-          colors[i * 3 + 1] = col.g;
-          colors[i * 3 + 2] = col.b;
-        }
-        geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-        child.material = new THREE.MeshBasicMaterial({
-          vertexColors: true,
-          side: THREE.DoubleSide,
-        });
-      }
-    });
+      });
+    }
 
     // 2a. Real Station Points on the River (Small Ringed Dots - Item #2 & #8)
     const RIVER_STATION_POINTS = [
@@ -975,7 +957,7 @@ export default function Terrain3DViewer({
 
       const firkaMesh = new THREE.Mesh(
         fillGeo,
-        new THREE.MeshBasicMaterial({ color: firka.color, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false })
+        new THREE.MeshBasicMaterial({ color: firka.color, transparent: true, opacity: 0.06, side: THREE.DoubleSide, depthWrite: false })
       );
       firkaMesh.position.copy(pos);
 

@@ -77,7 +77,7 @@ export default function Terrain3DPage() {
   const [userRole, setUserRole] = useState<UserRoleOverlay>("REGULATOR");
 
   // View Mode: 2.5D | 3D | Table
-  const [viewMode, setViewMode] = useState<"2.5D" | "3D" | "TABLE">("2.5D");
+  const [viewMode, setViewMode] = useState<"2.5D" | "3D" | "TABLE">("3D");
 
   // Mode Switch: BASELINE vs SCENARIO
   const [mode, setMode] = useState<"BASELINE" | "SCENARIO">("BASELINE");
@@ -114,7 +114,7 @@ export default function Terrain3DPage() {
     roads: true,
     buildings: true,
     units: true,
-    dischargePaths: true,
+    dischargePaths: false,
     infrastructure: true,
     vegetation: true,
     sensors: true,

@@ -62,6 +62,56 @@ export function parseGeoJSONToHydrologyDataset(
   };
 }
 
+function createRiverRibbonGeometry(
+  curve: THREE.CatmullRomCurve3,
+  width: number,
+  ctx: LayerBuilderContext
+): THREE.BufferGeometry {
+  const steps = 180;
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+  const halfWidth = width / 2;
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const p = curve.getPoint(t);
+    const tangent = curve.getTangent(t);
+    const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+
+    const left = p.clone().add(side.clone().multiplyScalar(halfWidth));
+    const right = p.clone().sub(side.clone().multiplyScalar(halfWidth));
+
+    const geoLeft = ctx.vector3DToGeo(left.x, left.z);
+    const geoRight = ctx.vector3DToGeo(right.x, right.z);
+
+    left.y = ctx.sampleElevation(geoLeft.lat, geoLeft.lon) + 0.12;
+    right.y = ctx.sampleElevation(geoRight.lat, geoRight.lon) + 0.12;
+
+    positions.push(left.x, left.y, left.z);
+    positions.push(right.x, right.y, right.z);
+
+    uvs.push(0, t);
+    uvs.push(1, t);
+  }
+
+  for (let i = 0; i < steps; i++) {
+    const v0 = i * 2;
+    const v1 = i * 2 + 1;
+    const v2 = (i + 1) * 2;
+    const v3 = (i + 1) * 2 + 1;
+    indices.push(v0, v1, v2);
+    indices.push(v1, v3, v2);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 /**
  * Builds Noyyal River, drainage channels, flow arrows, and pollution plume particles.
  * Uses real GIS dataset features when provided, with smooth fallback to procedural math curve.
@@ -113,17 +163,19 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
             isGisLoaded = true;
           }
 
-          const tubeRadius = feat.properties.type === "river" ? 0.2 : 0.1;
-          const tubeGeo = new THREE.TubeGeometry(curve, Math.max(160, vecPoints.length * 4), tubeRadius, 12, false);
+          const ribbonWidth = feat.properties.type === "river" ? 0.7 : 0.35;
+          const ribbonGeo = createRiverRibbonGeometry(curve, ribbonWidth, ctx);
 
           const tubeMat = new THREE.MeshStandardMaterial({
             color: feat.properties.type === "river" ? 0x0284c7 : 0x0d9488,
-            emissive: feat.properties.type === "river" ? 0x0284c7 : 0x0d9488,
-            emissiveIntensity: 0.35,
             roughness: 0.15,
+            metalness: 0.2,
+            transparent: true,
+            opacity: 0.85,
+            side: THREE.DoubleSide,
           });
 
-          const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+          const tubeMesh = new THREE.Mesh(ribbonGeo, tubeMat);
           tubeMesh.name = `GIS_Hydrology_${feat.properties.name}`;
           tubeMesh.userData = {
             type: "hydrology",
@@ -168,10 +220,11 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
 
           const polyMat = new THREE.MeshStandardMaterial({
             color: 0x0284c7,
-            emissive: 0x0284c7,
-            emissiveIntensity: 0.25,
+            roughness: 0.15,
+            metalness: 0.2,
             transparent: true,
-            opacity: 0.7,
+            opacity: 0.85,
+            side: THREE.DoubleSide,
           });
 
           const polyMesh = new THREE.Mesh(polyGeo, polyMat);
@@ -195,14 +248,16 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
     }
     activeRiverCurve = new THREE.CatmullRomCurve3(riverPoints);
 
-    const tubeGeo = new THREE.TubeGeometry(activeRiverCurve, 180, 0.2, 12, false);
+    const ribbonGeo = createRiverRibbonGeometry(activeRiverCurve, 0.7, ctx);
     const riverMesh = new THREE.Mesh(
-      tubeGeo,
+      ribbonGeo,
       new THREE.MeshStandardMaterial({
-        color: 0x0d9488,
-        emissive: 0x0d9488,
-        emissiveIntensity: 0.45,
-        roughness: 0.1,
+        color: 0x0284c7,
+        roughness: 0.15,
+        metalness: 0.2,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
       })
     );
     riverMesh.name = "Noyyal_River_Procedural_Fallback";

@@ -69,7 +69,7 @@ export function sampleTiruppurElevation(lat: number, lon: number): number {
   const riverDepression = Math.exp(-Math.pow(distToRiver / 0.012, 2)) * 3.8;
 
   const elevMeters = 300 + nwHigh * 7.5 + eastSlope * 5 - riverDepression * 4;
-  return Math.max(0.1, (elevMeters - 288) * 0.16);
+  return Math.max(0.1, (elevMeters - 288) * 0.45);
 }
 
 /**
