@@ -72,11 +72,15 @@ function createRiverRibbonGeometry(
   const uvs: number[] = [];
   const indices: number[] = [];
   const halfWidth = width / 2;
+  const dt = 0.012; // Window delta for smooth tangent calculation to prevent self-intersection
 
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
     const p = curve.getPoint(t);
-    const tangent = curve.getTangent(t);
+    // Calculate smoothed tangent over surrounding delta window
+    const pPrev = curve.getPoint(Math.max(0, t - dt));
+    const pNext = curve.getPoint(Math.min(1, t + dt));
+    const tangent = pNext.clone().sub(pPrev).normalize();
     const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
 
     const left = p.clone().add(side.clone().multiplyScalar(halfWidth));
@@ -158,6 +162,7 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
         // Only build if we have enough spatial points within bounds
         if (vecPoints.length >= 2) {
           const curve = new THREE.CatmullRomCurve3(vecPoints);
+
           if (!activeRiverCurve && feat.properties.type === "river") {
             activeRiverCurve = curve;
             isGisLoaded = true;
@@ -173,6 +178,9 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
             transparent: true,
             opacity: 0.85,
             side: THREE.DoubleSide,
+            polygonOffset: true,
+            polygonOffsetFactor: -1,
+            polygonOffsetUnits: -1,
           });
 
           const tubeMesh = new THREE.Mesh(ribbonGeo, tubeMat);

@@ -1522,37 +1522,65 @@ export default function Terrain3DViewer({
           overflow: "hidden",
         }}
       />
-      {/* Floating Exit Trace Control Button when in TRACE mode */}
+      {/* Active Task Focus Caption Bar */}
       {interactionMode === "TRACE" && (
-        <button
-          type="button"
-          onClick={onExitTrace}
-          className="dt-btn active"
+        <div
           style={{
             position: "absolute",
-            top: "14px",
-            right: "14px",
+            top: "60px",
+            left: "50%",
+            transform: "translateX(-50%)",
             zIndex: 100,
-            background: "#0d9488",
-            color: "#ffffff",
-            borderColor: "#0d9488",
-            padding: "6px 12px",
-            fontSize: "11px",
-            fontWeight: 700,
-            boxShadow: "var(--shadow-md)",
-            borderRadius: "var(--radius-sm)",
+            background: "rgba(255, 255, 255, 0.95)",
+            border: "1px solid #0d9488",
+            borderRadius: "8px",
+            padding: "8px 16px",
+            boxShadow: "0 4px 12px rgba(13, 148, 136, 0.15)",
+            backdropFilter: "blur(8px)",
             display: "flex",
             alignItems: "center",
-            gap: "6px",
-            cursor: "pointer",
+            gap: "14px",
+            fontSize: "11px",
+            color: "#0f172a",
           }}
-          aria-label="Exit Trace Mode"
         >
-          <span>✕</span> Exit Trace
-        </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontWeight: 800, color: "#0d9488", letterSpacing: "0.5px" }}>TRACE POLLUTION</span>
+            <SourceBadge type="SIMULATED" />
+          </div>
+          <div style={{ height: "14px", width: "1px", background: "#cbd5e1" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "#334155" }}>
+            <span><strong>1.</strong> Source</span>
+            <span style={{ color: "#94a3b8" }}>➜</span>
+            <span><strong>2.</strong> River path</span>
+            <span style={{ color: "#94a3b8" }}>➜</span>
+            <span><strong>3.</strong> Downstream sensors</span>
+          </div>
+          <div style={{ height: "14px", width: "1px", background: "#cbd5e1" }} />
+          <button
+            type="button"
+            onClick={onExitTrace}
+            style={{
+              background: "#f1f5f9",
+              border: "1px solid #cbd5e1",
+              borderRadius: "4px",
+              padding: "4px 8px",
+              fontSize: "10.5px",
+              fontWeight: 700,
+              color: "#0f766e",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+            aria-label="Exit Task Focus Mode (Esc)"
+          >
+            <span>✕ Exit Focus (Esc)</span>
+          </button>
+        </div>
       )}
 
-      {/* Hover Tooltip Overlay (Item #2) */}
+      {/* Hover Tooltip Overlay */}
       {hoveredTooltip && (
         <div
           style={{
@@ -1605,100 +1633,44 @@ export default function Terrain3DViewer({
           pointerEvents: "auto",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <div
-              style={{
-                width: "22px",
-                height: "22px",
-                borderRadius: "50%",
-                background: "#0f766e",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-                fontSize: "11px",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
-              }}
-              title="North Pointer"
-            >
-              N
-            </div>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: "11px", lineHeight: 1.2 }}>Tiruppur Urban Center</div>
-              <div style={{ fontSize: "9.5px", color: "#64748b" }}>Noyyal Sub-Basin • 11.1085°N, 77.3411°E</div>
-            </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
+            style={{
+              width: "22px",
+              height: "22px",
+              borderRadius: "50%",
+              background: "#0f766e",
+              color: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 800,
+              fontSize: "11px",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+            }}
+            title="North Pointer"
+          >
+            N
           </div>
-          <div style={{ display: "flex", gap: "4px" }}>
-            <button
-              type="button"
-              onClick={() => {
-                if (cameraRef.current && controlsRef.current && buildingsGroupRef.current) {
-                  const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
-                  const center = new THREE.Vector3(0.5, 0.5, -2.5);
-                  if (!urbanBox.isEmpty()) urbanBox.getCenter(center);
-                  if (viewMode === "2.5D") {
-                    targetCamPosRef.current = new THREE.Vector3(center.x, center.y + 28.0, center.z + 8.0);
-                    targetLookAtRef.current = new THREE.Vector3(center.x, center.y, center.z);
-                  } else {
-                    targetCamPosRef.current = new THREE.Vector3(center.x, center.y + 9.5, center.z + 11.5);
-                    targetLookAtRef.current = new THREE.Vector3(center.x, center.y + 0.3, center.z);
-                  }
-                }
-              }}
-              style={{
-                background: "#f1f5f9",
-                border: "1px solid #cbd5e1",
-                borderRadius: "4px",
-                padding: "3px 7px",
-                fontSize: "10px",
-                fontWeight: 600,
-                color: "#0f766e",
-                cursor: "pointer",
-              }}
-              title="Recenter camera on Tiruppur Urban Footprint"
-            >
-              📍 Fit Tiruppur
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (cameraRef.current && controlsRef.current) {
-                  targetCamPosRef.current = new THREE.Vector3(0.5, 28.0, 5.5);
-                  targetLookAtRef.current = new THREE.Vector3(0.5, 0.5, -2.5);
-                }
-              }}
-              style={{
-                background: "#f1f5f9",
-                border: "1px solid #cbd5e1",
-                borderRadius: "4px",
-                padding: "3px 7px",
-                fontSize: "10px",
-                fontWeight: 600,
-                color: "#475569",
-                cursor: "pointer",
-              }}
-              title="Reset View to Overview Framing"
-            >
-              🎯 Reset View
-            </button>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "11px", lineHeight: 1.2 }}>Tiruppur Urban Center</div>
+            <div style={{ fontSize: "9.5px", color: "#64748b" }}>Noyyal Sub-Basin • 11.1085°N, 77.3411°E</div>
           </div>
         </div>
 
-        {/* Graphic Scale Bar */}
+        {/* Graphic Scale Bar (~5 km) */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
           <span style={{ fontSize: "9.5px", color: "#64748b", fontWeight: 600 }}>SCALE</span>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ width: "80px", height: "4px", background: "#0f172a", borderRadius: "1px", position: "relative" }}>
+            <div style={{ width: "90px", height: "4px", background: "#0f172a", borderRadius: "1px", position: "relative" }}>
               <div style={{ position: "absolute", left: 0, top: "-3px", width: "1px", height: "10px", background: "#0f172a" }} />
               <div style={{ position: "absolute", left: "50%", top: "-3px", width: "1px", height: "10px", background: "#0f172a" }} />
               <div style={{ position: "absolute", right: 0, top: "-3px", width: "1px", height: "10px", background: "#0f172a" }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", width: "80px", fontSize: "8.5px", color: "#475569", marginTop: "4px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", width: "90px", fontSize: "8.5px", color: "#475569", marginTop: "4px" }}>
               <span>0</span>
-              <span>250m</span>
-              <span>500m</span>
+              <span>2.5km</span>
+              <span>5km</span>
             </div>
           </div>
         </div>

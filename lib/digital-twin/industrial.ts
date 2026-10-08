@@ -119,54 +119,54 @@ export function buildIndustrialLayer(ctx: LayerBuilderContext): IndustrialBuilde
     // COMPLIANT -> 0x86efac (LOW/Safe), WARNING -> 0xfdba74 (HIGH), INVESTIGATE -> 0xb91c1c (CRITICAL)
     const statusColor = unit.status === "INVESTIGATE" ? 0xb91c1c : unit.status === "WARNING" ? 0xfdba74 : 0x0d9488;
 
-    // 3D Industrial Warehouse/Factory Massing
-    // 1. Ground pad with status indicator outline
+    // Pale Grey Warehouse Massing & Small Status Dot
+    // 1. Subtle ground pad
     const padMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.2, 1.2, 0.06, 24),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
+      new THREE.CylinderGeometry(0.65, 0.65, 0.04, 24),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.5 })
     );
-    padMesh.position.y = 0.03;
+    padMesh.position.y = 0.02;
     group.add(padMesh);
 
-    // 2. Main Industrial Building Body (Factory/Warehouse)
-    const buildingGeo = new THREE.BoxGeometry(1.4, 0.75, 1.0);
+    // 2. Main Pale Grey Warehouse Building Body
+    const buildingGeo = new THREE.BoxGeometry(1.2, 0.65, 0.9);
     const buildingMat = new THREE.MeshStandardMaterial({
-      color: 0x475569,
+      color: 0xd1d5db,
       roughness: 0.6,
-      metalness: 0.1,
+      metalness: 0.05,
     });
     const mainBuilding = new THREE.Mesh(buildingGeo, buildingMat);
-    mainBuilding.position.y = 0.4;
+    mainBuilding.position.y = 0.35;
     mainBuilding.castShadow = true;
     mainBuilding.receiveShadow = true;
     group.add(mainBuilding);
 
-    // 3. Roof Structure Accent (Pitched Roof Bays)
-    const roofGeo = new THREE.BoxGeometry(1.3, 0.25, 0.8);
+    // 3. Subtle Roof Tint Structure Accent
+    const roofGeo = new THREE.BoxGeometry(1.1, 0.2, 0.7);
     const roofMat = new THREE.MeshStandardMaterial({
-      color: 0x334155,
+      color: 0x9ca3af,
       roughness: 0.5,
-      metalness: 0.15,
+      metalness: 0.05,
     });
     const roofMesh = new THREE.Mesh(roofGeo, roofMat);
-    roofMesh.position.y = 0.85;
+    roofMesh.position.y = 0.75;
     roofMesh.castShadow = true;
     group.add(roofMesh);
 
-    // 4. Industrial Vent Stack / Chimney
-    const stackGeo = new THREE.CylinderGeometry(0.1, 0.12, 1.1, 12);
-    const stackMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.4, metalness: 0.4 });
+    // 4. Industrial Stack
+    const stackGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.9, 12);
+    const stackMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.5, metalness: 0.2 });
     const stackMesh = new THREE.Mesh(stackGeo, stackMat);
-    stackMesh.position.set(0.45, 0.75, 0.25);
+    stackMesh.position.set(0.38, 0.65, 0.2);
     stackMesh.castShadow = true;
     group.add(stackMesh);
 
-    // 5. Interactive Status Ring Dot Marker
+    // 5. Small Colored Status Dot Marker
     const innerDot = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.45, 0.45, 0.12, 24),
+      new THREE.CylinderGeometry(0.25, 0.25, 0.10, 24),
       new THREE.MeshStandardMaterial({ color: statusColor, roughness: 0.3, emissive: statusColor, emissiveIntensity: 0.2 })
     );
-    innerDot.position.y = 0.98;
+    innerDot.position.y = 0.88;
     innerDot.userData = {
       type: "unit",
       data: {

@@ -22,10 +22,10 @@ export default function DigitalTwinLegend({
       aria-label="Map Legend"
       style={{
         position: "absolute",
-        bottom: "64px",
-        left: "12px",
+        bottom: "16px",
+        left: "68px", // 16px offset right of the 48px left rail
         zIndex: 28,
-        width: "250px",
+        width: "230px",
         background: "rgba(255, 255, 255, 0.95)",
         border: "1px solid var(--hairline)",
         borderRadius: "var(--radius-md)",
@@ -40,8 +40,8 @@ export default function DigitalTwinLegend({
     >
       {/* Header with Collapsible Toggle */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontWeight: 700, fontSize: "11px", letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
-          {interactionMode === "TRACE" ? "Pollution Trace Legend" : interactionMode === "RISK" || showRiskScale ? "STERI Risk Scale Legend" : "Explore Map Legend"}
+        <div style={{ fontWeight: 700, fontSize: "10.5px", letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
+          {interactionMode === "TRACE" ? "Trace Pollution Legend" : interactionMode === "RISK" || showRiskScale ? "STERI Risk Scale Legend" : "Explore Map Legend"}
         </div>
         <button
           type="button"
@@ -67,8 +67,8 @@ export default function DigitalTwinLegend({
           {/* Risk Ramp Bar - Rendered ONLY when Risk layer or Risk Mode is active */}
           {showRiskScale && (
             <div>
-              <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--ink-soft)", marginBottom: "3px", display: "flex", justifyContent: "space-between" }}>
-                <span>STERI RISK INTENSITY SCALE</span>
+              <div style={{ fontSize: "9.5px", fontWeight: 600, color: "var(--ink-soft)", marginBottom: "3px", display: "flex", justifyContent: "space-between" }}>
+                <span>STERI/WQI RISK INTENSITY</span>
                 <span>Low → Critical</span>
               </div>
               <div
@@ -95,42 +95,45 @@ export default function DigitalTwinLegend({
             <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "10.5px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#0d9488", border: "2px solid #fff", boxShadow: "0 0 0 1px #0d9488" }} />
-                <span>Industrial Source Facility</span>
+                <span>Source (Industrial Unit)</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ width: "14px", height: "0px", borderTop: "2px dashed #06b6d4" }} />
-                <span>Simulated Discharge Path & Outfall</span>
+                <span>Outfall (Discharge Path)</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ width: "14px", height: "3px", borderRadius: "2px", background: "#06b6d4" }} />
-                <span>Noyyal Downstream Waterway Route</span>
+                <span>River path (Noyyal Route)</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ffffff", border: "2px solid #0d9488" }} />
-                <span>Downstream Telemetry Sensor Station</span>
+                <span>Downstream sensors</span>
               </div>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "10.5px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ width: "14px", height: "2px", background: "#94a3b8" }} />
-                <span>Roads (City Structure)</span>
+                <span style={{ width: "14px", height: "2px", background: "#cbd5e1" }} />
+                <span>Roads</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ width: "14px", height: "4px", borderRadius: "2px", background: "#0284c7" }} />
-                <span>Noyyal River (Mapped Corridor)</span>
+                <span>Noyyal</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#64748b", border: "1px solid #475569" }} />
-                <span>Building Footprints (OSM)</span>
+                <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#e2e8f0", border: "1px solid #cbd5e1" }} />
+                <span>Buildings</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#0d9488", border: "2px solid #ffffff", boxShadow: "0 0 0 1px #0d9488" }} />
-                <span>Industrial Facilities</span>
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#d1d5db", border: "1.5px solid #9ca3af" }} />
+                <span>Industrial facilities</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ffffff", border: "2px solid #0d9488" }} />
                 <span>Sensors</span>
+              </div>
+              <div style={{ fontSize: "9.5px", color: "var(--ink-soft)", fontStyle: "italic", marginTop: "2px" }}>
+                Heights illustrative
               </div>
             </div>
           )}
@@ -138,7 +141,7 @@ export default function DigitalTwinLegend({
           <div style={{ height: "1px", background: "var(--hairline)" }} />
 
           {/* Persistent Data Tag */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "var(--ink-soft)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "9.5px", color: "var(--ink-soft)" }}>
             <SourceBadge type="SIMULATED" />
             <span>Simulated demonstration dataset</span>
           </div>
@@ -147,3 +150,4 @@ export default function DigitalTwinLegend({
     </div>
   );
 }
+

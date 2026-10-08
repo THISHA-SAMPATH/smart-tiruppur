@@ -129,18 +129,22 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
   const buildingsGroup = new THREE.Group();
   buildingsGroup.name = "Layer_Urban_Fabric";
 
-  // Darker slate roof cap surface for subtle top edge contrast
+  // Pale neutral roof cap surface for ghost physical city appearance
   const roofMaterial = new THREE.MeshStandardMaterial({
-    color: 0x475569,
-    roughness: 0.5,
-    metalness: 0.1,
-  });
-
-  // Medium neutral slate gray wall facades
-  const wallMaterial = new THREE.MeshStandardMaterial({
-    color: 0x64748b,
+    color: 0xe2e8f0,
     roughness: 0.6,
     metalness: 0.05,
+    transparent: true,
+    opacity: 0.65,
+  });
+
+  // Pale neutral wall facades
+  const wallMaterial = new THREE.MeshStandardMaterial({
+    color: 0xcbd5e1,
+    roughness: 0.7,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.60,
   });
 
   const materials = [roofMaterial, wallMaterial];
