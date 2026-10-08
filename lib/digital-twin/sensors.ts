@@ -170,22 +170,42 @@ export function buildSensorLayer(
     const group = new THREE.Group();
     group.position.copy(ctx.geoTo3D(sensor.lat, sensor.lon, 0.55));
 
-    // Outer white ring
-    const ringMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.7, 0.7, 0.08, 24),
+    // Outer white base ring
+    const baseMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.55, 0.55, 0.06, 24),
       new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
     );
-    ringMesh.position.y = 0.04;
-    group.add(ringMesh);
+    baseMesh.position.y = 0.03;
+    group.add(baseMesh);
 
-    // Inner teal core fill
+    // Inner Cyan/Teal Beacon Post
     const innerDot = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.5, 0.5, 0.1, 24),
-      new THREE.MeshStandardMaterial({ color: 0x0d9488, roughness: 0.3 })
+      new THREE.CylinderGeometry(0.22, 0.28, 0.5, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0x06b6d4,
+        emissive: 0x06b6d4,
+        emissiveIntensity: 0.6,
+        roughness: 0.2,
+      })
     );
-    innerDot.position.y = 0.06;
+    innerDot.position.y = 0.28;
     innerDot.userData = { type: "sensor", data: sensor };
     group.add(innerDot);
+
+    // Subtle Animated Pulse Ring
+    const pulseRingGeo = new THREE.RingGeometry(0.6, 0.8, 32);
+    pulseRingGeo.rotateX(-Math.PI / 2);
+    const pulseRingMat = new THREE.MeshBasicMaterial({
+      color: 0x06b6d4,
+      transparent: true,
+      opacity: 0.5,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const pulseRing = new THREE.Mesh(pulseRingGeo, pulseRingMat);
+    pulseRing.name = "Sensor_Pulse_Ring";
+    pulseRing.position.y = 0.02;
+    group.add(pulseRing);
 
     sensorsGroup.add(group);
     ctx.interactiveObjects.push(innerDot);

@@ -135,10 +135,12 @@ export function buildTerrainLayer(ctx: LayerBuilderContext): TerrainBuilderResul
 
   const terrainMat = new THREE.MeshStandardMaterial({
     color: 0xf1f5f9,
-    roughness: 0.9,
+    roughness: 0.85,
     metalness: 0.02,
+    flatShading: false,
   });
   const terrainMesh = new THREE.Mesh(geometry, terrainMat);
+  terrainMesh.castShadow = true;
   terrainMesh.receiveShadow = true;
   terrainMesh.name = "Terrain_Surface_Mesh";
 

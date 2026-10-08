@@ -99,11 +99,11 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
   const buildingsGroup = new THREE.Group();
   buildingsGroup.name = "Layer_Urban_Fabric";
   const material = new THREE.MeshStandardMaterial({
-    color: 0xcbd5e1,
-    roughness: 0.9,
-    metalness: 0.02,
-    transparent: true,
-    opacity: 0.45,
+    color: 0xe2e8f0,
+    roughness: 0.6,
+    metalness: 0.04,
+    transparent: false,
+    opacity: 1.0,
   });
   let featureCount = 0;
 
@@ -123,6 +123,8 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
       // Shape coordinates are X/-Z; rotate extrusion upward into world Y.
       geometry.rotateX(-Math.PI / 2);
       const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       mesh.position.y = ctx.sampleElevation(footprint.latitude, footprint.longitude) + 0.08;
       mesh.name = `OSM_Building_${String(feature.properties.featureId)}`;
       mesh.userData = {

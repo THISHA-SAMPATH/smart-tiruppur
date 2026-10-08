@@ -102,6 +102,9 @@ export default function Terrain3DPage() {
   // Analysis Modes State
   const [activeAnalysisMode, setActiveAnalysisMode] = useState<string>("baseline");
 
+  // Interaction Analysis Mode: EXPLORE | TRACE | RISK
+  const [interactionMode, setInteractionMode] = useState<"EXPLORE" | "TRACE" | "RISK">("EXPLORE");
+
   // Layer Toggles State
   const [layers, setLayers] = useState<LayerToggles>({
     terrain: true,
@@ -115,12 +118,23 @@ export default function Terrain3DPage() {
     infrastructure: true,
     vegetation: true,
     sensors: true,
-    groundwater: true,
+    groundwater: false,
     floodRisk: false,
     pollution: false,
     sourceSensorInfluence: false,
-    steriRisk: true,
+    steriRisk: false,
   });
+
+  const handleInteractionModeChange = (newMode: "EXPLORE" | "TRACE" | "RISK") => {
+    setInteractionMode(newMode);
+    if (newMode === "RISK") {
+      setLayers((prev) => ({ ...prev, steriRisk: true, groundwater: true }));
+    } else if (newMode === "TRACE") {
+      setLayers((prev) => ({ ...prev, dischargePaths: true, pollution: true }));
+    } else if (newMode === "EXPLORE") {
+      setLayers((prev) => ({ ...prev, steriRisk: false, groundwater: false }));
+    }
+  };
 
   // Dynamic KPI Data
   const [unitCount, setUnitCount] = useState<number>(12);
@@ -271,6 +285,34 @@ export default function Terrain3DPage() {
           onLocateMe={handleLocateMe}
         />
 
+        {/* Compact Interaction Mode Selector: EXPLORE | TRACE | RISK */}
+        <div className="dt-toolbar-group" role="radiogroup" aria-label="Interaction Analysis Mode">
+          <button
+            type="button"
+            className={`dt-btn ${interactionMode === "EXPLORE" ? "active" : ""}`}
+            style={{ padding: "4px 10px", fontSize: "11px", fontWeight: 700 }}
+            onClick={() => handleInteractionModeChange("EXPLORE")}
+          >
+            EXPLORE
+          </button>
+          <button
+            type="button"
+            className={`dt-btn ${interactionMode === "TRACE" ? "active" : ""}`}
+            style={{ padding: "4px 10px", fontSize: "11px", fontWeight: 700 }}
+            onClick={() => handleInteractionModeChange("TRACE")}
+          >
+            TRACE
+          </button>
+          <button
+            type="button"
+            className={`dt-btn ${interactionMode === "RISK" ? "active" : ""}`}
+            style={{ padding: "4px 10px", fontSize: "11px", fontWeight: 700 }}
+            onClick={() => handleInteractionModeChange("RISK")}
+          >
+            RISK
+          </button>
+        </div>
+
         {/* View Mode Switcher: 2.5D | 3D | Table */}
         <div className="dt-toolbar-group">
           <button
@@ -362,11 +404,17 @@ export default function Terrain3DPage() {
             floodIntensity={floodIntensity}
             role={userRole}
             layers={layers}
+            interactionMode={interactionMode}
+            selectedNode={selectedNode}
             viewMode={viewMode}
             focusPosition={focusPosition}
             steriOverview={steriOverview}
             steriBaseline={compareWithBaseline ? steriBaseline : null}
             onSelectNode={setSelectedNode}
+            onExitTrace={() => {
+              handleInteractionModeChange("EXPLORE");
+              setSelectedNode(null);
+            }}
           />
 
           {/* Compact On-Map Legend Card (Item #7) */}
@@ -469,6 +517,13 @@ export default function Terrain3DPage() {
             viewMode={viewMode}
             onClose={() => setSelectedNode(null)}
             onOpenProvenance={() => setIsProvenanceOpen(true)}
+            onTraceToRiver={() => {
+              handleInteractionModeChange("TRACE");
+            }}
+            onShowDownstreamSensors={() => {
+              handleInteractionModeChange("TRACE");
+              setLayers((prev) => ({ ...prev, sensors: true, sourceSensorInfluence: true }));
+            }}
           />
         </div>
       )}

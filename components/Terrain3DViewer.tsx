@@ -107,17 +107,22 @@ export interface SelectedNodeInfo {
   raw?: any;
 }
 
+export type InteractionAnalysisMode = "EXPLORE" | "TRACE" | "RISK";
+
 interface Terrain3DViewerProps {
   lighting: LightingPreset;
   autoRotate: boolean;
   floodIntensity?: number; // 0 to 1
   role?: UserRoleOverlay;
   layers: LayerToggles;
+  interactionMode?: InteractionAnalysisMode;
+  selectedNode?: SelectedNodeInfo | null;
   viewMode?: "2.5D" | "3D" | "TABLE";
   focusPosition?: { x: number; y: number; z: number } | null;
   steriOverview?: SteriCityOverview | null;
   steriBaseline?: SteriCityOverview | null;
   onSelectNode: (node: SelectedNodeInfo | null) => void;
+  onExitTrace?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -270,10 +275,13 @@ export default function Terrain3DViewer({
   autoRotate,
   floodIntensity = 0,
   layers,
+  interactionMode = "EXPLORE",
+  selectedNode,
   focusPosition,
   steriOverview,
   steriBaseline,
   onSelectNode,
+  onExitTrace,
 }: Terrain3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -300,10 +308,13 @@ export default function Terrain3DViewer({
   const sourceSensorInfluenceGroupRef = useRef<THREE.Group>(new THREE.Group());
   const riverFlowArrowsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const clusterGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const traceHighlightGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const selectionRingGroupRef = useRef<THREE.Group>(new THREE.Group());
 
   const interactiveObjectsRef = useRef<THREE.Object3D[]>([]);
   const terrainMeshRef = useRef<THREE.Mesh | null>(null);
   const riverCurveRef = useRef<THREE.CatmullRomCurve3 | null>(null);
+  const hoveredMeshRef = useRef<THREE.Object3D | null>(null);
 
   const [hoveredTooltip, setHoveredTooltip] = useState<{
     x: number;
@@ -409,7 +420,7 @@ export default function Terrain3DViewer({
     sourceSensorInfluenceGroupRef.current.visible = Boolean(layers.sourceSensorInfluence);
   }, [layers]);
 
-  // API-fed STERI overlays: one terrain-draped mesh for each existing equivalent-area sector.
+  // API-fed STERI overlays: soft terrain-draped spatial risk fills with subtle perimeter boundaries.
   useEffect(() => {
     const group = steriRiskGroupRef.current;
     interactiveObjectsRef.current = interactiveObjectsRef.current.filter((object) => object.userData.type !== "steri_risk");
@@ -431,37 +442,48 @@ export default function Terrain3DViewer({
       "VERY HIGH": 0xf87171,
       CRITICAL: 0xb91c1c,
     };
+
+    const isAnySectorSelected = selectedNode?.type === "steri_risk";
+    const selectedSectorId = isAnySectorSelected ? selectedNode.id : null;
     const baselineById = new Map(steriBaseline?.units.map((unit) => [unit.id, unit]) || []);
+
     steriOverview.units.forEach((sector) => {
       const baseline = baselineById.get(sector.id);
       const scenarioDelta = baseline ? Number((sector.steriScore - baseline.steriScore).toFixed(3)) : 0;
-      const position = geoTo3D(sector.lat, sector.lon, 0.22);
+      const position = geoTo3D(sector.lat, sector.lon, 0.12);
       const radius = Math.sqrt(sector.areaKm2 / Math.PI) * 1000 * WORLD_SCALE;
       const geometry = new THREE.RingGeometry(0, radius, 64);
       geometry.rotateX(-Math.PI / 2);
       const vertices = geometry.attributes.position;
       for (let index = 0; index < vertices.count; index++) {
         const { lat, lon } = vector3DToGeo(position.x + vertices.getX(index), position.z + vertices.getZ(index));
-        vertices.setY(index, sampleTiruppurElevation(lat, lon) - position.y + 0.22);
+        vertices.setY(index, sampleTiruppurElevation(lat, lon) - position.y + 0.12);
       }
       vertices.needsUpdate = true;
       geometry.computeVertexNormals();
+
       const color = tierColors[sector.riskCategory] || 0x86efac;
-      
-      // 25-35% opacity flat fill without radial spokes (Item #3)
+      const isSelected = selectedSectorId === sector.id;
+
+      // Soft risk intensity scaling (high-risk areas visually stronger, low-risk quieter)
+      let targetOpacity = sector.steriScore * 0.18 + 0.05;
+      if (isAnySectorSelected) {
+        targetOpacity = isSelected ? 0.32 : 0.06;
+      }
+
       const mesh = new THREE.Mesh(
         geometry,
         new THREE.MeshBasicMaterial({
           color,
           transparent: true,
-          opacity: 0.28,
+          opacity: targetOpacity,
           side: THREE.DoubleSide,
           depthWrite: false,
         })
       );
       mesh.position.copy(position);
 
-      // Perimeter-only outline (no radial spokes - Item #3)
+      // Subtle perimeter boundary (hairline outline, no radar spokes)
       const ringPoints: THREE.Vector3[] = [];
       const segs = 64;
       for (let s = 0; s <= segs; s++) {
@@ -471,9 +493,30 @@ export default function Terrain3DViewer({
       const outlineGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
       const hairlineOutline = new THREE.LineLoop(
         outlineGeo,
-        new THREE.LineBasicMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.85 })
+        new THREE.LineBasicMaterial({
+          color: isSelected ? 0x0d9488 : 0x94a3b8,
+          transparent: true,
+          opacity: isSelected ? 0.9 : 0.4,
+        })
       );
       mesh.add(hairlineOutline);
+
+      // Compare with baseline subtle indicator outline if enabled
+      if (baseline && scenarioDelta !== 0) {
+        const baselineRadius = Math.sqrt((baseline.areaKm2 || sector.areaKm2) / Math.PI) * 1000 * WORLD_SCALE;
+        const deltaRingPoints: THREE.Vector3[] = [];
+        for (let s = 0; s <= segs; s++) {
+          const theta = (s / segs) * Math.PI * 2;
+          deltaRingPoints.push(new THREE.Vector3((baselineRadius + scenarioDelta * 2) * Math.cos(theta), 0.03, (baselineRadius + scenarioDelta * 2) * Math.sin(theta)));
+        }
+        const deltaOutlineMat = new THREE.LineBasicMaterial({
+          color: scenarioDelta > 0 ? 0xb91c1c : 0x15803d,
+          transparent: true,
+          opacity: 0.5,
+        });
+        const deltaLoop = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(deltaRingPoints), deltaOutlineMat);
+        mesh.add(deltaLoop);
+      }
 
       mesh.userData = {
         type: "steri_risk",
@@ -494,7 +537,7 @@ export default function Terrain3DViewer({
       interactiveObjectsRef.current.push(mesh);
       group.add(mesh);
     });
-  }, [steriOverview, steriBaseline]);
+  }, [steriOverview, steriBaseline, selectedNode]);
 
   // Flood Intensity Level
   useEffect(() => {
@@ -502,6 +545,132 @@ export default function Terrain3DViewer({
       floodMeshRef.current.position.y = 0.6 + floodIntensity * 2.2;
     }
   }, [floodIntensity]);
+
+  // TRACE Mode Highlight & Visually De-emphasize Unrelated Objects
+  useEffect(() => {
+    const traceGroup = traceHighlightGroupRef.current;
+    traceGroup.clear();
+
+    const isTraceMode = interactionMode === "TRACE";
+    const selectedUnitId =
+      selectedNode?.type === "unit"
+        ? selectedNode.id
+        : selectedNode?.type === "outfall"
+        ? selectedNode.raw?.unit?.unit_id
+        : null;
+
+    if (isTraceMode && selectedUnitId) {
+      // 1. Visually de-emphasize unrelated objects (dim buildings & roads)
+      buildingsGroupRef.current.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material) {
+          const mat = Array.isArray(child.material) ? child.material[0] : child.material;
+          mat.transparent = true;
+          mat.opacity = 0.12;
+        }
+      });
+
+      roadsGroupRef.current.traverse((child) => {
+        if (child instanceof THREE.LineSegments && child.material) {
+          const mat = Array.isArray(child.material) ? child.material[0] : child.material;
+          mat.opacity = 0.08;
+        }
+      });
+
+      let activeUnitPos: THREE.Vector3 | null = null;
+
+      // 2. Highlight target unit
+      unitsGroupRef.current.children.forEach((child) => {
+        const uData = child.children.find((c) => c.userData?.type === "unit")?.userData?.data;
+        if (uData?.unit?.unit_id === selectedUnitId) {
+          child.scale.set(1.4, 1.4, 1.4);
+          activeUnitPos = child.position.clone();
+          // Smooth camera focus on source
+          targetCamPosRef.current = new THREE.Vector3(child.position.x + 12, child.position.y + 14, child.position.z + 16);
+          targetLookAtRef.current = new THREE.Vector3(child.position.x, child.position.y, child.position.z);
+        } else {
+          child.scale.set(0.65, 0.65, 0.65);
+        }
+      });
+
+      // 3. Highlight Noyyal River route downstream from outfall along active curve
+      if (riverCurveRef.current) {
+        const curve = riverCurveRef.current;
+        const pts: THREE.Vector3[] = [];
+        const steps = 80;
+        const startT = 0.2;
+        for (let i = 0; i <= steps; i++) {
+          const t = startT + (1.0 - startT) * (i / steps);
+          const p = curve.getPoint(Math.min(0.999, t));
+          p.y += 0.35;
+          pts.push(p);
+        }
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+        const lineMat = new THREE.LineBasicMaterial({
+          color: 0x06b6d4,
+          transparent: true,
+          opacity: 0.95,
+        });
+        const traceLine = new THREE.Line(lineGeo, lineMat);
+        traceGroup.add(traceLine);
+      }
+    } else {
+      // Restore normal visual presentation
+      buildingsGroupRef.current.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material) {
+          const mat = Array.isArray(child.material) ? child.material[0] : child.material;
+          mat.transparent = false;
+          mat.opacity = 1.0;
+        }
+      });
+
+      roadsGroupRef.current.traverse((child) => {
+        if (child instanceof THREE.LineSegments && child.material) {
+          const mat = Array.isArray(child.material) ? child.material[0] : child.material;
+          mat.opacity = 0.45;
+        }
+      });
+
+      unitsGroupRef.current.children.forEach((child) => {
+        child.scale.set(1, 1, 1);
+      });
+    }
+  }, [interactionMode, selectedNode]);
+
+  // Selection Ring Overlay for active selected entity
+  useEffect(() => {
+    const group = selectionRingGroupRef.current;
+    group.clear();
+    if (!selectedNode || selectedNode.latitude === undefined || selectedNode.longitude === undefined) return;
+
+    const pos = geoTo3D(selectedNode.latitude, selectedNode.longitude, 0.25);
+    const ringGeo = new THREE.RingGeometry(1.2, 1.45, 32);
+    ringGeo.rotateX(-Math.PI / 2);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x0d9488,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.9,
+    });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    ringMesh.position.copy(pos);
+    group.add(ringMesh);
+  }, [selectedNode]);
+
+  // Lighting Preset Handler (Day / Dusk / Night)
+  useEffect(() => {
+    if (!sceneRef.current) return;
+    const scene = sceneRef.current;
+    if (lighting === "dusk") {
+      scene.background = new THREE.Color(0xf1f5f9);
+      if (scene.fog) scene.fog.color = new THREE.Color(0xe2e8f0);
+    } else if (lighting === "night") {
+      scene.background = new THREE.Color(0x0f172a);
+      if (scene.fog) scene.fog.color = new THREE.Color(0x0f172a);
+    } else {
+      scene.background = new THREE.Color(0xf8fafc);
+      if (scene.fog) scene.fog.color = new THREE.Color(0xf8fafc);
+    }
+  }, [lighting]);
 
   // Scene Setup
   useEffect(() => {
@@ -542,16 +711,19 @@ export default function Terrain3DViewer({
     scene.add(pollutionPlumeGroupRef.current);
     scene.add(sourceSensorInfluenceGroupRef.current);
     scene.add(clusterGroupRef.current);
+    scene.add(traceHighlightGroupRef.current);
+    scene.add(selectionRingGroupRef.current);
 
-    // Narrower FOV 35 to reduce perspective distortion, ~35° tilt angle from vertical (Item #5)
-    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 1000);
-    camera.position.set(0, 50, 35);
+    // Elevated Oblique City-Level Perspective (~40° tilt angle from vertical)
+    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 1000);
+    camera.position.set(0, 42, 58);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     while (container.firstChild) container.removeChild(container.firstChild);
@@ -562,22 +734,31 @@ export default function Terrain3DViewer({
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.maxPolarAngle = Math.PI / 2 - 0.08;
-    controls.minDistance = 15;
-    controls.maxDistance = 110;
+    controls.minDistance = 12;
+    controls.maxDistance = 120;
     controls.target.set(0, 0, 0);
     controlsRef.current = controls;
 
-    // Neutral White Lighting - NO sky blue or navy ground lights (Item #1)
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 0.9);
+    // Soft Scientific Environment Lighting
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xe2e8f0, 0.85);
     hemiLight.position.set(0, 50, 0);
     scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
-    dirLight.position.set(30, 60, 40);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.25);
+    dirLight.position.set(35, 65, 45);
     dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 160;
+    dirLight.shadow.camera.left = -60;
+    dirLight.shadow.camera.right = 60;
+    dirLight.shadow.camera.top = 60;
+    dirLight.shadow.camera.bottom = -60;
+    dirLight.shadow.bias = -0.0005;
     scene.add(dirLight);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
     scene.add(ambientLight);
 
     // Layer Builder Context
@@ -1091,8 +1272,27 @@ export default function Terrain3DViewer({
       });
     };
 
+    const handleDoubleClick = (event: MouseEvent) => {
+      if (!rendererRef.current || !cameraRef.current) return;
+      const rect = rendererRef.current.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, cameraRef.current);
+      const intersects = raycaster.intersectObjects(interactiveObjectsRef.current, false);
+
+      if (intersects.length > 0) {
+        const hit = intersects[0];
+        if (hit.point) {
+          targetCamPosRef.current = new THREE.Vector3(hit.point.x + 10, hit.point.y + 12, hit.point.z + 14);
+          targetLookAtRef.current = new THREE.Vector3(hit.point.x, hit.point.y, hit.point.z);
+        }
+      }
+    };
+
     renderer.domElement.addEventListener("click", handlePointerDown);
     renderer.domElement.addEventListener("mousemove", handlePointerMove);
+    renderer.domElement.addEventListener("dblclick", handleDoubleClick);
 
     // Animation Loop
     let animId: number;
@@ -1150,6 +1350,17 @@ export default function Terrain3DViewer({
             mesh.position.y += 0.3;
           });
         }
+      }
+
+      // Animate Sensor Pulse Rings
+      if (sensorsGroupRef.current) {
+        sensorsGroupRef.current.traverse((child) => {
+          if (child.name === "Sensor_Pulse_Ring" && child instanceof THREE.Mesh) {
+            const pulse = (elapsedTime * 1.5) % 1;
+            child.scale.set(1 + pulse * 0.5, 1 + pulse * 0.5, 1);
+            (child.material as THREE.MeshBasicMaterial).opacity = 0.5 * (1 - pulse);
+          }
+        });
       }
 
       renderer.render(scene, camera);
@@ -1242,6 +1453,7 @@ export default function Terrain3DViewer({
       window.removeEventListener("export-dt-figure", handleExportFigure);
       renderer.domElement.removeEventListener("click", handlePointerDown);
       renderer.domElement.removeEventListener("mousemove", handlePointerMove);
+      renderer.domElement.removeEventListener("dblclick", handleDoubleClick);
       renderer.dispose();
     };
   }, [autoRotate, onSelectNode, hydroGisDataset, roadsGisDataset, buildingsGisDataset]);
@@ -1256,6 +1468,36 @@ export default function Terrain3DViewer({
         background: "#f8fafc",
       }}
     >
+      {/* Floating Exit Trace Control Button when in TRACE mode */}
+      {interactionMode === "TRACE" && (
+        <button
+          type="button"
+          onClick={onExitTrace}
+          className="dt-btn active"
+          style={{
+            position: "absolute",
+            top: "14px",
+            right: "14px",
+            zIndex: 100,
+            background: "#0d9488",
+            color: "#ffffff",
+            borderColor: "#0d9488",
+            padding: "6px 12px",
+            fontSize: "11px",
+            fontWeight: 700,
+            boxShadow: "var(--shadow-md)",
+            borderRadius: "var(--radius-sm)",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            cursor: "pointer",
+          }}
+          aria-label="Exit Trace Mode"
+        >
+          <span>✕</span> Exit Trace
+        </button>
+      )}
+
       {/* Hover Tooltip Overlay (Item #2) */}
       {hoveredTooltip && (
         <div
