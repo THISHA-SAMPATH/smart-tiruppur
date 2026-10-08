@@ -284,7 +284,7 @@ export default function Terrain3DViewer({
   onSelectNode,
   onExitTrace,
 }: Terrain3DViewerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const threeHostRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -705,10 +705,10 @@ export default function Terrain3DViewer({
 
   // Scene Setup
   useEffect(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    const width = container.clientWidth || window.innerWidth;
-    const height = container.clientHeight || window.innerHeight;
+    if (!threeHostRef.current) return;
+    const host = threeHostRef.current;
+    const width = host.clientWidth || window.innerWidth;
+    const height = host.clientHeight || window.innerHeight;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf8fafc);
@@ -757,8 +757,8 @@ export default function Terrain3DViewer({
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    while (container.firstChild) container.removeChild(container.firstChild);
-    container.appendChild(renderer.domElement);
+    while (host.firstChild) host.removeChild(host.firstChild);
+    host.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -1473,9 +1473,9 @@ export default function Terrain3DViewer({
     };
 
     const handleResize = () => {
-      if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
-      const w = containerRef.current.clientWidth;
-      const h = containerRef.current.clientHeight;
+      if (!threeHostRef.current || !rendererRef.current || !cameraRef.current) return;
+      const w = threeHostRef.current.clientWidth;
+      const h = threeHostRef.current.clientHeight;
       cameraRef.current.aspect = w / h;
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
@@ -1489,16 +1489,20 @@ export default function Terrain3DViewer({
       if (hoverAnimationFrameId !== null) cancelAnimationFrame(hoverAnimationFrameId);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("export-dt-figure", handleExportFigure);
-      renderer.domElement.removeEventListener("click", handlePointerDown);
-      renderer.domElement.removeEventListener("mousemove", handlePointerMove);
-      renderer.domElement.removeEventListener("dblclick", handleDoubleClick);
+      if (renderer.domElement) {
+        renderer.domElement.removeEventListener("click", handlePointerDown);
+        renderer.domElement.removeEventListener("mousemove", handlePointerMove);
+        renderer.domElement.removeEventListener("dblclick", handleDoubleClick);
+      }
+      if (host.contains(renderer.domElement)) {
+        host.removeChild(renderer.domElement);
+      }
       renderer.dispose();
     };
   }, [autoRotate, onSelectNode, hydroGisDataset, roadsGisDataset, buildingsGisDataset]);
 
   return (
     <div
-      ref={containerRef}
       style={{
         width: "100%",
         height: "100%",
@@ -1506,6 +1510,18 @@ export default function Terrain3DViewer({
         background: "#f8fafc",
       }}
     >
+      {/* Dedicated Three.js WebGL canvas host element (isolated from React JSX children) */}
+      <div
+        ref={threeHostRef}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          overflow: "hidden",
+        }}
+      />
       {/* Floating Exit Trace Control Button when in TRACE mode */}
       {interactionMode === "TRACE" && (
         <button
