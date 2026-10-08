@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import type { SelectedNodeInfo } from "../Terrain3DViewer";
 import DataProvenanceCard from "@/components/provenance/DataProvenanceCard";
 import SourceBadge, { SourceType } from "@/components/provenance/SourceBadge";
@@ -78,7 +77,6 @@ export default function InspectorPanel({
       ? selectedNode.raw
       : null;
   const unit = industrialSelection?.unit;
-  const outfall = industrialSelection?.outfall;
   const sourceStrength = industrialSelection?.sourceStrength;
   const normalizedSourceStrength = industrialSelection?.normalizedSourceStrength;
   const sensorSelection = selectedNode.type === "sensor" ? selectedNode.raw : null;
@@ -90,28 +88,28 @@ export default function InspectorPanel({
       ? "HISTORICAL"
       : "SIMULATED";
 
-  const getStatusChipStyle = (status?: string) => {
+  const getStatusBadgeStyle = (status?: string) => {
     switch (status) {
       case "INVESTIGATE":
       case "CRITICAL":
-        return { color: "#b91c1c", background: "#fee2e2", border: "1px solid #fca5a5" };
+        return { color: "#b91c1c", background: "#fee2e2" };
       case "WARNING":
       case "VERY HIGH":
       case "HIGH":
       case "MODERATE":
       case "SEMI-CRITICAL":
       case "OVER-EXPLOITED":
-        return { color: "#b45309", background: "#fef3c7", border: "1px solid #fde68a" };
+        return { color: "#b45309", background: "#fef3c7" };
       case "SAFE":
       case "COMPLIANT":
       case "NORMAL":
-        return { color: "#15803d", background: "#dcfce7", border: "1px solid #86efac" };
+        return { color: "#15803d", background: "#dcfce7" };
       default:
-        return { color: "#0f766e", background: "#ccfbf1", border: "1px solid #99f6e4" };
+        return { color: "#0f766e", background: "#ccfbf1" };
     }
   };
 
-  const getStatusColor = (status?: string) => getStatusChipStyle(status).color;
+  const getStatusColor = (status?: string) => getStatusBadgeStyle(status).color;
 
   return (
     <aside
@@ -120,235 +118,228 @@ export default function InspectorPanel({
       aria-label="Entity Inspector Panel"
       tabIndex={-1}
       style={{
-        width: "320px",
+        width: "340px",
         maxHeight: "calc(100vh - 120px)",
         overflowY: "auto",
+        background: "rgba(255, 255, 255, 0.92)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        border: "1px solid rgba(226, 232, 240, 0.8)",
+        borderRadius: "12px",
+        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.04)",
+        padding: "14px",
       }}
     >
-      {/* PANEL HEADER WITH CLOSE BUTTON */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-        <div className="dt-section-title" style={{ borderBottom: "none", margin: 0, fontSize: "11px" }}>
-          CONTEXTUAL INSPECTOR
+      {/* 1. TITLE & PROVENANCE BADGE HEADER */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: "10px", borderBottom: "1px solid #f1f5f9" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+          <div style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", lineHeight: 1.2 }}>{selectedNode.name}</div>
+          <div style={{ fontSize: "11px", color: "#64748b", display: "flex", gap: "6px", alignItems: "center", marginTop: "2px" }}>
+            <span>{selectedNode.designation}</span>
+            <SourceBadge type={sourceType} />
+          </div>
         </div>
         <button
           type="button"
           aria-label="Close Inspector"
-          style={{ background: "transparent", border: "none", color: "var(--ink-soft)", cursor: "pointer", fontSize: "15px", padding: "2px 6px" }}
+          style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "16px", padding: "0 4px", lineHeight: 1 }}
           onClick={handleClose}
         >
           ✕
         </button>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {/* ENTITY HEADER CARD */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-          <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>{selectedNode.name}</div>
-          <div style={{ fontSize: "11px", color: "var(--ink-soft)", display: "flex", gap: "6px", alignItems: "center" }}>
-            <span>{selectedNode.designation}</span>
-            <SourceBadge type={sourceType} />
-          </div>
-        </div>
-
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
         {/* ------------------------------------------------------------------ */}
-        {/* 1. INDUSTRIAL SOURCE INSPECTOR                                    */}
+        {/* INDUSTRIAL SOURCE INSPECTOR                                        */}
         {/* ------------------------------------------------------------------ */}
         {industrialSelection && (
           <>
-            <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase" }}>Source Metrics</span>
-                <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 6px", borderRadius: "var(--radius-sm)", ...getStatusChipStyle(selectedNode.status) }}>
-                  {selectedNode.status || "COMPLIANT"}
-                </span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>FACILITY TELEMETRY</span>
+              <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", ...getStatusBadgeStyle(selectedNode.status) }}>
+                {selectedNode.status || "COMPLIANT"}
+              </span>
+            </div>
+
+            {/* 2-COLUMN METRIC ROWS */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "11px", fontFamily: "JetBrains Mono, monospace" }}>
+              <div style={{ padding: "6px 8px", background: "#f8fafc", borderRadius: "6px" }}>
+                <span style={{ color: "#64748b", fontSize: "9.5px", display: "block", fontFamily: "sans-serif" }}>TYPE</span>
+                <strong style={{ color: "#0f172a" }}>{unit?.type || selectedNode.designation || "Dyeing"}</strong>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "11.5px", fontFamily: "JetBrains Mono, monospace" }}>
-                <div>
-                  <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>TYPE</span>
-                  <strong style={{ color: "var(--ink)" }}>{unit?.type || selectedNode.designation || "Dyeing"}</strong>
-                </div>
-                <div>
-                  <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>FLOW</span>
-                  <strong style={{ color: "var(--ink)" }}>{unit?.flow ?? "—"} L/s</strong>
-                </div>
-                <div style={{ gridColumn: "span 2" }}>
-                  <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>SOURCE STRENGTH</span>
-                  <strong style={{ color: "var(--teal)" }}>
-                    {sourceStrength ? `${sourceStrength.toFixed(0)} (${(normalizedSourceStrength! * 100).toFixed(0)}% Index)` : "—"}
-                  </strong>
-                </div>
+              <div style={{ padding: "6px 8px", background: "#f8fafc", borderRadius: "6px" }}>
+                <span style={{ color: "#64748b", fontSize: "9.5px", display: "block", fontFamily: "sans-serif" }}>FLOW</span>
+                <strong style={{ color: "#0f172a" }}>{unit?.flow ?? "—"} L/s</strong>
+              </div>
+              <div style={{ gridColumn: "span 2", padding: "6px 8px", background: "#f0fdfa", border: "1px solid #ccfbf1", borderRadius: "6px" }}>
+                <span style={{ color: "#0d9488", fontSize: "9.5px", display: "block", fontFamily: "sans-serif", fontWeight: 700 }}>SOURCE STRENGTH INDEX</span>
+                <strong style={{ color: "#0d9488" }}>
+                  {sourceStrength ? `${sourceStrength.toFixed(0)} (${(normalizedSourceStrength! * 100).toFixed(0)}% Index)` : "—"}
+                </strong>
               </div>
             </div>
 
             {/* PRIMARY ACTION BUTTONS */}
-            <div style={{ display: "flex", gap: "6px" }}>
+            <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
               <button
                 type="button"
                 className="dt-btn active"
-                style={{ flex: 1, padding: "6px", fontSize: "10.5px", fontWeight: 700, background: "var(--teal)", color: "#ffffff", borderColor: "var(--teal)", textAlign: "center" }}
+                style={{ flex: 1, padding: "6px 10px", fontSize: "11px", fontWeight: 700, background: "#0d9488", color: "#ffffff", borderColor: "#0d9488", textAlign: "center", borderRadius: "6px" }}
                 onClick={() => onTraceToRiver?.(unit?.unit_id || selectedNode.id)}
               >
-                🌊 Trace to River
+                🌊 Trace
               </button>
               <button
                 type="button"
                 className="dt-btn"
-                style={{ flex: 1, padding: "6px", fontSize: "10.5px", fontWeight: 700, textAlign: "center" }}
+                style={{ flex: 1, padding: "6px 10px", fontSize: "11px", fontWeight: 700, textAlign: "center", borderRadius: "6px" }}
                 onClick={() => onShowDownstreamSensors?.(unit?.unit_id || selectedNode.id)}
               >
                 📡 Downstream Sensors
               </button>
             </div>
+            <div style={{ borderBottom: "1px solid #f1f5f9", marginTop: "4px" }} />
           </>
         )}
 
         {/* ------------------------------------------------------------------ */}
-        {/* 2. SENSOR NODE INSPECTOR                                          */}
+        {/* SENSOR NODE INSPECTOR                                             */}
         {/* ------------------------------------------------------------------ */}
         {sensorSelection && (
-          <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <div style={{ fontSize: "10px", fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase" }}>
-              Station Telemetry
+          <>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              STATION TELEMETRY
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "11.5px", fontFamily: "JetBrains Mono, monospace" }}>
-              <div>
-                <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>pH</span>
-                <strong style={{ color: "var(--ink)" }}>{sensorSelection.ph}</strong>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "11px", fontFamily: "JetBrains Mono, monospace" }}>
+              <div style={{ padding: "6px", background: "#f8fafc", borderRadius: "6px" }}>
+                <span style={{ color: "#64748b", fontSize: "9.5px", display: "block", fontFamily: "sans-serif" }}>pH</span>
+                <strong style={{ color: "#0f172a" }}>{sensorSelection.ph}</strong>
               </div>
-              <div>
-                <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>EC</span>
-                <strong style={{ color: "var(--ink)" }}>{sensorSelection.ec} µS/cm</strong>
+              <div style={{ padding: "6px", background: "#f8fafc", borderRadius: "6px" }}>
+                <span style={{ color: "#64748b", fontSize: "9.5px", display: "block", fontFamily: "sans-serif" }}>EC</span>
+                <strong style={{ color: "#0f172a" }}>{sensorSelection.ec} µS/cm</strong>
               </div>
-              <div>
-                <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>TURBIDITY</span>
-                <strong style={{ color: "var(--ink)" }}>{sensorSelection.turbidity} NTU</strong>
+              <div style={{ padding: "6px", background: "#f8fafc", borderRadius: "6px" }}>
+                <span style={{ color: "#64748b", fontSize: "9.5px", display: "block", fontFamily: "sans-serif" }}>TURBIDITY</span>
+                <strong style={{ color: "#0f172a" }}>{sensorSelection.turbidity} NTU</strong>
               </div>
-              <div>
-                <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>FLOW</span>
-                <strong style={{ color: "var(--ink)" }}>{sensorSelection.flow} L/s</strong>
+              <div style={{ padding: "6px", background: "#f8fafc", borderRadius: "6px" }}>
+                <span style={{ color: "#64748b", fontSize: "9.5px", display: "block", fontFamily: "sans-serif" }}>FLOW</span>
+                <strong style={{ color: "#0f172a" }}>{sensorSelection.flow} L/s</strong>
               </div>
             </div>
-            <div style={{ marginTop: "4px", paddingTop: "4px", borderTop: "1px dashed var(--hairline)", fontSize: "11px", color: "var(--teal)", fontWeight: 600 }}>
+            <div style={{ fontSize: "10.5px", color: "#0d9488", fontWeight: 600, marginTop: "2px" }}>
               Relative Source Influence: {(sensorSelection.simulatedSourceInfluence * 100).toFixed(0)}%
             </div>
-          </div>
+            <div style={{ borderBottom: "1px solid #f1f5f9", marginTop: "4px" }} />
+          </>
         )}
 
         {/* ------------------------------------------------------------------ */}
-        {/* 3. STERI ENVIRONMENTAL RISK SECTOR INSPECTOR                       */}
+        {/* STERI ENVIRONMENTAL RISK SECTOR INSPECTOR                          */}
         {/* ------------------------------------------------------------------ */}
         {selectedNode.type === "steri_risk" && (
           <>
-            <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase" }}>STERI RISK INDEX</span>
-                <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 6px", borderRadius: "var(--radius-sm)", ...getStatusChipStyle(selectedNode.riskCategory) }}>
-                  {selectedNode.riskCategory}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>STERI RISK INDEX</span>
+              <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", ...getStatusBadgeStyle(selectedNode.riskCategory) }}>
+                {selectedNode.riskCategory}
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+              <span style={{ fontSize: "22px", fontWeight: 800, fontFamily: "JetBrains Mono, monospace", color: getStatusColor(selectedNode.riskCategory) }}>
+                {selectedNode.steriScore?.toFixed(3) ?? "—"}
+              </span>
+              <span style={{ fontSize: "10.5px", color: "#64748b" }}>/ 1.000</span>
+              {selectedNode.scenarioDelta !== undefined && selectedNode.scenarioDelta !== 0 && (
+                <span style={{ fontSize: "10.5px", fontWeight: 700, color: selectedNode.scenarioDelta > 0 ? "#b91c1c" : "#0d9488", marginLeft: "auto" }}>
+                  {selectedNode.scenarioDelta > 0 ? "+" : ""}{selectedNode.scenarioDelta.toFixed(3)} vs baseline
                 </span>
-              </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-                <span style={{ fontSize: "24px", fontWeight: 800, fontFamily: "JetBrains Mono, monospace", color: getStatusColor(selectedNode.riskCategory) }}>
-                  {selectedNode.steriScore?.toFixed(3) ?? "—"}
-                </span>
-                <span style={{ fontSize: "11px", color: "var(--ink-soft)" }}>/ 1.000</span>
-                {selectedNode.scenarioDelta !== undefined && selectedNode.scenarioDelta !== 0 && (
-                  <span style={{ fontSize: "10.5px", fontWeight: 700, color: selectedNode.scenarioDelta > 0 ? "var(--risk-5)" : "var(--teal)", marginLeft: "auto" }}>
-                    {selectedNode.scenarioDelta > 0 ? "+" : ""}{selectedNode.scenarioDelta.toFixed(3)} vs baseline
-                  </span>
-                )}
-              </div>
-              <div style={{ fontSize: "11px", color: "var(--ink)" }}>
-                Dominant Factor: <strong>{selectedNode.dominantFactorLabel}</strong>
-              </div>
+              )}
+            </div>
+            <div style={{ fontSize: "11px", color: "#334155" }}>
+              Dominant Factor: <strong>{selectedNode.dominantFactorLabel}</strong>
             </div>
 
-            {/* SIX EXISTING COMPONENT CONTRIBUTIONS */}
+            {/* COMPONENT CONTRIBUTIONS */}
             {selectedNode.componentScores && (
-              <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  Component Contributions (6 Factors)
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Component Contributions
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", fontSize: "10.5px" }}>
-                  <div style={{ background: "var(--paper)", padding: "3px 5px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "var(--ink-soft)" }}>Pollution:</span>
+                  <div style={{ padding: "3px 6px", background: "#f8fafc", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Pollution:</span>
                     <strong style={{ fontFamily: "JetBrains Mono, monospace" }}>{(selectedNode.componentScores.pollution * 100).toFixed(0)}%</strong>
                   </div>
-                  <div style={{ background: "var(--paper)", padding: "3px 5px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "var(--ink-soft)" }}>Water Quality:</span>
+                  <div style={{ padding: "3px 6px", background: "#f8fafc", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Water Quality:</span>
                     <strong style={{ fontFamily: "JetBrains Mono, monospace" }}>{(selectedNode.componentScores.waterQuality * 100).toFixed(0)}%</strong>
                   </div>
-                  <div style={{ background: "var(--paper)", padding: "3px 5px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "var(--ink-soft)" }}>Flood Risk:</span>
+                  <div style={{ padding: "3px 6px", background: "#f8fafc", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Flood Risk:</span>
                     <strong style={{ fontFamily: "JetBrains Mono, monospace" }}>{(selectedNode.componentScores.flood * 100).toFixed(0)}%</strong>
                   </div>
-                  <div style={{ background: "var(--paper)", padding: "3px 5px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "var(--ink-soft)" }}>Groundwater:</span>
+                  <div style={{ padding: "3px 6px", background: "#f8fafc", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Groundwater:</span>
                     <strong style={{ fontFamily: "JetBrains Mono, monospace" }}>{(selectedNode.componentScores.groundwater * 100).toFixed(0)}%</strong>
                   </div>
-                  <div style={{ background: "var(--paper)", padding: "3px 5px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "var(--ink-soft)" }}>Industrial:</span>
+                  <div style={{ padding: "3px 6px", background: "#f8fafc", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Industrial:</span>
                     <strong style={{ fontFamily: "JetBrains Mono, monospace" }}>{((selectedNode.componentScores.industrialPressure ?? 0.7) * 100).toFixed(0)}%</strong>
                   </div>
-                  <div style={{ background: "var(--paper)", padding: "3px 5px", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "var(--ink-soft)" }}>Complaints:</span>
+                  <div style={{ padding: "3px 6px", background: "#f8fafc", borderRadius: "4px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Complaints:</span>
                     <strong style={{ fontFamily: "JetBrains Mono, monospace" }}>{((selectedNode.componentScores.complaintIntensity ?? 0.6) * 100).toFixed(0)}%</strong>
                   </div>
                 </div>
               </div>
             )}
+            <div style={{ borderBottom: "1px solid #f1f5f9", marginTop: "4px" }} />
           </>
         )}
 
         {/* ------------------------------------------------------------------ */}
-        {/* 4. ORDINARY OSM BUILDING INSPECTOR (COMPACT CARD ONLY)              */}
+        {/* ORDINARY BUILDING FOOTPRINT INSPECTOR                              */}
         {/* ------------------------------------------------------------------ */}
         {selectedNode.type === "building" && (
-          <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase" }}>Building Footprint Info</span>
-              <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 6px", borderRadius: "var(--radius-sm)", background: "#f1f5f9", color: "#475569", border: "1px solid #cbd5e1" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>BUILDING FOOTPRINT</span>
+              <span style={{ fontSize: "9.5px", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", background: "#f1f5f9", color: "#475569" }}>
                 OPEN_DATA
               </span>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "11.5px" }}>
-              <div>
-                <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>BUILDING NAME / ID</span>
-                <strong style={{ color: "var(--ink)" }}>{selectedNode.name || "OSM Building Footprint"}</strong>
-              </div>
-              <div>
-                <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>BUILDING TYPE</span>
-                <strong style={{ color: "var(--ink)" }}>{selectedNode.designation || "Building footprint"}</strong>
-              </div>
-              <div>
-                <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>DATA SOURCE</span>
-                <strong style={{ color: "var(--ink)" }}>OpenStreetMap</strong>
-              </div>
+            <div style={{ color: "#334155", marginTop: "2px" }}>
+              Source: <strong>OpenStreetMap Geometry</strong>
             </div>
+            <div style={{ borderBottom: "1px solid #f1f5f9", marginTop: "4px" }} />
           </div>
         )}
 
         {/* ------------------------------------------------------------------ */}
-        {/* COLLAPSIBLE DATA & MODEL SECTION                                  */}
+        {/* COLLAPSIBLE TECHNICAL DETAILS SECTION                              */}
         {/* ------------------------------------------------------------------ */}
-        <div style={{ marginTop: "4px" }}>
+        <div style={{ marginTop: "2px" }}>
           <button
             type="button"
             className="dt-btn"
-            style={{ width: "100%", justifyContent: "space-between", fontSize: "11px", fontWeight: 700, padding: "5px 8px" }}
+            style={{ width: "100%", justifyContent: "space-between", fontSize: "10.5px", fontWeight: 700, padding: "5px 8px", borderRadius: "6px" }}
             onClick={() => setIsDetailsOpen(!isDetailsOpen)}
           >
-            <span>📜 Data & Model Provenance</span>
+            <span>📜 Technical Details & Provenance</span>
             <span>{isDetailsOpen ? "▲" : "▼"}</span>
           </button>
 
           {isDetailsOpen && (
-            <div style={{ marginTop: "6px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
               {sensorSelection && <AttributionList stationId={sensorSelection.sensor_id} />}
               {industrialSelection && (
                 <button
                   type="button"
                   className="dt-btn"
-                  style={{ width: "100%", textAlign: "center", background: "var(--teal-soft)", color: "var(--teal)", borderColor: "var(--teal)", fontSize: "11px" }}
+                  style={{ width: "100%", textAlign: "center", background: "#f0fdfa", color: "#0d9488", borderColor: "#99f6e4", fontSize: "10.5px", borderRadius: "6px" }}
                   onClick={onOpenProvenance}
                 >
                   🔒 View Ledger SHA-256 Hash
@@ -362,3 +353,4 @@ export default function InspectorPanel({
     </aside>
   );
 }
+

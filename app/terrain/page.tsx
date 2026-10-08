@@ -403,137 +403,141 @@ export default function Terrain3DPage() {
   return (
     <div className="twin-page dt-container" style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* -------------------------------------------------------------------- */}
-      {/* 1. 56PX MAIN NAVIGATION HEADER                                       */}
+      {/* 1. SLIM 52PX MAIN NAVIGATION HEADER                                  */}
       {/* -------------------------------------------------------------------- */}
       <header
         style={{
-          height: "56px",
-          background: "#ffffff",
-          borderBottom: "1px solid #e2e8f0",
+          height: "52px",
+          background: "rgba(255, 255, 255, 0.90)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(226, 232, 240, 0.8)",
           padding: "0 16px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           zIndex: 10,
           flexShrink: 0,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.02)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ background: "#0f766e", color: "#ffffff", padding: "3px 7px", borderRadius: "4px", fontSize: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>
-            DECISION-SUPPORT
+          <span style={{ background: "#0f766e", color: "#ffffff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>
+            DECISION SUPPORT
           </span>
-          <div>
-            <h1 style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a", margin: 0, lineHeight: 1.2 }}>
-              Tiruppur Environmental Digital Twin
-            </h1>
-            <p style={{ fontSize: "10px", color: "#64748b", margin: 0 }}>
-              Guided spatial decision support & scenario analysis
-            </p>
-          </div>
+          <h1 style={{ fontSize: "14px", fontWeight: 800, color: "#0f172a", margin: 0 }}>
+            Tiruppur Digital Twin
+          </h1>
         </div>
 
-        {/* Compact summary state metrics */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px" }}>
-            <span style={{ color: "#64748b", fontWeight: 500 }}>STERI Score:</span>
+        {/* Compact inline status summary chips */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <span style={{ color: "#64748b" }}>STERI</span>
             <strong style={{ color: "#0f172a" }}>{steriOverview?.citywideScore ? steriOverview.citywideScore.toFixed(3) : "0.542"}</strong>
             <SourceBadge type="MODELLED" />
           </div>
-          <div style={{ height: "14px", width: "1px", background: "#cbd5e1" }} />
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px" }}>
-            <span style={{ color: "#64748b", fontWeight: 500 }}>High-Risk Sectors:</span>
-            <strong style={{ color: "#b91c1c" }}>{steriOverview?.units.filter((u) => u.riskCategory === "HIGH" || u.riskCategory === "VERY HIGH" || u.riskCategory === "CRITICAL").length ?? 3} / 6</strong>
+          <span style={{ color: "#cbd5e1" }}>·</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <strong style={{ color: "#b91c1c" }}>{steriOverview?.units.filter((u) => u.riskCategory === "HIGH" || u.riskCategory === "VERY HIGH" || u.riskCategory === "CRITICAL").length ?? 3}/6 high-risk</strong>
             <SourceBadge type="MODELLED" />
           </div>
-          <div style={{ height: "14px", width: "1px", background: "#cbd5e1" }} />
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px" }}>
-            <span style={{ color: "#64748b", fontWeight: 500 }}>Facilities:</span>
-            <strong style={{ color: "#0f172a" }}>{unitCount}</strong>
+          <span style={{ color: "#cbd5e1" }}>·</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <strong style={{ color: "#0f172a" }}>{unitCount} facilities</strong>
+            <SourceBadge type="SIMULATED" />
+          </div>
+          <span style={{ color: "#cbd5e1" }}>·</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <strong style={{ color: "#0d9488" }}>3 sensors</strong>
             <SourceBadge type="SIMULATED" />
           </div>
         </div>
       </header>
 
       {/* -------------------------------------------------------------------- */}
-      {/* 2. FULL VIEWPORT CANVAS WORKSPACE (height: calc(100vh - 56px))       */}
+      {/* 2. FULL VIEWPORT CANVAS WORKSPACE (height: calc(100vh - 52px))       */}
       {/* -------------------------------------------------------------------- */}
-      <div style={{ height: "calc(100vh - 56px)", width: "100%", position: "relative", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* SINGLE COMPACT FLOATING TOOLBAR WITH GUIDED TASKS CHIP ROW */}
+      <div style={{ height: "calc(100vh - 52px)", width: "100%", position: "relative", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* SINGLE COMPACT FLOATING TOOLBAR WITH SEGMENTED PILLS */}
         <div className="dt-toolbar" role="toolbar" aria-label="Digital Twin Controls Toolbar" style={{ margin: "10px 14px", position: "absolute", top: 0, left: 0, right: 0, zIndex: 30 }}>
           <DigitalTwinSearch onSelectResult={handleSearchResult} onLocateMe={handleLocateMe} />
 
-          {/* Compact Guided Tasks Chip Row */}
-          <div className="dt-toolbar-group" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", paddingRight: "4px", textTransform: "uppercase" }}>Guided tasks:</span>
+          {/* Compact Guided Tasks Pills */}
+          <div className="dt-toolbar-group" style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748b", paddingRight: "4px" }}>Guided tasks:</span>
             <button
               type="button"
               className={`dt-btn ${activeTask === "EXPLORE" ? "active" : ""}`}
-              style={{ padding: "4px 10px", fontSize: "11px", fontWeight: activeTask === "EXPLORE" ? 700 : 500 }}
+              style={{ padding: "3px 9px", fontSize: "11px", borderRadius: "12px", fontWeight: activeTask === "EXPLORE" ? 700 : 500 }}
               onClick={() => handleSelectTask("EXPLORE")}
+              title="Understand the physical urban and river environment."
             >
-              🗺️ Explore
+              Explore
             </button>
             <button
               type="button"
               className={`dt-btn ${activeTask === "TRACE" ? "active" : ""}`}
-              style={{ padding: "4px 10px", fontSize: "11px", fontWeight: activeTask === "TRACE" ? 700 : 500 }}
+              style={{ padding: "3px 9px", fontSize: "11px", borderRadius: "12px", fontWeight: activeTask === "TRACE" ? 700 : 500 }}
               onClick={() => handleSelectTask("TRACE")}
+              title="Follow a simulated industrial source to downstream sensors."
             >
-              🌊 Trace pollution
+              Trace
             </button>
             <button
               type="button"
               className={`dt-btn ${activeTask === "FLOOD" ? "active" : ""}`}
-              style={{ padding: "4px 10px", fontSize: "11px", fontWeight: activeTask === "FLOOD" ? 700 : 500 }}
+              style={{ padding: "3px 9px", fontSize: "11px", borderRadius: "12px", fontWeight: activeTask === "FLOOD" ? 700 : 500 }}
               onClick={() => handleSelectTask("FLOOD")}
+              title="Inspect flood-risk areas and mapped buildings under a scenario."
             >
-              🌧️ Flood exposure
+              Flood
             </button>
             <button
               type="button"
               className={`dt-btn ${activeTask === "SCENARIO" ? "active" : ""}`}
-              style={{ padding: "4px 10px", fontSize: "11px", fontWeight: activeTask === "SCENARIO" ? 700 : 500 }}
+              style={{ padding: "3px 9px", fontSize: "11px", borderRadius: "12px", fontWeight: activeTask === "SCENARIO" ? 700 : 500 }}
               onClick={() => handleSelectTask("SCENARIO")}
+              title="Compare baseline and modelled environmental risk under changed conditions."
             >
-              📊 Compare scenario
+              Scenario
             </button>
           </div>
 
-          {/* View Mode Switcher: Overview (2.5D) | Focused 3D | Table */}
-          <div className="dt-toolbar-group">
+          {/* View Mode Switcher Pills: 2.5D | 3D | Table */}
+          <div className="dt-toolbar-group" style={{ display: "flex", alignItems: "center", gap: "2px" }}>
             <button
               type="button"
               className={`dt-btn ${viewMode === "2.5D" ? "active" : ""}`}
-              style={{ padding: "4px 9px", fontSize: "11px" }}
+              style={{ padding: "3px 8px", fontSize: "11px", borderRadius: "12px" }}
               onClick={() => setViewMode("2.5D")}
             >
-              Overview (2.5D)
+              2.5D
             </button>
             <button
               type="button"
               className={`dt-btn ${viewMode === "3D" ? "active" : ""}`}
-              style={{ padding: "4px 9px", fontSize: "11px" }}
+              style={{ padding: "3px 8px", fontSize: "11px", borderRadius: "12px" }}
               onClick={() => setViewMode("3D")}
             >
-              Focused 3D
+              3D
             </button>
             <button
               type="button"
               className={`dt-btn ${viewMode === "TABLE" ? "active" : ""}`}
-              style={{ padding: "4px 9px", fontSize: "11px" }}
+              style={{ padding: "3px 8px", fontSize: "11px", borderRadius: "12px" }}
               onClick={() => setViewMode("TABLE")}
             >
               Table
             </button>
           </div>
 
-          {/* Mode Switcher */}
-          <div className="dt-toolbar-group">
+          {/* Mode Switcher Pills: Baseline | Scenario */}
+          <div className="dt-toolbar-group" style={{ display: "flex", alignItems: "center", gap: "2px" }}>
             <button
               type="button"
               className={`dt-btn ${mode === "BASELINE" ? "active" : ""}`}
-              style={{ padding: "4px 9px", fontSize: "11px" }}
+              style={{ padding: "3px 8px", fontSize: "11px", borderRadius: "12px" }}
               onClick={() => setMode("BASELINE")}
             >
               Baseline
@@ -541,7 +545,7 @@ export default function Terrain3DPage() {
             <button
               type="button"
               className={`dt-btn ${mode === "SCENARIO" ? "active" : ""}`}
-              style={{ padding: "4px 9px", fontSize: "11px" }}
+              style={{ padding: "3px 8px", fontSize: "11px", borderRadius: "12px" }}
               onClick={() => {
                 setMode("SCENARIO");
                 setActiveRailTab("scenario");
@@ -551,19 +555,17 @@ export default function Terrain3DPage() {
             </button>
           </div>
 
-          {/* Clean Camera Fit / Reset & Role Controls */}
+          {/* Clean Camera Fit & Role Controls */}
           <div style={{ display: "flex", gap: "6px", alignItems: "center", marginLeft: "auto" }}>
-            <button type="button" className="dt-btn" style={{ padding: "4px 8px", fontSize: "10.5px" }} onClick={handleLocateMe} title="Fit Tiruppur Urban Center">
+            <button type="button" className="dt-btn" style={{ padding: "4px 8px", fontSize: "10.5px", borderRadius: "6px" }} onClick={handleLocateMe} title="Fit Tiruppur Urban Center">
               📍 Fit Tiruppur
-            </button>
-            <button type="button" className="dt-btn" style={{ padding: "4px 8px", fontSize: "10.5px" }} onClick={handleResetView} title="Reset View to Overview">
-              🎯 Reset View
             </button>
             <select
               value={userRole}
               onChange={(e) => handleRoleChange(e.target.value as UserRoleOverlay)}
               className="dt-toolbar-select"
               aria-label="Select User Role View"
+              style={{ borderRadius: "6px" }}
             >
               <option value="REGULATOR">Regulator View</option>
               <option value="GROUNDWATER_OFFICER">GW Officer View</option>
@@ -573,7 +575,7 @@ export default function Terrain3DPage() {
             <button
               type="button"
               className="dt-btn"
-              style={{ padding: "4px 8px", fontSize: "10.5px" }}
+              style={{ padding: "4px 8px", fontSize: "10.5px", borderRadius: "6px" }}
               onClick={() => window.dispatchEvent(new CustomEvent("export-dt-figure"))}
               title="Download Scientific PNG Figure"
               aria-label="Download Figure PNG"
