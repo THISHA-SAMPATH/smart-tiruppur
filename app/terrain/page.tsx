@@ -437,9 +437,10 @@ export default function Terrain3DPage() {
             <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "6px", padding: "4px 10px", display: "flex", flexDirection: "column" }}>
               <span style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Sensors Network</span>
               <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#0d9488" }}>4 Stations</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#0d9488" }}>3 Sensor Stations</span>
                 <SourceBadge type="SIMULATED" />
               </div>
+              <span style={{ fontSize: "8.5px", color: "#64748b", marginTop: "1px" }}>4 logical streams · S_D unmapped</span>
             </div>
           </div>
         </div>
