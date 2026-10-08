@@ -76,8 +76,11 @@ export default function Terrain3DPage() {
   const [autoRotate, setAutoRotate] = useState(false);
   const [userRole, setUserRole] = useState<UserRoleOverlay>("REGULATOR");
 
-  // View Mode: 2.5D | 3D | Table
-  const [viewMode, setViewMode] = useState<"2.5D" | "3D" | "TABLE">("3D");
+  // Active Decision-Support Task: EXPLORE | TRACE | FLOOD | SCENARIO
+  const [activeTask, setActiveTask] = useState<"EXPLORE" | "TRACE" | "FLOOD" | "SCENARIO">("EXPLORE");
+
+  // View Mode: 2.5D | 3D | Table (Overview defaults to 2.5D/3D map without forcing full-screen 3D orbit)
+  const [viewMode, setViewMode] = useState<"2.5D" | "3D" | "TABLE">("2.5D");
 
   // Mode Switch: BASELINE vs SCENARIO
   const [mode, setMode] = useState<"BASELINE" | "SCENARIO">("BASELINE");
@@ -105,7 +108,7 @@ export default function Terrain3DPage() {
   // Interaction Analysis Mode: EXPLORE | TRACE | RISK
   const [interactionMode, setInteractionMode] = useState<"EXPLORE" | "TRACE" | "RISK">("EXPLORE");
 
-  // Layer Toggles State
+  // Layer Toggles State (Physical City dominant by default in Explore mode)
   const [layers, setLayers] = useState<LayerToggles>({
     terrain: true,
     contours: true,
@@ -125,24 +128,13 @@ export default function Terrain3DPage() {
     steriRisk: false,
   });
 
-  const handleInteractionModeChange = (newMode: "EXPLORE" | "TRACE" | "RISK") => {
-    setInteractionMode(newMode);
-    if (newMode === "RISK") {
-      setLayers((prev) => ({ ...prev, steriRisk: true, groundwater: true }));
-    } else if (newMode === "TRACE") {
-      setLayers((prev) => ({ ...prev, dischargePaths: true, pollution: true }));
-    } else if (newMode === "EXPLORE") {
-      setLayers((prev) => ({ ...prev, steriRisk: false, groundwater: false }));
-    }
-  };
-
   // Dynamic KPI Data
   const [unitCount, setUnitCount] = useState<number>(12);
   const [activeAlerts, setActiveAlerts] = useState<number>(1);
   const [avgReuse, setAvgReuse] = useState<number>(91);
   const [criticalZones, setCriticalZones] = useState<number>(3);
 
-  // Inspector & Data Provenance Modal State
+  // Inspector & Data Provenance Modal State (Startup default: NO selection, inspector hidden)
   const [selectedNode, setSelectedNode] = useState<SelectedNodeInfo | null>(null);
   const [isProvenanceOpen, setIsProvenanceOpen] = useState<boolean>(false);
 
@@ -200,23 +192,136 @@ export default function Terrain3DPage() {
     })();
   }, []);
 
-  const toggleLayer = (key: keyof LayerToggles) => {
-    setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
+  // Primary Decision-Support Task Workflow Handler
+  const handleSelectTask = (task: "EXPLORE" | "TRACE" | "FLOOD" | "SCENARIO") => {
+    setActiveTask(task);
+    setSelectedNode(null);
+
+    switch (task) {
+      case "EXPLORE":
+        setInteractionMode("EXPLORE");
+        setViewMode("2.5D");
+        setMode("BASELINE");
+        setCompareWithBaseline(false);
+        setLayers({
+          terrain: true,
+          contours: true,
+          river: true,
+          drainage: true,
+          roads: true,
+          buildings: true,
+          units: true,
+          dischargePaths: false,
+          infrastructure: true,
+          vegetation: true,
+          sensors: true,
+          groundwater: false,
+          floodRisk: false,
+          pollution: false,
+          sourceSensorInfluence: false,
+          steriRisk: false,
+        });
+        {
+          const centerPos = geoTo3D(11.1085, 77.3411, 0);
+          setFocusPosition({ x: centerPos.x, y: centerPos.y, z: centerPos.z });
+        }
+        break;
+
+      case "TRACE":
+        setInteractionMode("TRACE");
+        setViewMode("3D");
+        setMode("BASELINE");
+        setActiveRailTab("analysis");
+        setLayers((prev) => ({
+          ...prev,
+          dischargePaths: true,
+          pollution: true,
+          sensors: true,
+          sourceSensorInfluence: true,
+        }));
+        // Fly camera to Angeripalayam Processing Unit 007 for simulated trace
+        {
+          const sourcePos = geoTo3D(11.1420, 77.3310, 0);
+          setFocusPosition({ x: sourcePos.x, y: sourcePos.y, z: sourcePos.z });
+        }
+        break;
+
+      case "FLOOD":
+        setInteractionMode("EXPLORE");
+        setViewMode("3D");
+        setMode("SCENARIO");
+        setActiveRailTab("scenario");
+        setFloodIntensity(0.45);
+        setLayers((prev) => ({
+          ...prev,
+          floodRisk: true,
+          contours: true,
+          buildings: true,
+          river: true,
+        }));
+        {
+          const floodPos = geoTo3D(11.11975, 77.39716, 0);
+          setFocusPosition({ x: floodPos.x, y: floodPos.y, z: floodPos.z });
+        }
+        break;
+
+      case "SCENARIO":
+        setInteractionMode("RISK");
+        setViewMode("3D");
+        setMode("SCENARIO");
+        setCompareWithBaseline(true);
+        setActiveRailTab("scenario");
+        setLayers((prev) => ({
+          ...prev,
+          steriRisk: true,
+          groundwater: true,
+          buildings: true,
+          river: true,
+        }));
+        {
+          const scenarioPos = geoTo3D(11.1085, 77.3411, 0);
+          setFocusPosition({ x: scenarioPos.x, y: scenarioPos.y, z: scenarioPos.z });
+        }
+        break;
+    }
   };
 
-  const handleTimelineClick = (evt: typeof SCENARIO_TIMELINE_EVENTS[0]) => {
-    const pos = geoTo3D(evt.lat, evt.lon, 0);
-    setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
+  const handleInteractionModeChange = (newMode: "EXPLORE" | "TRACE" | "RISK") => {
+    setInteractionMode(newMode);
+    if (newMode === "RISK") {
+      setLayers((prev) => ({ ...prev, steriRisk: true, groundwater: true }));
+    } else if (newMode === "TRACE") {
+      setLayers((prev) => ({ ...prev, dischargePaths: true, pollution: true }));
+    } else if (newMode === "EXPLORE") {
+      setLayers((prev) => ({ ...prev, steriRisk: false, groundwater: false }));
+    }
+  };
+
+  const toggleLayer = (key: keyof LayerToggles) => {
+    setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSearchResult = (item: { lat: number; lon: number; name: string }) => {
     const pos = geoTo3D(item.lat, item.lon, 0);
     setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
+    setViewMode("3D");
   };
 
   const handleLocateMe = () => {
-    const pos = geoTo3D(11.11975, 77.39716, 0);
+    const pos = geoTo3D(11.1085, 77.3411, 0);
     setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
+  };
+
+  const handleResetView = () => {
+    handleSelectTask("EXPLORE");
+  };
+
+  const handleOpen3DArea = () => {
+    setViewMode("3D");
+    if (selectedNode && selectedNode.latitude && selectedNode.longitude) {
+      const pos = geoTo3D(selectedNode.latitude, selectedNode.longitude, 0);
+      setFocusPosition({ x: pos.x, y: pos.y, z: pos.z });
+    }
   };
 
   const handleRoleChange = (role: UserRoleOverlay) => {
@@ -268,52 +373,208 @@ export default function Terrain3DPage() {
   };
 
   return (
-    <div className="twin-page dt-container">
+    <div className="twin-page dt-container" style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* -------------------------------------------------------------------- */}
-      {/* SINGLE COMPACT FLOATING TOOLBAR OVER MAP (Top-Left to Top-Right)      */}
+      {/* 1. DIGITAL TWIN COMMAND CENTER LANDING HEADER                         */}
       {/* -------------------------------------------------------------------- */}
-      <div className="dt-toolbar" role="toolbar" aria-label="Digital Twin Controls Toolbar">
-        {/* Title */}
-        <div className="dt-toolbar-title">
-          <div className="dt-badge-brand">DIGITAL TWIN</div>
-          <h1>Environmental Digital Twin</h1>
+      <header
+        style={{
+          background: "#ffffff",
+          borderBottom: "1px solid #e2e8f0",
+          padding: "10px 16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          zIndex: 10,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ background: "#0f766e", color: "#ffffff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>
+                DECISION-SUPPORT WORKSPACE
+              </span>
+              <h1 style={{ fontSize: "17px", fontWeight: 800, color: "#0f172a", margin: 0 }}>
+                Tiruppur Environmental Digital Twin
+              </h1>
+            </div>
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "2px 0 0 0" }}>
+              Spatial decision support for environmental monitoring and scenario analysis
+            </p>
+          </div>
+
+          {/* Compact Current State Summary Cards (EXISTING Values Only) */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "6px", padding: "4px 10px", display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>City STERI Score</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#0f172a" }}>
+                  {steriOverview?.citywideScore ? steriOverview.citywideScore.toFixed(3) : "0.542"}
+                </span>
+                <SourceBadge type="MODELLED" />
+              </div>
+            </div>
+
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "6px", padding: "4px 10px", display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>High-Risk Sectors</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#b91c1c" }}>
+                  {steriOverview?.units.filter((u) => u.riskCategory === "HIGH" || u.riskCategory === "VERY HIGH" || u.riskCategory === "CRITICAL").length ?? 3} / 6
+                </span>
+                <SourceBadge type="MODELLED" />
+              </div>
+            </div>
+
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "6px", padding: "4px 10px", display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Industrial Units</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#0f172a" }}>{unitCount} Facilities</span>
+                <SourceBadge type="SIMULATED" />
+              </div>
+            </div>
+
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "6px", padding: "4px 10px", display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Sensors Network</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#0d9488" }}>4 Stations</span>
+                <SourceBadge type="SIMULATED" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Compact Search Bar */}
-        <DigitalTwinSearch
-          onSelectResult={handleSearchResult}
-          onLocateMe={handleLocateMe}
-        />
+        {/* -------------------------------------------------------------------- */}
+        {/* 2. PRIMARY USER TASK CARDS (Four Primary Actions)                   */}
+        {/* -------------------------------------------------------------------- */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "8px" }}>
+          {/* Task 1: Explore Area */}
+          <button
+            type="button"
+            onClick={() => handleSelectTask("EXPLORE")}
+            style={{
+              background: activeTask === "EXPLORE" ? "#f0fdf4" : "#f8fafc",
+              border: `1.5px solid ${activeTask === "EXPLORE" ? "#16a34a" : "#e2e8f0"}`,
+              borderRadius: "6px",
+              padding: "8px 10px",
+              textAlign: "left",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: "11px", color: "#0f172a", display: "flex", alignItems: "center", gap: "5px" }}>
+              <span>🗺️</span> Explore Area
+            </div>
+            <p style={{ fontSize: "10px", color: "#64748b", margin: "2px 0 0 0", lineHeight: 1.25 }}>
+              Understand the physical urban and river environment.
+            </p>
+          </button>
 
-        {/* Compact Interaction Mode Selector: EXPLORE | TRACE | RISK */}
-        <div className="dt-toolbar-group" role="radiogroup" aria-label="Interaction Analysis Mode">
+          {/* Task 2: Trace Pollution */}
           <button
             type="button"
-            className={`dt-btn ${interactionMode === "EXPLORE" ? "active" : ""}`}
-            style={{ padding: "4px 10px", fontSize: "11px", fontWeight: 700 }}
-            onClick={() => handleInteractionModeChange("EXPLORE")}
+            onClick={() => handleSelectTask("TRACE")}
+            style={{
+              background: activeTask === "TRACE" ? "#f0fdfa" : "#f8fafc",
+              border: `1.5px solid ${activeTask === "TRACE" ? "#0d9488" : "#e2e8f0"}`,
+              borderRadius: "6px",
+              padding: "8px 10px",
+              textAlign: "left",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
           >
-            EXPLORE
+            <div style={{ fontWeight: 700, fontSize: "11px", color: "#0f172a", display: "flex", alignItems: "center", gap: "5px" }}>
+              <span>🌊</span> Trace Pollution
+            </div>
+            <p style={{ fontSize: "10px", color: "#64748b", margin: "2px 0 0 0", lineHeight: 1.25 }}>
+              Follow a simulated industrial source to downstream sensors.
+            </p>
           </button>
+
+          {/* Task 3: Assess Flood Exposure */}
           <button
             type="button"
-            className={`dt-btn ${interactionMode === "TRACE" ? "active" : ""}`}
-            style={{ padding: "4px 10px", fontSize: "11px", fontWeight: 700 }}
-            onClick={() => handleInteractionModeChange("TRACE")}
+            onClick={() => handleSelectTask("FLOOD")}
+            style={{
+              background: activeTask === "FLOOD" ? "#f0f9ff" : "#f8fafc",
+              border: `1.5px solid ${activeTask === "FLOOD" ? "#0284c7" : "#e2e8f0"}`,
+              borderRadius: "6px",
+              padding: "8px 10px",
+              textAlign: "left",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
           >
-            TRACE
+            <div style={{ fontWeight: 700, fontSize: "11px", color: "#0f172a", display: "flex", alignItems: "center", gap: "5px" }}>
+              <span>🌧️</span> Assess Flood Exposure
+            </div>
+            <p style={{ fontSize: "10px", color: "#64748b", margin: "2px 0 0 0", lineHeight: 1.25 }}>
+              Inspect flood-risk areas and mapped buildings under a scenario.
+            </p>
           </button>
+
+          {/* Task 4: Compare Scenario */}
           <button
             type="button"
-            className={`dt-btn ${interactionMode === "RISK" ? "active" : ""}`}
-            style={{ padding: "4px 10px", fontSize: "11px", fontWeight: 700 }}
-            onClick={() => handleInteractionModeChange("RISK")}
+            onClick={() => handleSelectTask("SCENARIO")}
+            style={{
+              background: activeTask === "SCENARIO" ? "#fff7ed" : "#f8fafc",
+              border: `1.5px solid ${activeTask === "SCENARIO" ? "#ea580c" : "#e2e8f0"}`,
+              borderRadius: "6px",
+              padding: "8px 10px",
+              textAlign: "left",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
           >
-            RISK
+            <div style={{ fontWeight: 700, fontSize: "11px", color: "#0f172a", display: "flex", alignItems: "center", gap: "5px" }}>
+              <span>📊</span> Compare Scenario
+            </div>
+            <p style={{ fontSize: "10px", color: "#64748b", margin: "2px 0 0 0", lineHeight: 1.25 }}>
+              Compare baseline and modelled environmental risk under changed conditions.
+            </p>
           </button>
         </div>
 
-        {/* View Mode Switcher: 2.5D | 3D | Table */}
+        {/* -------------------------------------------------------------------- */}
+        {/* EXPLANATORY VALUE STRIP & OVERVIEW MAP CONTROLS                       */}
+        {/* -------------------------------------------------------------------- */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px", background: "#f1f5f9", padding: "4px 10px", borderRadius: "6px" }}>
+          <div style={{ fontSize: "10.5px", color: "#475569", display: "flex", alignItems: "center", gap: "6px" }}>
+            <strong style={{ color: "#0f172a" }}>Use Digital Twin to:</strong>
+            <span>Explore spatial conditions · Trace relationships · Compare scenarios · Prioritize investigation</span>
+            <span style={{ color: "#64748b" }}>(Inputs are simulated/modelled)</span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <button type="button" className="dt-btn" style={{ padding: "3px 8px", fontSize: "10.5px" }} onClick={handleLocateMe} title="Fit Tiruppur Urban Center">
+              📍 Fit Tiruppur
+            </button>
+            <button type="button" className="dt-btn" style={{ padding: "3px 8px", fontSize: "10.5px" }} onClick={handleResetView} title="Reset View to Overview">
+              🎯 Reset View
+            </button>
+            {activeTask !== "EXPLORE" && (
+              <button
+                type="button"
+                className="dt-btn active"
+                style={{ padding: "3px 10px", fontSize: "10.5px", background: "#0f766e", color: "#ffffff", borderColor: "#0f766e", fontWeight: 700 }}
+                onClick={() => handleSelectTask("EXPLORE")}
+              >
+                ↩️ Back to Overview
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* -------------------------------------------------------------------- */}
+      {/* SINGLE COMPACT TOOLBAR FOR SPATIAL CONTROL & VIEW SWITCHER           */}
+      {/* -------------------------------------------------------------------- */}
+      <div className="dt-toolbar" role="toolbar" aria-label="Digital Twin Controls Toolbar" style={{ margin: "4px 12px" }}>
+        <DigitalTwinSearch onSelectResult={handleSearchResult} onLocateMe={handleLocateMe} />
+
+        {/* Workflow Mode Switcher: OVERVIEW | INVESTIGATE | SCENARIO */}
         <div className="dt-toolbar-group">
           <button
             type="button"
@@ -321,7 +582,7 @@ export default function Terrain3DPage() {
             style={{ padding: "4px 10px", fontSize: "11px" }}
             onClick={() => setViewMode("2.5D")}
           >
-            🗺️ 2.5D
+            🗺️ Overview (2.5D)
           </button>
           <button
             type="button"
@@ -329,7 +590,7 @@ export default function Terrain3DPage() {
             style={{ padding: "4px 10px", fontSize: "11px" }}
             onClick={() => setViewMode("3D")}
           >
-            🌐 3D
+            🌐 Focused 3D
           </button>
           <button
             type="button"
@@ -340,6 +601,18 @@ export default function Terrain3DPage() {
             📋 Table
           </button>
         </div>
+
+        {/* Action Button to Open 3D Area when selected in Overview */}
+        {selectedNode && viewMode === "2.5D" && (
+          <button
+            type="button"
+            className="dt-btn active"
+            style={{ padding: "4px 10px", fontSize: "11px", background: "#0d9488", color: "#ffffff", borderColor: "#0d9488", fontWeight: 700 }}
+            onClick={handleOpen3DArea}
+          >
+            🌐 Open 3D Area
+          </button>
+        )}
 
         {/* Live / Scenario Mode Switch */}
         <div className="dt-toolbar-group">
@@ -364,7 +637,7 @@ export default function Terrain3DPage() {
           </button>
         </div>
 
-        {/* Role Selector & Figure PNG Download Button (Item #8) */}
+        {/* Role Selector & Figure PNG Download Button */}
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
           <select
             value={userRole}
@@ -396,7 +669,7 @@ export default function Terrain3DPage() {
       {viewMode === "TABLE" ? (
         <AccessibleTableViewer />
       ) : (
-        <div className="dt-viewport">
+        <div className="dt-viewport" style={{ flex: 1, position: "relative" }}>
           {/* 3D / 2.5D Map Canvas Viewer */}
           <Terrain3DViewer
             lighting={lighting}
@@ -412,12 +685,11 @@ export default function Terrain3DPage() {
             steriBaseline={compareWithBaseline ? steriBaseline : null}
             onSelectNode={setSelectedNode}
             onExitTrace={() => {
-              handleInteractionModeChange("EXPLORE");
-              setSelectedNode(null);
+              handleSelectTask("EXPLORE");
             }}
           />
 
-          {/* Compact On-Map Legend Card (Item #7) */}
+          {/* Compact On-Map Legend Card */}
           <DigitalTwinLegend />
 
           {/* -------------------------------------------------------------------- */}
@@ -518,10 +790,10 @@ export default function Terrain3DPage() {
             onClose={() => setSelectedNode(null)}
             onOpenProvenance={() => setIsProvenanceOpen(true)}
             onTraceToRiver={() => {
-              handleInteractionModeChange("TRACE");
+              handleSelectTask("TRACE");
             }}
             onShowDownstreamSensors={() => {
-              handleInteractionModeChange("TRACE");
+              handleSelectTask("TRACE");
               setLayers((prev) => ({ ...prev, sensors: true, sourceSensorInfluence: true }));
             }}
           />
