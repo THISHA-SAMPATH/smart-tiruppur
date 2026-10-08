@@ -902,8 +902,9 @@ export default function Terrain3DViewer({
         const targetY = center.y + 0.5;
         const targetZ = center.z;
 
-        cameraRef.current.position.set(targetX, targetY + 13.5, targetZ + 14.5);
-        controlsRef.current.target.set(targetX, targetY, targetZ);
+        // Lower camera slightly for stronger 3D parallax (building facades + roofs clearly visible)
+        cameraRef.current.position.set(targetX, targetY + 9.5, targetZ + 11.5);
+        controlsRef.current.target.set(targetX, targetY + 0.3, targetZ);
         controlsRef.current.update();
       }
     }

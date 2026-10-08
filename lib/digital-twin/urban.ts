@@ -64,29 +64,59 @@ function getBuildingHeight(properties: BuildingGISFeature["properties"]): number
   return DEFAULT_BUILDING_HEIGHT_3D;
 }
 
+// Visual building-scale exaggeration for 3D readability (presentation scale only; source GIS untouched)
+const VISUAL_FOOTPRINT_SCALE = 1.85;
+
 function makeShape(
   rings: Array<Array<[number, number, number?]>>,
   ctx: LayerBuilderContext
 ): { shape: THREE.Shape; latitude: number; longitude: number } | null {
-  const toPath = (ring: Array<[number, number, number?]>) => {
+  const toPathPoints = (ring: Array<[number, number, number?]>) => {
     const points = ring.slice(0, -1).map(([longitude, latitude]) => ctx.geoTo3D(latitude, longitude));
     if (points.length < 3) return null;
-    const path = new THREE.Path();
-    path.moveTo(points[0].x, -points[0].z);
-    for (let i = 1; i < points.length; i++) path.lineTo(points[i].x, -points[i].z);
-    path.closePath();
-    return { path, points };
+    return points;
   };
 
-  const exterior = toPath(rings[0]);
-  if (!exterior) return null;
-  const shape = new THREE.Shape(exterior.path.getPoints());
-  for (const ring of rings.slice(1)) {
-    const hole = toPath(ring);
-    if (hole) shape.holes.push(hole.path);
+  const extPoints = toPathPoints(rings[0]);
+  if (!extPoints) return null;
+
+  // Calculate centroid of footprint shape
+  const cX = extPoints.reduce((acc, p) => acc + p.x, 0) / extPoints.length;
+  const cZ = extPoints.reduce((acc, p) => acc + (-p.z), 0) / extPoints.length;
+
+  const scalePoint = (px: number, py: number) => ({
+    x: cX + (px - cX) * VISUAL_FOOTPRINT_SCALE,
+    y: cZ + (py - cZ) * VISUAL_FOOTPRINT_SCALE,
+  });
+
+  const path = new THREE.Path();
+  const start = scalePoint(extPoints[0].x, -extPoints[0].z);
+  path.moveTo(start.x, start.y);
+  for (let i = 1; i < extPoints.length; i++) {
+    const pt = scalePoint(extPoints[i].x, -extPoints[i].z);
+    path.lineTo(pt.x, pt.y);
   }
-  const latitude = exterior.points.reduce((total, point) => total + point.z, 0) / exterior.points.length;
-  const longitude = exterior.points.reduce((total, point) => total + point.x, 0) / exterior.points.length;
+  path.closePath();
+
+  const shape = new THREE.Shape(path.getPoints());
+
+  for (const ring of rings.slice(1)) {
+    const holePoints = toPathPoints(ring);
+    if (holePoints) {
+      const holePath = new THREE.Path();
+      const hStart = scalePoint(holePoints[0].x, -holePoints[0].z);
+      holePath.moveTo(hStart.x, hStart.y);
+      for (let i = 1; i < holePoints.length; i++) {
+        const hPt = scalePoint(holePoints[i].x, -holePoints[i].z);
+        holePath.lineTo(hPt.x, hPt.y);
+      }
+      holePath.closePath();
+      shape.holes.push(holePath);
+    }
+  }
+
+  const latitude = extPoints.reduce((total, point) => total + point.z, 0) / extPoints.length;
+  const longitude = extPoints.reduce((total, point) => total + point.x, 0) / extPoints.length;
   const center = ctx.vector3DToGeo(longitude, latitude);
   return { shape, latitude: center.lat, longitude: center.lon };
 }
@@ -98,13 +128,22 @@ function makeShape(
 export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
   const buildingsGroup = new THREE.Group();
   buildingsGroup.name = "Layer_Urban_Fabric";
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x94a3b8,
-    roughness: 0.45,
+
+  // Darker roof cap surface for top roof massing definition
+  const roofMaterial = new THREE.MeshStandardMaterial({
+    color: 0x334155,
+    roughness: 0.4,
     metalness: 0.1,
-    transparent: false,
-    opacity: 1.0,
   });
+
+  // Medium neutral grey wall facades
+  const wallMaterial = new THREE.MeshStandardMaterial({
+    color: 0x94a3b8,
+    roughness: 0.5,
+    metalness: 0.05,
+  });
+
+  const materials = [roofMaterial, wallMaterial];
   let featureCount = 0;
 
   ctx.buildingsDataset?.features.forEach((feature) => {
@@ -122,7 +161,7 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
       });
       // Shape coordinates are X/-Z; rotate extrusion upward into world Y.
       geometry.rotateX(-Math.PI / 2);
-      const mesh = new THREE.Mesh(geometry, material);
+      const mesh = new THREE.Mesh(geometry, materials);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.position.y = ctx.sampleElevation(footprint.latitude, footprint.longitude) + 0.1;
