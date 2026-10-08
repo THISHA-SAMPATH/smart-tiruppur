@@ -691,7 +691,7 @@ export default function Terrain3DPage() {
           />
 
           {/* Compact On-Map Legend Card */}
-          <DigitalTwinLegend />
+          <DigitalTwinLegend interactionMode={interactionMode} isRiskActive={layers.steriRisk} />
 
           {/* -------------------------------------------------------------------- */}
           {/* LEFT 48PX ICON RAIL                                                  */}

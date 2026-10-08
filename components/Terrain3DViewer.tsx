@@ -277,6 +277,7 @@ export default function Terrain3DViewer({
   layers,
   interactionMode = "EXPLORE",
   selectedNode,
+  viewMode = "2.5D",
   focusPosition,
   steriOverview,
   steriBaseline,
@@ -399,6 +400,44 @@ export default function Terrain3DViewer({
       targetLookAtRef.current = new THREE.Vector3(focusPosition.x, focusPosition.y, focusPosition.z);
     }
   }, [focusPosition]);
+
+  // Handle View Mode Toggling (2.5D Flat Footprints & Mapped River Corridor vs 3D Focused Extrusions)
+  useEffect(() => {
+    if (buildingsGroupRef.current) {
+      if (viewMode === "2.5D") {
+        buildingsGroupRef.current.scale.set(1.0, 0.10, 1.0);
+      } else {
+        buildingsGroupRef.current.scale.set(1.0, 1.0, 1.0);
+      }
+    }
+
+    if (riverGroupRef.current) {
+      if (viewMode === "2.5D") {
+        riverGroupRef.current.scale.set(0.5, 1.0, 0.5);
+      } else {
+        riverGroupRef.current.scale.set(1.0, 1.0, 1.0);
+      }
+    }
+
+    if (cameraRef.current && controlsRef.current) {
+      const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
+      const center = new THREE.Vector3(0.5, 0.5, -2.5);
+      if (!urbanBox.isEmpty()) {
+        urbanBox.getCenter(center);
+      }
+      const targetX = center.x;
+      const targetY = center.y;
+      const targetZ = center.z;
+
+      if (viewMode === "2.5D") {
+        targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 28.0, targetZ + 8.0);
+        targetLookAtRef.current = new THREE.Vector3(targetX, targetY, targetZ);
+      } else if (viewMode === "3D") {
+        targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 9.5, targetZ + 11.5);
+        targetLookAtRef.current = new THREE.Vector3(targetX, targetY + 0.3, targetZ);
+      }
+    }
+  }, [viewMode]);
 
   // Layer Visibility
   useEffect(() => {
@@ -892,7 +931,7 @@ export default function Terrain3DViewer({
     buildingsGroupRef.current.clear();
     buildingsGroupRef.current.add(urbanRes.buildingsGroup);
 
-    // Frame camera on actual 451-building urban centroid so buildings occupy ~60% of viewport width
+    // Frame camera on actual 451-building urban centroid according to viewMode (2.5D vs 3D)
     if (urbanRes.featureCount > 0 && cameraRef.current && controlsRef.current) {
       const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
       if (!urbanBox.isEmpty()) {
@@ -902,9 +941,17 @@ export default function Terrain3DViewer({
         const targetY = center.y + 0.5;
         const targetZ = center.z;
 
-        // Lower camera slightly for stronger 3D parallax (building facades + roofs clearly visible)
-        cameraRef.current.position.set(targetX, targetY + 9.5, targetZ + 11.5);
-        controlsRef.current.target.set(targetX, targetY + 0.3, targetZ);
+        if (viewMode === "2.5D") {
+          buildingsGroupRef.current.scale.set(1.0, 0.10, 1.0);
+          riverGroupRef.current.scale.set(0.5, 1.0, 0.5);
+          cameraRef.current.position.set(targetX, targetY + 28.0, targetZ + 8.0);
+          controlsRef.current.target.set(targetX, targetY, targetZ);
+        } else {
+          buildingsGroupRef.current.scale.set(1.0, 1.0, 1.0);
+          riverGroupRef.current.scale.set(1.0, 1.0, 1.0);
+          cameraRef.current.position.set(targetX, targetY + 9.5, targetZ + 11.5);
+          controlsRef.current.target.set(targetX, targetY + 0.3, targetZ);
+        }
         controlsRef.current.update();
       }
     }
@@ -1528,6 +1575,102 @@ export default function Terrain3DViewer({
           </div>
         </div>
       )}
+
+      {/* Map Orientation, Area Label & Graphic Scale Bar Overlay Box */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "16px",
+          right: "16px",
+          zIndex: 90,
+          background: "rgba(255, 255, 255, 0.94)",
+          border: "1px solid #cbd5e1",
+          borderRadius: "8px",
+          padding: "8px 12px",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+          backdropFilter: "blur(6px)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "6px",
+          fontSize: "11px",
+          color: "#0f172a",
+          pointerEvents: "auto",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div
+              style={{
+                width: "22px",
+                height: "22px",
+                borderRadius: "50%",
+                background: "#0f766e",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 800,
+                fontSize: "11px",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+              }}
+              title="North Pointer"
+            >
+              N
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "11px", lineHeight: 1.2 }}>Tiruppur Urban Center</div>
+              <div style={{ fontSize: "9.5px", color: "#64748b" }}>Noyyal Sub-Basin • 11.1085°N, 77.3411°E</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (cameraRef.current && controlsRef.current && buildingsGroupRef.current) {
+                const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
+                const center = new THREE.Vector3(0.5, 0.5, -2.5);
+                if (!urbanBox.isEmpty()) urbanBox.getCenter(center);
+                if (viewMode === "2.5D") {
+                  targetCamPosRef.current = new THREE.Vector3(center.x, center.y + 28.0, center.z + 8.0);
+                  targetLookAtRef.current = new THREE.Vector3(center.x, center.y, center.z);
+                } else {
+                  targetCamPosRef.current = new THREE.Vector3(center.x, center.y + 9.5, center.z + 11.5);
+                  targetLookAtRef.current = new THREE.Vector3(center.x, center.y + 0.3, center.z);
+                }
+              }
+            }}
+            style={{
+              background: "#f1f5f9",
+              border: "1px solid #cbd5e1",
+              borderRadius: "4px",
+              padding: "3px 8px",
+              fontSize: "10px",
+              fontWeight: 600,
+              color: "#0f766e",
+              cursor: "pointer",
+            }}
+            title="Recenter camera on Tiruppur Urban Footprint"
+          >
+            📍 Fit Tiruppur
+          </button>
+        </div>
+
+        {/* Graphic Scale Bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
+          <span style={{ fontSize: "9.5px", color: "#64748b", fontWeight: 600 }}>SCALE</span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ width: "80px", height: "4px", background: "#0f172a", borderRadius: "1px", position: "relative" }}>
+              <div style={{ position: "absolute", left: 0, top: "-3px", width: "1px", height: "10px", background: "#0f172a" }} />
+              <div style={{ position: "absolute", left: "50%", top: "-3px", width: "1px", height: "10px", background: "#0f172a" }} />
+              <div style={{ position: "absolute", right: 0, top: "-3px", width: "1px", height: "10px", background: "#0f172a" }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", width: "80px", fontSize: "8.5px", color: "#475569", marginTop: "4px" }}>
+              <span>0</span>
+              <span>250m</span>
+              <span>500m</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

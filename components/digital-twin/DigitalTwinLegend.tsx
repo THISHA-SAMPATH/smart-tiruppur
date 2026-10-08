@@ -3,8 +3,18 @@
 import React, { useState } from "react";
 import SourceBadge from "@/components/provenance/SourceBadge";
 
-export default function DigitalTwinLegend() {
+interface DigitalTwinLegendProps {
+  interactionMode?: "EXPLORE" | "TRACE" | "RISK";
+  isRiskActive?: boolean;
+}
+
+export default function DigitalTwinLegend({
+  interactionMode = "EXPLORE",
+  isRiskActive = false,
+}: DigitalTwinLegendProps) {
   const [isOpen, setIsOpen] = useState(true);
+
+  const showRiskScale = isRiskActive || interactionMode === "RISK";
 
   return (
     <div
@@ -31,7 +41,7 @@ export default function DigitalTwinLegend() {
       {/* Header with Collapsible Toggle */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontWeight: 700, fontSize: "11px", letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
-          Map Legend
+          {interactionMode === "TRACE" ? "Pollution Trace Legend" : interactionMode === "RISK" || showRiskScale ? "STERI Risk Scale Legend" : "Explore Map Legend"}
         </div>
         <button
           type="button"
@@ -54,71 +64,76 @@ export default function DigitalTwinLegend() {
 
       {isOpen && (
         <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          {/* Risk Ramp Bar */}
-          <div>
-            <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--ink-soft)", marginBottom: "3px", display: "flex", justifyContent: "space-between" }}>
-              <span>NOYYAL WQI RISK RAMP</span>
-              <span>Low → Critical</span>
+          {/* Risk Ramp Bar - Rendered ONLY when Risk layer or Risk Mode is active */}
+          {showRiskScale && (
+            <div>
+              <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--ink-soft)", marginBottom: "3px", display: "flex", justifyContent: "space-between" }}>
+                <span>STERI RISK INTENSITY SCALE</span>
+                <span>Low → Critical</span>
+              </div>
+              <div
+                style={{
+                  height: "6px",
+                  borderRadius: "3px",
+                  background: "linear-gradient(to right, #86efac, #fde68a, #fdba74, #f87171, #b91c1c)",
+                  border: "1px solid rgba(0,0,0,0.05)",
+                }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9px", color: "var(--ink-soft)", marginTop: "2px", fontWeight: 600 }}>
+                <span>0.0</span>
+                <span>0.25</span>
+                <span>0.50</span>
+                <span>0.75</span>
+                <span>1.0</span>
+              </div>
+              <div style={{ height: "1px", background: "var(--hairline)", marginTop: "8px" }} />
             </div>
-            <div
-              style={{
-                height: "6px",
-                borderRadius: "3px",
-                background: "linear-gradient(to right, #86efac, #fde68a, #fdba74, #f87171, #b91c1c)",
-                border: "1px solid rgba(0,0,0,0.05)",
-              }}
-            />
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9px", color: "var(--ink-soft)", marginTop: "2px", fontWeight: 600 }}>
-              <span>0.0</span>
-              <span>0.25</span>
-              <span>0.50</span>
-              <span>0.75</span>
-              <span>1.0</span>
-            </div>
-          </div>
+          )}
 
-          <div style={{ height: "1px", background: "var(--hairline)" }} />
-
-          {/* Marker Types */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "10.5px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  borderRadius: "50%",
-                  background: "var(--teal)",
-                  border: "2px solid #ffffff",
-                  boxShadow: "0 0 0 1px var(--teal)",
-                  display: "inline-block",
-                }}
-              />
-              <span>Industrial Facility / Station</span>
+          {/* Context-Sensitive Legend Items */}
+          {interactionMode === "TRACE" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "10.5px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#0d9488", border: "2px solid #fff", boxShadow: "0 0 0 1px #0d9488" }} />
+                <span>Industrial Source Facility</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "14px", height: "0px", borderTop: "2px dashed #06b6d4" }} />
+                <span>Simulated Discharge Path & Outfall</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "14px", height: "3px", borderRadius: "2px", background: "#06b6d4" }} />
+                <span>Noyyal Downstream Waterway Route</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ffffff", border: "2px solid #0d9488" }} />
+                <span>Downstream Telemetry Sensor Station</span>
+              </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
-                style={{
-                  width: "14px",
-                  height: "3px",
-                  borderRadius: "2px",
-                  background: "linear-gradient(to right, #86efac, #b91c1c)",
-                  display: "inline-block",
-                }}
-              />
-              <span>Interpolated Stretch (River)</span>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "10.5px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "14px", height: "4px", borderRadius: "2px", background: "#0284c7" }} />
+                <span>Noyyal River (Mapped Corridor)</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#94a3b8", border: "1px solid #334155" }} />
+                <span>Building Footprints (OSM)</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "14px", height: "2px", background: "#94a3b8" }} />
+                <span>Mapped Road Network (TNGIS)</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#0d9488", border: "2px solid #ffffff", boxShadow: "0 0 0 1px #0d9488" }} />
+                <span>Industrial Facility / Outfall</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ffffff", border: "2px solid #0d9488" }} />
+                <span>Telemetry Sensor Station</span>
+              </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
-                style={{
-                  width: "14px",
-                  height: "0px",
-                  borderTop: "1.5px dashed var(--teal)",
-                  display: "inline-block",
-                }}
-              />
-              <span>Simulated Discharge Path</span>
-            </div>
-          </div>
+          )}
 
           <div style={{ height: "1px", background: "var(--hairline)" }} />
 
