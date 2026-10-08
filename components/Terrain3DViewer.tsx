@@ -715,8 +715,8 @@ export default function Terrain3DViewer({
     scene.add(selectionRingGroupRef.current);
 
     // Oblique Urban View Perspective framing Tiruppur City Core
-    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
-    camera.position.set(0, 24, 30);
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+    camera.position.set(0.5, 15, 13);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -734,9 +734,9 @@ export default function Terrain3DViewer({
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.maxPolarAngle = Math.PI / 2 - 0.12;
-    controls.minDistance = 8;
-    controls.maxDistance = 65;
-    controls.target.set(0, 1.2, -3.5);
+    controls.minDistance = 5;
+    controls.maxDistance = 45;
+    controls.target.set(0.5, 1.2, -2.5);
     controlsRef.current = controls;
 
     // Soft Scientific Environment Lighting with Directional Shadow Contrast
@@ -891,6 +891,22 @@ export default function Terrain3DViewer({
     const urbanRes = buildUrbanLayer(builderCtx);
     buildingsGroupRef.current.clear();
     buildingsGroupRef.current.add(urbanRes.buildingsGroup);
+
+    // Frame camera on actual 451-building urban centroid so buildings occupy ~60% of viewport width
+    if (urbanRes.featureCount > 0 && cameraRef.current && controlsRef.current) {
+      const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
+      if (!urbanBox.isEmpty()) {
+        const center = new THREE.Vector3();
+        urbanBox.getCenter(center);
+        const targetX = center.x;
+        const targetY = center.y + 0.5;
+        const targetZ = center.z;
+
+        cameraRef.current.position.set(targetX, targetY + 13.5, targetZ + 14.5);
+        controlsRef.current.target.set(targetX, targetY, targetZ);
+        controlsRef.current.update();
+      }
+    }
 
     // 5. Industrial Facilities Builder
     const industrialRes = buildIndustrialLayer({ ...builderCtx, activeWaterwayCurve: hydroRes.riverCurve });
