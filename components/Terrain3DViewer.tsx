@@ -405,7 +405,7 @@ export default function Terrain3DViewer({
   useEffect(() => {
     if (buildingsGroupRef.current) {
       if (viewMode === "2.5D") {
-        buildingsGroupRef.current.scale.set(1.0, 0.10, 1.0);
+        buildingsGroupRef.current.scale.set(1.0, 0.08, 1.0);
       } else {
         buildingsGroupRef.current.scale.set(1.0, 1.0, 1.0);
       }
@@ -413,7 +413,7 @@ export default function Terrain3DViewer({
 
     if (riverGroupRef.current) {
       if (viewMode === "2.5D") {
-        riverGroupRef.current.scale.set(0.5, 1.0, 0.5);
+        riverGroupRef.current.scale.set(0.40, 1.0, 0.40);
       } else {
         riverGroupRef.current.scale.set(1.0, 1.0, 1.0);
       }
@@ -942,8 +942,8 @@ export default function Terrain3DViewer({
         const targetZ = center.z;
 
         if (viewMode === "2.5D") {
-          buildingsGroupRef.current.scale.set(1.0, 0.10, 1.0);
-          riverGroupRef.current.scale.set(0.5, 1.0, 0.5);
+          buildingsGroupRef.current.scale.set(1.0, 0.08, 1.0);
+          riverGroupRef.current.scale.set(0.40, 1.0, 0.40);
           cameraRef.current.position.set(targetX, targetY + 28.0, targetZ + 8.0);
           controlsRef.current.target.set(targetX, targetY, targetZ);
         } else {
@@ -1622,36 +1622,60 @@ export default function Terrain3DViewer({
               <div style={{ fontSize: "9.5px", color: "#64748b" }}>Noyyal Sub-Basin • 11.1085°N, 77.3411°E</div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (cameraRef.current && controlsRef.current && buildingsGroupRef.current) {
-                const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
-                const center = new THREE.Vector3(0.5, 0.5, -2.5);
-                if (!urbanBox.isEmpty()) urbanBox.getCenter(center);
-                if (viewMode === "2.5D") {
-                  targetCamPosRef.current = new THREE.Vector3(center.x, center.y + 28.0, center.z + 8.0);
-                  targetLookAtRef.current = new THREE.Vector3(center.x, center.y, center.z);
-                } else {
-                  targetCamPosRef.current = new THREE.Vector3(center.x, center.y + 9.5, center.z + 11.5);
-                  targetLookAtRef.current = new THREE.Vector3(center.x, center.y + 0.3, center.z);
+          <div style={{ display: "flex", gap: "4px" }}>
+            <button
+              type="button"
+              onClick={() => {
+                if (cameraRef.current && controlsRef.current && buildingsGroupRef.current) {
+                  const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
+                  const center = new THREE.Vector3(0.5, 0.5, -2.5);
+                  if (!urbanBox.isEmpty()) urbanBox.getCenter(center);
+                  if (viewMode === "2.5D") {
+                    targetCamPosRef.current = new THREE.Vector3(center.x, center.y + 28.0, center.z + 8.0);
+                    targetLookAtRef.current = new THREE.Vector3(center.x, center.y, center.z);
+                  } else {
+                    targetCamPosRef.current = new THREE.Vector3(center.x, center.y + 9.5, center.z + 11.5);
+                    targetLookAtRef.current = new THREE.Vector3(center.x, center.y + 0.3, center.z);
+                  }
                 }
-              }
-            }}
-            style={{
-              background: "#f1f5f9",
-              border: "1px solid #cbd5e1",
-              borderRadius: "4px",
-              padding: "3px 8px",
-              fontSize: "10px",
-              fontWeight: 600,
-              color: "#0f766e",
-              cursor: "pointer",
-            }}
-            title="Recenter camera on Tiruppur Urban Footprint"
-          >
-            📍 Fit Tiruppur
-          </button>
+              }}
+              style={{
+                background: "#f1f5f9",
+                border: "1px solid #cbd5e1",
+                borderRadius: "4px",
+                padding: "3px 7px",
+                fontSize: "10px",
+                fontWeight: 600,
+                color: "#0f766e",
+                cursor: "pointer",
+              }}
+              title="Recenter camera on Tiruppur Urban Footprint"
+            >
+              📍 Fit Tiruppur
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (cameraRef.current && controlsRef.current) {
+                  targetCamPosRef.current = new THREE.Vector3(0.5, 28.0, 5.5);
+                  targetLookAtRef.current = new THREE.Vector3(0.5, 0.5, -2.5);
+                }
+              }}
+              style={{
+                background: "#f1f5f9",
+                border: "1px solid #cbd5e1",
+                borderRadius: "4px",
+                padding: "3px 7px",
+                fontSize: "10px",
+                fontWeight: 600,
+                color: "#475569",
+                cursor: "pointer",
+              }}
+              title="Reset View to Overview Framing"
+            >
+              🎯 Reset View
+            </button>
+          </div>
         </div>
 
         {/* Graphic Scale Bar */}

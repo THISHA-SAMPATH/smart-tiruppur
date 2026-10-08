@@ -300,6 +300,34 @@ export default function InspectorPanel({
         )}
 
         {/* ------------------------------------------------------------------ */}
+        {/* 4. ORDINARY OSM BUILDING INSPECTOR (COMPACT CARD ONLY)              */}
+        {/* ------------------------------------------------------------------ */}
+        {selectedNode.type === "building" && (
+          <div className="dt-card-surface" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase" }}>Building Footprint Info</span>
+              <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 6px", borderRadius: "var(--radius-sm)", background: "#f1f5f9", color: "#475569", border: "1px solid #cbd5e1" }}>
+                OPEN_DATA
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "11.5px" }}>
+              <div>
+                <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>BUILDING NAME / ID</span>
+                <strong style={{ color: "var(--ink)" }}>{selectedNode.name || "OSM Building Footprint"}</strong>
+              </div>
+              <div>
+                <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>BUILDING TYPE</span>
+                <strong style={{ color: "var(--ink)" }}>{selectedNode.designation || "Building footprint"}</strong>
+              </div>
+              <div>
+                <span style={{ color: "var(--ink-soft)", fontSize: "10px", display: "block" }}>DATA SOURCE</span>
+                <strong style={{ color: "var(--ink)" }}>OpenStreetMap</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------------ */}
         {/* COLLAPSIBLE DATA & MODEL SECTION                                  */}
         {/* ------------------------------------------------------------------ */}
         <div style={{ marginTop: "4px" }}>

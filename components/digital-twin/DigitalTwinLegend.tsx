@@ -113,24 +113,24 @@ export default function DigitalTwinLegend({
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "10.5px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "14px", height: "2px", background: "#94a3b8" }} />
+                <span>Roads (City Structure)</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ width: "14px", height: "4px", borderRadius: "2px", background: "#0284c7" }} />
                 <span>Noyyal River (Mapped Corridor)</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#94a3b8", border: "1px solid #334155" }} />
+                <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#64748b", border: "1px solid #475569" }} />
                 <span>Building Footprints (OSM)</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ width: "14px", height: "2px", background: "#94a3b8" }} />
-                <span>Mapped Road Network (TNGIS)</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#0d9488", border: "2px solid #ffffff", boxShadow: "0 0 0 1px #0d9488" }} />
-                <span>Industrial Facility / Outfall</span>
+                <span>Industrial Facilities</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ffffff", border: "2px solid #0d9488" }} />
-                <span>Telemetry Sensor Station</span>
+                <span>Sensors</span>
               </div>
             </div>
           )}
