@@ -1503,15 +1503,22 @@ export default function Terrain3DViewer({
       a.click();
     };
 
-    const handleResize = () => {
-      if (!threeHostRef.current || !rendererRef.current || !cameraRef.current) return;
-      const w = threeHostRef.current.clientWidth;
-      const h = threeHostRef.current.clientHeight;
+    const syncViewportAndRender = () => {
+      if (!threeHostRef.current || !rendererRef.current || !cameraRef.current || !sceneRef.current) return;
+      const hostEl = threeHostRef.current;
+      const w = hostEl.clientWidth;
+      const h = hostEl.clientHeight;
       if (w > 0 && h > 0) {
         cameraRef.current.aspect = w / h;
         cameraRef.current.updateProjectionMatrix();
-        rendererRef.current.setSize(w, h);
+        rendererRef.current.setSize(w, h, false);
+        if (controlsRef.current) controlsRef.current.update();
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
+    };
+
+    const handleResize = () => {
+      syncViewportAndRender();
     };
 
     const resizeObserver = new ResizeObserver((entries) => {
@@ -1520,11 +1527,18 @@ export default function Terrain3DViewer({
         if (w > 0 && h > 0 && cameraRef.current && rendererRef.current) {
           cameraRef.current.aspect = w / h;
           cameraRef.current.updateProjectionMatrix();
-          rendererRef.current.setSize(w, h);
+          rendererRef.current.setSize(w, h, false);
+          if (controlsRef.current) controlsRef.current.update();
+          if (sceneRef.current) rendererRef.current.render(sceneRef.current, cameraRef.current);
         }
       }
     });
     resizeObserver.observe(host);
+
+    // Initial post-layout settlement render frame
+    requestAnimationFrame(() => {
+      syncViewportAndRender();
+    });
 
     window.addEventListener("resize", handleResize);
     window.addEventListener("export-dt-figure", handleExportFigure);
