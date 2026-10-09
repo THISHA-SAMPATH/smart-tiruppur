@@ -6,6 +6,28 @@ export interface UrbanBuilderResult {
   featureCount: number;
 }
 
+function getNormalizedOsmId(feature: any): string | null {
+  const p = feature.properties || {};
+  const featId = feature.id ?? p["@id"] ?? p["id"] ?? p["featureId"];
+
+  if (p.osm_type && p.osm_id) {
+    let typePrefix = "way";
+    const typeStr = String(p.osm_type).toLowerCase();
+    if (typeStr.includes("relation")) typePrefix = "relation";
+    else if (typeStr.includes("node")) typePrefix = "node";
+    return `${typePrefix}/${p.osm_id}`;
+  }
+
+  if (featId) {
+    const s = String(featId).trim();
+    if (s.includes("/")) return s;
+    if (s.includes("_")) return s.replace("_", "/");
+    return `way/${s}`;
+  }
+
+  return null;
+}
+
 /**
  * Parses OpenStreetMap/Overpass GeoJSON extracts without changing source IDs, tags, or geometry.
  * Supports merging multiple extracts with stable OSM identity deduplication (@id / featureId).
@@ -20,14 +42,15 @@ export function parseGeoJSONToBuildingDataset(...geojsons: any[]): BuildingGISDa
       if (!feature?.geometry || (feature.geometry.type !== "Polygon" && feature.geometry.type !== "MultiPolygon")) return;
 
       const properties = feature.properties || {};
-      const featureId = String(feature.id ?? properties["@id"] ?? properties.id ?? `bldg_${featureMap.size}`);
+      const normId = getNormalizedOsmId(feature);
+      const featureId = normId ?? String(feature.id ?? properties["@id"] ?? properties.id ?? `bldg_${featureMap.size}`);
 
       if (featureMap.has(featureId)) {
         // Merge properties safely if feature is already present
         const existing = featureMap.get(featureId)!;
         existing.properties.originalProperties = {
-          ...existing.properties.originalProperties,
           ...properties,
+          ...existing.properties.originalProperties,
         };
         if (!existing.properties.name && properties.name) existing.properties.name = properties.name;
         if (!existing.properties.building && properties.building) existing.properties.building = properties.building;

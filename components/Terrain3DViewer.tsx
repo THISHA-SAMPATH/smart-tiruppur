@@ -357,23 +357,24 @@ export default function Terrain3DViewer({
     };
   }, []);
 
-  // Load the OSM/Overpass footprints (regional + urban core extracts) deduplicated by stable feature ID.
+  // Load the OSM/Overpass footprints (regional + urban core + expanded urban extent extracts) deduplicated by stable feature ID.
   useEffect(() => {
     let isMounted = true;
     Promise.all([
       fetch("/geo/tiruppur-buildings.geojson").then((res) => (res.ok ? res.json() : null)),
       fetch("/geo/tiruppur-urban-buildings.geojson").then((res) => (res.ok ? res.json() : null)),
+      fetch("/geo/tiruppur-buildings-expanded-urban-extent.geojson").then((res) => (res.ok ? res.json() : null)),
     ])
-      .then(([b1, b2]) => {
+      .then(([b1, b2, b3]) => {
         if (isMounted) {
-          const geojsons = [b1, b2].filter(Boolean);
+          const geojsons = [b1, b2, b3].filter(Boolean);
           if (geojsons.length > 0) {
             setBuildingsGisDataset(parseGeoJSONToBuildingDataset(...geojsons));
           }
         }
       })
       .catch(() => {
-        // Keep the existing urban layer empty when the optional open-data source is unavailable.
+        // Keep the existing urban layer empty when optional open-data sources are unavailable.
       });
     return () => {
       isMounted = false;
