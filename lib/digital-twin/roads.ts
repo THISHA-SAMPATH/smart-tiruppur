@@ -56,29 +56,28 @@ export function parseGeoJSONToRoadDataset(
   };
 }
 
-function getRoadVisualConfig(roadClass: string): { width: number; color: number } {
+function getRoadVisualConfig(roadClass: string): { width: number; asphaltColor: number; markingColor: number } {
   switch (roadClass) {
     case "motorway":
     case "trunk":
-      return { width: 0.7, color: 0xf59e0b }; // Amber arterial
+      return { width: 0.85, asphaltColor: 0x1e293b, markingColor: 0xf59e0b }; // Arterial paved highway
     case "primary":
-      return { width: 0.55, color: 0x38bdf8 }; // Cyan major road
+      return { width: 0.65, asphaltColor: 0x334155, markingColor: 0xe2e8f0 }; // Major city arterial
     case "secondary":
-      return { width: 0.4, color: 0x94a3b8 }; // Slate secondary
+      return { width: 0.50, asphaltColor: 0x334155, markingColor: 0x94a3b8 }; // Secondary connector
     case "tertiary":
-      return { width: 0.3, color: 0x64748b }; // Dark slate tertiary
+      return { width: 0.38, asphaltColor: 0x475569, markingColor: 0x64748b }; // Tertiary street
     case "residential":
     case "service":
     case "unclassified":
     default:
-      return { width: 0.22, color: 0x475569 }; // Minor street
+      return { width: 0.28, asphaltColor: 0x475569, markingColor: 0x64748b }; // Minor urban street
   }
 }
 
 /**
- * Builds the 3D GIS Road Network Layer.
- * Renders real GIS vector features when available with +0.12 Y-offset to prevent z-fighting.
- * Returns a clean empty group when no GIS road dataset is provided (zero fake data invented).
+ * Builds the 3D GIS Road Network Layer as physical road surfaces.
+ * Renders real GIS vector features when available with muted asphalt appearance and restrained lane markings.
  */
 export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
   const roadsGroup = new THREE.Group();
@@ -102,49 +101,109 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
         lineCoordsList.push(...feat.geometry.coordinates);
       }
 
-      // A single LineSegments object per feature retains all source vertices and
-      // MultiLineString parts without the very high geometry cost of tube meshes.
-      const positions: number[] = [];
+      const roadClass = feat.properties.roadClass || feat.properties.highway || "unclassified";
+      const config = getRoadVisualConfig(roadClass);
+
       lineCoordsList.forEach((coords) => {
-        for (let index = 1; index < coords.length; index++) {
-          const previous = coords[index - 1];
-          const current = coords[index];
-          if (!Array.isArray(previous) || !Array.isArray(current) || previous.length < 2 || current.length < 2) continue;
-          const start = ctx.geoTo3D(previous[1], previous[0], 0.12);
-          const end = ctx.geoTo3D(current[1], current[0], 0.12);
-          positions.push(start.x, start.y, start.z, end.x, end.y, end.z);
+        if (!Array.isArray(coords) || coords.length < 2) return;
+
+        const points: THREE.Vector3[] = [];
+        for (let i = 0; i < coords.length; i++) {
+          const pt = coords[i];
+          if (!Array.isArray(pt) || pt.length < 2) continue;
+          points.push(ctx.geoTo3D(pt[1], pt[0], 0.10));
         }
-      });
 
-      if (!positions.length) return;
+        if (points.length < 2) return;
 
-      const config = getRoadVisualConfig(feat.properties.roadClass || feat.properties.highway || "unclassified");
-      const roadGeometry = new THREE.BufferGeometry();
-      roadGeometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-      const roadMaterial = new THREE.LineBasicMaterial({
-        color: 0x94a3b8,
-        transparent: true,
-        opacity: 0.45,
-        depthWrite: false,
+        // Build ribbon mesh geometry for physical asphalt surface
+        const ribbonPositions: number[] = [];
+        const markingPositions: number[] = [];
+        const halfWidth = config.width / 2;
+
+        for (let i = 0; i < points.length; i++) {
+          const p = points[i];
+          const prev = points[Math.max(0, i - 1)];
+          const next = points[Math.min(points.length - 1, i + 1)];
+          const dir = next.clone().sub(prev).normalize();
+          if (dir.lengthSq() === 0) dir.set(1, 0, 0);
+
+          const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+
+          const left = p.clone().add(side.clone().multiplyScalar(halfWidth));
+          const right = p.clone().sub(side.clone().multiplyScalar(halfWidth));
+
+          left.y = ctx.sampleElevation(ctx.vector3DToGeo(left.x, left.z).lat, ctx.vector3DToGeo(left.x, left.z).lon) + 0.10;
+          right.y = ctx.sampleElevation(ctx.vector3DToGeo(right.x, right.z).lat, ctx.vector3DToGeo(right.x, right.z).lon) + 0.10;
+
+          ribbonPositions.push(left.x, left.y, left.z, right.x, right.y, right.z);
+
+          // Center marking point
+          markingPositions.push(p.x, p.y + 0.02, p.z);
+        }
+
+        const indices: number[] = [];
+        const segs = points.length - 1;
+        for (let i = 0; i < segs; i++) {
+          const v0 = i * 2;
+          const v1 = i * 2 + 1;
+          const v2 = (i + 1) * 2;
+          const v3 = (i + 1) * 2 + 1;
+          indices.push(v0, v1, v2);
+          indices.push(v1, v3, v2);
+        }
+
+        const ribbonGeo = new THREE.BufferGeometry();
+        ribbonGeo.setAttribute("position", new THREE.Float32BufferAttribute(ribbonPositions, 3));
+        ribbonGeo.setIndex(indices);
+        ribbonGeo.computeVertexNormals();
+
+        // Muted asphalt physical surface material
+        const asphaltMat = new THREE.MeshStandardMaterial({
+          color: config.asphaltColor,
+          roughness: 0.85,
+          metalness: 0.05,
+          side: THREE.DoubleSide,
+          polygonOffset: true,
+          polygonOffsetFactor: -1,
+          polygonOffsetUnits: -1,
+        });
+
+        const asphaltMesh = new THREE.Mesh(ribbonGeo, asphaltMat);
+        asphaltMesh.name = `Physical_Road_${String(feat.properties.featureId ?? feat.properties.id)}`;
+        asphaltMesh.userData = {
+          type: "road",
+          isGisFeature: true,
+          source: "TNGIS",
+          sourceType: "REAL",
+          featureId: feat.properties.featureId,
+          roadName: feat.properties.name,
+          roadClass: roadClass,
+          originalProperties: feat.properties.metadata,
+          data: {
+            ...feat.properties,
+            provenanceNote: "Physical road surface rendered from TNGIS vector geometry.",
+          },
+        };
+
+        // Restrained lane marking overlay line
+        if (markingPositions.length >= 6) {
+          const markingGeo = new THREE.BufferGeometry();
+          markingGeo.setAttribute("position", new THREE.Float32BufferAttribute(markingPositions, 3));
+          const markingMat = new THREE.LineBasicMaterial({
+            color: config.markingColor,
+            transparent: true,
+            opacity: 0.6,
+          });
+          const markingLine = new THREE.Line(markingGeo, markingMat);
+          asphaltMesh.add(markingLine);
+        }
+
+        roadsGroup.add(asphaltMesh);
+        ctx.interactiveObjects.push(asphaltMesh);
+        featureCount++;
+        isGisLoaded = true;
       });
-      const roadLine = new THREE.LineSegments(roadGeometry, roadMaterial);
-      roadLine.name = `GIS_Road_${String(feat.properties.featureId ?? feat.properties.id)}`;
-      roadLine.renderOrder = 1;
-      roadLine.userData = {
-        type: "road",
-        isGisFeature: true,
-        source: "TNGIS",
-        sourceType: "REAL",
-        featureId: feat.properties.featureId,
-        roadName: feat.properties.name,
-        roadClass: feat.properties.roadClass,
-        originalProperties: feat.properties.metadata,
-        data: feat.properties,
-      };
-      roadsGroup.add(roadLine);
-      ctx.interactiveObjects.push(roadLine);
-      featureCount++;
-      isGisLoaded = true;
     });
   }
 

@@ -1612,6 +1612,115 @@ export default function Terrain3DViewer({
         </div>
       )}
 
+      {/* Floating Camera Presets Bar (Item #7) */}
+      <div
+        style={{
+          position: "absolute",
+          top: "14px",
+          left: "14px",
+          zIndex: 90,
+          background: "rgba(255, 255, 255, 0.92)",
+          border: "1px solid #cbd5e1",
+          borderRadius: "8px",
+          padding: "4px 8px",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+          backdropFilter: "blur(12px)",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          fontSize: "11px",
+        }}
+      >
+        <span style={{ fontWeight: 700, color: "#64748b", fontSize: "10px", textTransform: "uppercase", paddingRight: "4px" }}>
+          Camera Presets:
+        </span>
+        {[
+          { label: "City Overview", pos: new THREE.Vector3(0.5, 22.0, 16.0), lookAt: new THREE.Vector3(0.5, 0.5, -2.5) },
+          { label: "Urban Core", pos: new THREE.Vector3(0.5, 9.5, 8.5), lookAt: new THREE.Vector3(0.5, 0.5, -2.5) },
+          { label: "Noyyal Corridor", pos: new THREE.Vector3(-12.0, 8.0, 2.0), lookAt: new THREE.Vector3(2.0, 0.5, -1.5) },
+          { label: "Industrial Zone", pos: new THREE.Vector3(14.0, 9.0, -4.0), lookAt: new THREE.Vector3(4.0, 0.5, -4.0) },
+          { label: "Flood Exposure", pos: new THREE.Vector3(0.0, 24.0, 0.5), lookAt: new THREE.Vector3(0.0, 0.0, 0.0) },
+        ].map((preset) => (
+          <button
+            key={preset.label}
+            type="button"
+            onClick={() => {
+              targetCamPosRef.current = preset.pos;
+              targetLookAtRef.current = preset.lookAt;
+            }}
+            style={{
+              background: "#f1f5f9",
+              border: "1px solid #e2e8f0",
+              borderRadius: "4px",
+              padding: "3px 8px",
+              fontSize: "10.5px",
+              fontWeight: 600,
+              color: "#0f172a",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            {preset.label}
+          </button>
+        ))}
+        <div style={{ width: "1px", height: "14px", background: "#cbd5e1", margin: "0 2px" }} />
+        <button
+          type="button"
+          onClick={() => {
+            targetCamPosRef.current = new THREE.Vector3(0.5, 15.0, 13.0);
+            targetLookAtRef.current = new THREE.Vector3(0.5, 1.2, -2.5);
+          }}
+          style={{
+            background: "#0d9488",
+            border: "1px solid #0f766e",
+            borderRadius: "4px",
+            padding: "3px 8px",
+            fontSize: "10.5px",
+            fontWeight: 700,
+            color: "#ffffff",
+            cursor: "pointer",
+          }}
+        >
+          Fit City
+        </button>
+      </div>
+
+      {/* Compact Minimap Overlay (Item #8) */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "16px",
+          left: "16px",
+          zIndex: 90,
+          background: "rgba(255, 255, 255, 0.94)",
+          border: "1px solid #cbd5e1",
+          borderRadius: "8px",
+          padding: "6px",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+          backdropFilter: "blur(6px)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "4px",
+        }}
+      >
+        <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#475569", letterSpacing: "0.5px" }}>
+          SUB-BASIN MINIMAP
+        </div>
+        <svg width="120" height="75" style={{ background: "#f8fafc", borderRadius: "4px", border: "1px solid #e2e8f0" }}>
+          {/* Outer City Extent Bounding Box */}
+          <rect x="10" y="8" width="100" height="58" fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2,2" />
+          {/* Noyyal River Curve Thumbnail */}
+          <path d="M 12 38 Q 45 48, 70 34 T 108 36" fill="none" stroke="#0284c7" strokeWidth="2.5" />
+          {/* Urban Center Indicator */}
+          <circle cx="60" cy="38" r="4" fill="#0d9488" opacity="0.8" />
+          {/* Active Camera Frustum Cone */}
+          <polygon points="60,38 48,20 72,20" fill="rgba(13, 148, 136, 0.2)" stroke="#0d9488" strokeWidth="1" />
+          <text x="60" y="62" textAnchor="middle" fontSize="7.5" fill="#64748b" fontWeight="600">
+            Tiruppur Urban Basin
+          </text>
+        </svg>
+      </div>
+
       {/* Map Orientation, Area Label & Graphic Scale Bar Overlay Box */}
       <div
         style={{

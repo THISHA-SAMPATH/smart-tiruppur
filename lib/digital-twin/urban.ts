@@ -121,6 +121,120 @@ function makeShape(
   return { shape, latitude: center.lat, longitude: center.lon };
 }
 
+export type BuildingTypology = "RESIDENTIAL" | "COMMERCIAL" | "INDUSTRIAL" | "INSTITUTIONAL" | "RELIGIOUS";
+
+export interface BuildingTypologyConfig {
+  typology: BuildingTypology;
+  label: string;
+  roofColor: number;
+  wallColor: number;
+  roofOpacity: number;
+  wallOpacity: number;
+}
+
+/**
+ * Classifies building footprints strictly using existing OSM tags/properties.
+ * Does NOT invent buildings or real-world locations.
+ */
+export function classifyBuildingTypology(props: Record<string, any>): BuildingTypologyConfig {
+  const b = String(props.building || "").toLowerCase();
+  const amenity = String(props.amenity || "").toLowerCase();
+  const shop = String(props.shop || "").toLowerCase();
+  const office = String(props.office || "").toLowerCase();
+  const industrial = String(props.industrial || "").toLowerCase();
+  const landuse = String(props.landuse || "").toLowerCase();
+
+  // 1. RELIGIOUS
+  if (
+    amenity === "place_of_worship" ||
+    b === "temple" ||
+    b === "church" ||
+    b === "mosque" ||
+    b === "shrine" ||
+    props["building:use"] === "religious"
+  ) {
+    return {
+      typology: "RELIGIOUS",
+      label: "Religious / Place of Worship (OSM Tagged)",
+      roofColor: 0xfef08a, // Soft warm gold accent
+      wallColor: 0xe2e8f0,
+      roofOpacity: 0.85,
+      wallOpacity: 0.75,
+    };
+  }
+
+  // 2. INSTITUTIONAL (Schools, Hospitals, Offices)
+  if (
+    amenity === "school" ||
+    amenity === "hospital" ||
+    amenity === "clinic" ||
+    amenity === "college" ||
+    amenity === "university" ||
+    amenity === "townhall" ||
+    b === "school" ||
+    b === "hospital" ||
+    b === "civic" ||
+    b === "public" ||
+    office !== ""
+  ) {
+    return {
+      typology: "INSTITUTIONAL",
+      label: "Institutional / Public Facility (OSM Tagged)",
+      roofColor: 0x94a3b8, // Slate slate-grey
+      wallColor: 0xcbd5e1,
+      roofOpacity: 0.80,
+      wallOpacity: 0.70,
+    };
+  }
+
+  // 3. INDUSTRIAL
+  if (
+    b === "industrial" ||
+    b === "warehouse" ||
+    b === "manufacture" ||
+    industrial !== "" ||
+    landuse === "industrial" ||
+    props["building:use"] === "industrial"
+  ) {
+    return {
+      typology: "INDUSTRIAL",
+      label: "Industrial / Warehouse Shed (OSM Tagged)",
+      roofColor: 0x94a3b8, // Pale grey metal shed
+      wallColor: 0xb45309, // Muted terracotta/pale brick industrial base
+      roofOpacity: 0.85,
+      wallOpacity: 0.75,
+    };
+  }
+
+  // 4. COMMERCIAL
+  if (
+    b === "commercial" ||
+    b === "retail" ||
+    b === "supermarket" ||
+    shop !== "" ||
+    props["building:use"] === "commercial"
+  ) {
+    return {
+      typology: "COMMERCIAL",
+      label: "Commercial / Retail Storefront (OSM Tagged)",
+      roofColor: 0x64748b, // Darker street-facing slate massing
+      wallColor: 0x94a3b8,
+      roofOpacity: 0.80,
+      wallOpacity: 0.70,
+    };
+  }
+
+  // 5. RESIDENTIAL (Default concrete forms)
+  return {
+    typology: "RESIDENTIAL",
+    label: "Residential Concrete Form (Procedural Representative)",
+    roofColor: 0xe2e8f0, // Warm concrete top
+    wallColor: 0xcbd5e1, // Pale concrete wall
+    roofOpacity: 0.75,
+    wallOpacity: 0.65,
+  };
+}
+
 /**
  * Builds real OSM-derived footprint extrusions. The meshes are visualization
  * estimates, not surveyed building heights or a complete city inventory.
@@ -129,28 +243,47 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
   const buildingsGroup = new THREE.Group();
   buildingsGroup.name = "Layer_Urban_Fabric";
 
-  // Pale neutral roof cap surface for ghost physical city appearance
-  const roofMaterial = new THREE.MeshStandardMaterial({
-    color: 0xe2e8f0,
-    roughness: 0.6,
-    metalness: 0.05,
-    transparent: true,
-    opacity: 0.65,
+  // Reusable materials cache by typology to minimize draw calls
+  const materialCache = new Map<BuildingTypology, THREE.Material[]>();
+  const getTypologyMaterials = (config: BuildingTypologyConfig): THREE.Material[] => {
+    if (materialCache.has(config.typology)) return materialCache.get(config.typology)!;
+
+    const roofMaterial = new THREE.MeshStandardMaterial({
+      color: config.roofColor,
+      roughness: 0.5,
+      metalness: config.typology === "INDUSTRIAL" ? 0.25 : 0.05,
+      transparent: true,
+      opacity: config.roofOpacity,
+    });
+
+    const wallMaterial = new THREE.MeshStandardMaterial({
+      color: config.wallColor,
+      roughness: 0.7,
+      metalness: 0.05,
+      transparent: true,
+      opacity: config.wallOpacity,
+    });
+
+    const mats = [roofMaterial, wallMaterial];
+    materialCache.set(config.typology, mats);
+    return mats;
+  };
+
+  // Reusable rooftop water tank geometry for city-life ambient detail
+  const waterTankGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.35, 10);
+  const waterTankMat = new THREE.MeshStandardMaterial({
+    color: 0x0284c7, // Black/blue plastic rooftop water storage tank
+    roughness: 0.4,
+    metalness: 0.1,
   });
 
-  // Pale neutral wall facades
-  const wallMaterial = new THREE.MeshStandardMaterial({
-    color: 0xcbd5e1,
-    roughness: 0.7,
-    metalness: 0.05,
-    transparent: true,
-    opacity: 0.60,
-  });
-
-  const materials = [roofMaterial, wallMaterial];
   let featureCount = 0;
 
   ctx.buildingsDataset?.features.forEach((feature) => {
+    const origProps = feature.properties.originalProperties || {};
+    const config = classifyBuildingTypology(origProps);
+    const materials = getTypologyMaterials(config);
+
     const polygons = feature.geometry.type === "Polygon"
       ? [feature.geometry.coordinates]
       : feature.geometry.coordinates;
@@ -158,8 +291,10 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
     polygons.forEach((rings: Array<Array<[number, number, number?]>>) => {
       const footprint = makeShape(rings, ctx);
       if (!footprint) return;
+
+      const buildingHeight = getBuildingHeight(feature.properties);
       const geometry = new THREE.ExtrudeGeometry(footprint.shape, {
-        depth: getBuildingHeight(feature.properties),
+        depth: buildingHeight,
         bevelEnabled: false,
         curveSegments: 1,
       });
@@ -168,15 +303,37 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
       const mesh = new THREE.Mesh(geometry, materials);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      mesh.position.y = ctx.sampleElevation(footprint.latitude, footprint.longitude) + 0.1;
+
+      const baseElevation = ctx.sampleElevation(footprint.latitude, footprint.longitude) + 0.1;
+      mesh.position.y = baseElevation;
       mesh.name = `OSM_Building_${String(feature.properties.featureId)}`;
+
+      // Procedural City-Life Detail: Add rooftop water tank to selected residential/commercial roofs
+      const featureIdNum = Number(feature.properties.featureId) || featureCount;
+      if ((config.typology === "RESIDENTIAL" || config.typology === "COMMERCIAL") && featureIdNum % 3 === 0) {
+        const tankMesh = new THREE.Mesh(waterTankGeo, waterTankMat);
+        tankMesh.position.set(0, buildingHeight + 0.18, 0);
+        tankMesh.userData = {
+          type: "rooftop_tank",
+          provenance: "PROCEDURAL / REPRESENTATIVE",
+        };
+        mesh.add(tankMesh);
+      }
+
       mesh.userData = {
         type: "building",
         source: "OpenStreetMap",
         sourceType: "OPEN_DATA",
         featureId: feature.properties.featureId,
-        originalProperties: feature.properties.originalProperties,
-        data: feature.properties,
+        typology: config.typology,
+        typologyLabel: config.label,
+        originalProperties: origProps,
+        data: {
+          ...feature.properties,
+          typology: config.typology,
+          typologyLabel: config.label,
+          provenanceNote: "3D building form is representative/procedural except where source geometry/attributes provide evidence.",
+        },
       };
       buildingsGroup.add(mesh);
       ctx.interactiveObjects.push(mesh);
@@ -189,3 +346,4 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
     featureCount,
   };
 }
+
