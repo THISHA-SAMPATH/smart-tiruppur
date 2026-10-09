@@ -452,7 +452,7 @@ export default function Terrain3DViewer({
       targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 9.5, targetZ + 11.5);
       targetLookAtRef.current = new THREE.Vector3(targetX, targetY + 0.3, targetZ);
     }
-  }, [viewMode]);
+  }, [viewMode, buildingsGisDataset, hydroGisDataset]);
 
   // Layer Visibility
   useEffect(() => {
@@ -768,9 +768,17 @@ export default function Terrain3DViewer({
     scene.add(traceHighlightGroupRef.current);
     scene.add(selectionRingGroupRef.current);
 
-    // Oblique Urban View Perspective framing Tiruppur City Core
+    // Oblique Urban View Perspective framing Tiruppur City Core (11.1085°N, 77.3411°E)
+    const targetX = 0.0;
+    const targetY = 0.5;
+    const targetZ = 0.0;
+
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.set(0.5, 15, 13);
+    if (viewMode === "2.5D") {
+      camera.position.set(targetX, targetY + 14.0, targetZ + 12.0);
+    } else {
+      camera.position.set(targetX, targetY + 9.5, targetZ + 11.5);
+    }
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -790,7 +798,11 @@ export default function Terrain3DViewer({
     controls.maxPolarAngle = Math.PI / 2 - 0.12;
     controls.minDistance = 5;
     controls.maxDistance = 45;
-    controls.target.set(0.5, 1.2, -2.5);
+    if (viewMode === "2.5D") {
+      controls.target.set(targetX, targetY, targetZ);
+    } else {
+      controls.target.set(targetX, targetY + 0.3, targetZ);
+    }
     controlsRef.current = controls;
 
     // Soft Scientific Environment Lighting with Directional Shadow Contrast
@@ -1495,10 +1507,24 @@ export default function Terrain3DViewer({
       if (!threeHostRef.current || !rendererRef.current || !cameraRef.current) return;
       const w = threeHostRef.current.clientWidth;
       const h = threeHostRef.current.clientHeight;
-      cameraRef.current.aspect = w / h;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(w, h);
+      if (w > 0 && h > 0) {
+        cameraRef.current.aspect = w / h;
+        cameraRef.current.updateProjectionMatrix();
+        rendererRef.current.setSize(w, h);
+      }
     };
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width: w, height: h } = entry.contentRect;
+        if (w > 0 && h > 0 && cameraRef.current && rendererRef.current) {
+          cameraRef.current.aspect = w / h;
+          cameraRef.current.updateProjectionMatrix();
+          rendererRef.current.setSize(w, h);
+        }
+      }
+    });
+    resizeObserver.observe(host);
 
     window.addEventListener("resize", handleResize);
     window.addEventListener("export-dt-figure", handleExportFigure);
@@ -1506,6 +1532,7 @@ export default function Terrain3DViewer({
     return () => {
       cancelAnimationFrame(animId);
       if (hoverAnimationFrameId !== null) cancelAnimationFrame(hoverAnimationFrameId);
+      resizeObserver.disconnect();
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("export-dt-figure", handleExportFigure);
       if (renderer.domElement) {
