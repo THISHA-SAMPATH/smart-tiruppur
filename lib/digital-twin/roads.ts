@@ -56,22 +56,25 @@ export function parseGeoJSONToRoadDataset(
   };
 }
 
+// Convert real-world meter widths using centralized WORLD_SCALE (0.0035 Three.js units / meter)
+const METERS_TO_WORLD = 0.0035;
+
 function getRoadVisualConfig(roadClass: string): { width: number; asphaltColor: number; markingColor: number } {
   switch (roadClass) {
     case "motorway":
     case "trunk":
-      return { width: 0.85, asphaltColor: 0x1e293b, markingColor: 0xf59e0b }; // Arterial paved highway
+      return { width: 16 * METERS_TO_WORLD, asphaltColor: 0x334155, markingColor: 0xf59e0b }; // 16 m arterial highway (0.056 units)
     case "primary":
-      return { width: 0.65, asphaltColor: 0x334155, markingColor: 0xe2e8f0 }; // Major city arterial
+      return { width: 12 * METERS_TO_WORLD, asphaltColor: 0x475569, markingColor: 0xe2e8f0 }; // 12 m major city arterial (0.042 units)
     case "secondary":
-      return { width: 0.50, asphaltColor: 0x334155, markingColor: 0x94a3b8 }; // Secondary connector
+      return { width: 8.5 * METERS_TO_WORLD, asphaltColor: 0x64748b, markingColor: 0x94a3b8 }; // 8.5 m secondary connector (0.030 units)
     case "tertiary":
-      return { width: 0.38, asphaltColor: 0x475569, markingColor: 0x64748b }; // Tertiary street
+      return { width: 6 * METERS_TO_WORLD, asphaltColor: 0x64748b, markingColor: 0x64748b }; // 6 m tertiary street (0.021 units)
     case "residential":
     case "service":
     case "unclassified":
     default:
-      return { width: 0.28, asphaltColor: 0x475569, markingColor: 0x64748b }; // Minor urban street
+      return { width: 4 * METERS_TO_WORLD, asphaltColor: 0x94a3b8, markingColor: 0xcbd5e1 }; // 4 m fine local street (0.014 units)
   }
 }
 
@@ -123,7 +126,7 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
         for (let i = 0; i < coords.length; i++) {
           const pt = coords[i];
           if (!Array.isArray(pt) || pt.length < 2) continue;
-          points.push(ctx.geoTo3D(pt[1], pt[0], 0.18));
+          points.push(ctx.geoTo3D(pt[1], pt[0], 0.05));
         }
 
         if (points.length < 2) return;
@@ -145,13 +148,13 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
           const left = p.clone().add(side.clone().multiplyScalar(halfWidth));
           const right = p.clone().sub(side.clone().multiplyScalar(halfWidth));
 
-          left.y = ctx.sampleElevation(ctx.vector3DToGeo(left.x, left.z).lat, ctx.vector3DToGeo(left.x, left.z).lon) + 0.18;
-          right.y = ctx.sampleElevation(ctx.vector3DToGeo(right.x, right.z).lat, ctx.vector3DToGeo(right.x, right.z).lon) + 0.18;
+          left.y = ctx.sampleElevation(ctx.vector3DToGeo(left.x, left.z).lat, ctx.vector3DToGeo(left.x, left.z).lon) + 0.05;
+          right.y = ctx.sampleElevation(ctx.vector3DToGeo(right.x, right.z).lat, ctx.vector3DToGeo(right.x, right.z).lon) + 0.05;
 
           ribbonPositions.push(left.x, left.y, left.z, right.x, right.y, right.z);
 
           // Center marking point
-          markingPositions.push(p.x, p.y + 0.03, p.z);
+          markingPositions.push(p.x, p.y + 0.01, p.z);
         }
 
         const indices: number[] = [];
@@ -176,7 +179,9 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
           roughness: 0.85,
           metalness: 0.05,
           side: THREE.DoubleSide,
-          polygonOffset: false,
+          polygonOffset: true,
+          polygonOffsetFactor: -1.0,
+          polygonOffsetUnits: -1.0,
         });
 
         const asphaltMesh = new THREE.Mesh(ribbonGeo, asphaltMat);

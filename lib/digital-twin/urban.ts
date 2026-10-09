@@ -274,18 +274,16 @@ export function buildUrbanLayer(ctx: LayerBuilderContext): UrbanBuilderResult {
 
     const roofMaterial = new THREE.MeshStandardMaterial({
       color: config.roofColor,
-      roughness: 0.5,
+      roughness: 0.45,
       metalness: config.typology === "INDUSTRIAL" ? 0.25 : 0.05,
-      transparent: true,
-      opacity: config.roofOpacity,
+      transparent: false,
     });
 
     const wallMaterial = new THREE.MeshStandardMaterial({
       color: config.wallColor,
-      roughness: 0.7,
+      roughness: 0.65,
       metalness: 0.05,
-      transparent: true,
-      opacity: config.wallOpacity,
+      transparent: false,
     });
 
     const mats = [roofMaterial, wallMaterial];
