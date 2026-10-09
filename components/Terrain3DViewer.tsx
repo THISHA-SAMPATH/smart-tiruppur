@@ -401,29 +401,25 @@ export default function Terrain3DViewer({
     }
   }, [focusPosition]);
 
-  // Handle View Mode Toggling (2.5D Flat Footprints & Mapped River Corridor vs 3D Focused Extrusions)
+  // Handle View Mode Toggling (2.5D Restrained Slabs & Mapped River Corridor vs 3D Focused Extrusions)
   useEffect(() => {
     if (!cameraRef.current || !controlsRef.current || !buildingsGroupRef.current || !riverGroupRef.current) return;
 
     if (viewMode === "2.5D") {
-      buildingsGroupRef.current.scale.set(1.0, 0.08, 1.0);
-      riverGroupRef.current.scale.set(0.40, 1.0, 0.40);
+      buildingsGroupRef.current.scale.set(1.0, 0.25, 1.0);
+      riverGroupRef.current.scale.set(1.0, 1.0, 1.0);
     } else {
       buildingsGroupRef.current.scale.set(1.0, 1.0, 1.0);
       riverGroupRef.current.scale.set(1.0, 1.0, 1.0);
     }
 
-    const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
-    const center = new THREE.Vector3(0.5, 0.5, -2.5);
-    if (!urbanBox.isEmpty()) {
-      urbanBox.getCenter(center);
-    }
-    const targetX = center.x;
-    const targetY = center.y;
-    const targetZ = center.z;
+    // Direct urban core target (11.1085°N, 77.3411°E) in 3D world space
+    const targetX = 0.0;
+    const targetY = 0.5;
+    const targetZ = 0.0;
 
     if (viewMode === "2.5D") {
-      targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 28.0, targetZ + 8.0);
+      targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 14.0, targetZ + 12.0);
       targetLookAtRef.current = new THREE.Vector3(targetX, targetY, targetZ);
     } else if (viewMode === "3D") {
       targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 9.5, targetZ + 11.5);
@@ -923,29 +919,24 @@ export default function Terrain3DViewer({
     buildingsGroupRef.current.clear();
     buildingsGroupRef.current.add(urbanRes.buildingsGroup);
 
-    // Frame camera on actual 451-building urban centroid according to viewMode (2.5D vs 3D)
-    if (urbanRes.featureCount > 0 && cameraRef.current && controlsRef.current) {
-      const urbanBox = new THREE.Box3().setFromObject(buildingsGroupRef.current);
-      if (!urbanBox.isEmpty()) {
-        const center = new THREE.Vector3();
-        urbanBox.getCenter(center);
-        const targetX = center.x;
-        const targetY = center.y + 0.5;
-        const targetZ = center.z;
+    // Frame camera on defined Tiruppur Urban Center (11.1085°N, 77.3411°E)
+    if (cameraRef.current && controlsRef.current) {
+      const targetX = 0.0;
+      const targetY = 0.5;
+      const targetZ = 0.0;
 
-        if (viewMode === "2.5D") {
-          buildingsGroupRef.current.scale.set(1.0, 0.08, 1.0);
-          riverGroupRef.current.scale.set(0.40, 1.0, 0.40);
-          cameraRef.current.position.set(targetX, targetY + 28.0, targetZ + 8.0);
-          controlsRef.current.target.set(targetX, targetY, targetZ);
-        } else {
-          buildingsGroupRef.current.scale.set(1.0, 1.0, 1.0);
-          riverGroupRef.current.scale.set(1.0, 1.0, 1.0);
-          cameraRef.current.position.set(targetX, targetY + 9.5, targetZ + 11.5);
-          controlsRef.current.target.set(targetX, targetY + 0.3, targetZ);
-        }
-        controlsRef.current.update();
+      if (viewMode === "2.5D") {
+        buildingsGroupRef.current.scale.set(1.0, 0.25, 1.0);
+        riverGroupRef.current.scale.set(1.0, 1.0, 1.0);
+        cameraRef.current.position.set(targetX, targetY + 14.0, targetZ + 12.0);
+        controlsRef.current.target.set(targetX, targetY, targetZ);
+      } else {
+        buildingsGroupRef.current.scale.set(1.0, 1.0, 1.0);
+        riverGroupRef.current.scale.set(1.0, 1.0, 1.0);
+        cameraRef.current.position.set(targetX, targetY + 9.5, targetZ + 11.5);
+        controlsRef.current.target.set(targetX, targetY + 0.3, targetZ);
       }
+      controlsRef.current.update();
     }
 
     // 5. Industrial Facilities Builder

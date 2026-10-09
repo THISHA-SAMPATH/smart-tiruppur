@@ -168,7 +168,7 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
             isGisLoaded = true;
           }
 
-          const ribbonWidth = feat.properties.type === "river" ? 0.7 : 0.35;
+          const ribbonWidth = feat.properties.type === "river" ? 0.32 : 0.20;
           const ribbonGeo = createRiverRibbonGeometry(curve, ribbonWidth, ctx);
 
           const tubeMat = new THREE.MeshStandardMaterial({
@@ -303,7 +303,7 @@ export function buildHydrologyLayers(ctx: LayerBuilderContext): HydrologyBuilder
     }
     activeRiverCurve = new THREE.CatmullRomCurve3(riverPoints);
 
-    const ribbonGeo = createRiverRibbonGeometry(activeRiverCurve, 0.7, ctx);
+    const ribbonGeo = createRiverRibbonGeometry(activeRiverCurve, 0.32, ctx);
     const riverMesh = new THREE.Mesh(
       ribbonGeo,
       new THREE.MeshStandardMaterial({

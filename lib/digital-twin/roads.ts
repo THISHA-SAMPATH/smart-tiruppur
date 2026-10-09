@@ -111,7 +111,7 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
         for (let i = 0; i < coords.length; i++) {
           const pt = coords[i];
           if (!Array.isArray(pt) || pt.length < 2) continue;
-          points.push(ctx.geoTo3D(pt[1], pt[0], 0.10));
+          points.push(ctx.geoTo3D(pt[1], pt[0], 0.18));
         }
 
         if (points.length < 2) return;
@@ -133,13 +133,13 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
           const left = p.clone().add(side.clone().multiplyScalar(halfWidth));
           const right = p.clone().sub(side.clone().multiplyScalar(halfWidth));
 
-          left.y = ctx.sampleElevation(ctx.vector3DToGeo(left.x, left.z).lat, ctx.vector3DToGeo(left.x, left.z).lon) + 0.10;
-          right.y = ctx.sampleElevation(ctx.vector3DToGeo(right.x, right.z).lat, ctx.vector3DToGeo(right.x, right.z).lon) + 0.10;
+          left.y = ctx.sampleElevation(ctx.vector3DToGeo(left.x, left.z).lat, ctx.vector3DToGeo(left.x, left.z).lon) + 0.18;
+          right.y = ctx.sampleElevation(ctx.vector3DToGeo(right.x, right.z).lat, ctx.vector3DToGeo(right.x, right.z).lon) + 0.18;
 
           ribbonPositions.push(left.x, left.y, left.z, right.x, right.y, right.z);
 
           // Center marking point
-          markingPositions.push(p.x, p.y + 0.02, p.z);
+          markingPositions.push(p.x, p.y + 0.03, p.z);
         }
 
         const indices: number[] = [];
@@ -158,15 +158,13 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
         ribbonGeo.setIndex(indices);
         ribbonGeo.computeVertexNormals();
 
-        // Muted asphalt physical surface material
+        // Muted asphalt physical surface material cleanly rendered above terrain
         const asphaltMat = new THREE.MeshStandardMaterial({
           color: config.asphaltColor,
           roughness: 0.85,
           metalness: 0.05,
           side: THREE.DoubleSide,
-          polygonOffset: true,
-          polygonOffsetFactor: -1,
-          polygonOffsetUnits: -1,
+          polygonOffset: false,
         });
 
         const asphaltMesh = new THREE.Mesh(ribbonGeo, asphaltMat);

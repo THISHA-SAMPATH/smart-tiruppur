@@ -64,8 +64,8 @@ function getBuildingHeight(properties: BuildingGISFeature["properties"]): number
   return DEFAULT_BUILDING_HEIGHT_3D;
 }
 
-// Visual building-scale exaggeration for 3D readability (presentation scale only; source GIS untouched)
-const VISUAL_FOOTPRINT_SCALE = 1.85;
+// Restrained 1.0 visual building-scale preserving authentic source OSM footprint shapes without distortion
+const VISUAL_FOOTPRINT_SCALE = 1.0;
 
 function makeShape(
   rings: Array<Array<[number, number, number?]>>,
