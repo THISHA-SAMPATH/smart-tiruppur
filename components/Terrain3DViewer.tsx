@@ -48,6 +48,7 @@ export interface LayerToggles {
   citizenIssues?: boolean;
   drainage?: boolean;
   roads?: boolean;
+  urbanRoads?: boolean;
   buildings?: boolean;
   infrastructure?: boolean;
   vegetation?: boolean;
@@ -331,6 +332,7 @@ export default function Terrain3DViewer({
 
   const [hydroGisDataset, setHydroGisDataset] = useState<HydrologyGISDataset | null>(null);
   const [roadsGisDataset, setRoadsGisDataset] = useState<RoadGISDataset | null>(null);
+  const [urbanRoadsGisDataset, setUrbanRoadsGisDataset] = useState<RoadGISDataset | null>(null);
   const [buildingsGisDataset, setBuildingsGisDataset] = useState<BuildingGISDataset | null>(null);
 
   // Load the bundled open-data Noyyal River geometry when present.
@@ -355,13 +357,20 @@ export default function Terrain3DViewer({
     };
   }, []);
 
-  // Load the OSM/Overpass footprints exactly as supplied; no gap-filling geometry.
+  // Load the OSM/Overpass footprints (regional + urban core extracts) deduplicated by stable feature ID.
   useEffect(() => {
     let isMounted = true;
-    fetch("/geo/tiruppur-buildings.geojson")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (isMounted && data) setBuildingsGisDataset(parseGeoJSONToBuildingDataset(data));
+    Promise.all([
+      fetch("/geo/tiruppur-buildings.geojson").then((res) => (res.ok ? res.json() : null)),
+      fetch("/geo/tiruppur-urban-buildings.geojson").then((res) => (res.ok ? res.json() : null)),
+    ])
+      .then(([b1, b2]) => {
+        if (isMounted) {
+          const geojsons = [b1, b2].filter(Boolean);
+          if (geojsons.length > 0) {
+            setBuildingsGisDataset(parseGeoJSONToBuildingDataset(...geojsons));
+          }
+        }
       })
       .catch(() => {
         // Keep the existing urban layer empty when the optional open-data source is unavailable.
@@ -371,7 +380,7 @@ export default function Terrain3DViewer({
     };
   }, []);
 
-  // Fetch verified Tiruppur Road Network GeoJSON if present in public/geo/
+  // Fetch verified Tiruppur Regional Highway GeoJSON (TNGIS)
   useEffect(() => {
     let isMounted = true;
     fetch("/geo/tiruppur-roads.geojson")
@@ -386,8 +395,25 @@ export default function Terrain3DViewer({
         }
       })
       .catch(() => {
-        // Handled gracefully: empty roads group returned (zero fake data invented)
+        // Handled gracefully: empty roads group returned
       });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Fetch detailed Tiruppur Urban Street Network GeoJSON (OSM 3,117 local road features)
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/geo/tiruppur-urban-roads.geojson")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data) {
+          const dataset = parseGeoJSONToRoadDataset(data, "OpenStreetMap", "OPEN_DATA");
+          setUrbanRoadsGisDataset(dataset);
+        }
+      })
+      .catch(() => {});
     return () => {
       isMounted = false;
     };
@@ -433,7 +459,7 @@ export default function Terrain3DViewer({
     contourGroupRef.current.visible = layers.contours;
     riverGroupRef.current.visible = layers.river;
     drainageGroupRef.current.visible = Boolean(layers.drainage);
-    roadsGroupRef.current.visible = Boolean(layers.roads);
+    roadsGroupRef.current.visible = Boolean(layers.roads || layers.urbanRoads);
     buildingsGroupRef.current.visible = Boolean(layers.buildings);
     unitsGroupRef.current.visible = layers.units;
     dischargePathsGroupRef.current.visible = Boolean(layers.dischargePaths);
@@ -799,6 +825,7 @@ export default function Terrain3DViewer({
       sampleElevation: sampleTiruppurElevation,
       hydrologyDataset: hydroGisDataset,
       roadsDataset: roadsGisDataset,
+      urbanRoadsDataset: urbanRoadsGisDataset,
       buildingsDataset: buildingsGisDataset,
     };
 
@@ -1490,7 +1517,7 @@ export default function Terrain3DViewer({
       }
       renderer.dispose();
     };
-  }, [autoRotate, onSelectNode, hydroGisDataset, roadsGisDataset, buildingsGisDataset]);
+  }, [autoRotate, onSelectNode, hydroGisDataset, roadsGisDataset, urbanRoadsGisDataset, buildingsGisDataset]);
 
   return (
     <div

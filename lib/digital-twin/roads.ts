@@ -85,15 +85,24 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
 
   let isGisLoaded = false;
   let featureCount = 0;
+  const processedFeatureIds = new Set<string>();
 
-  const dataset = ctx.roadsDataset;
+  const datasets: RoadGISDataset[] = [];
+  if (ctx.roadsDataset) datasets.push(ctx.roadsDataset);
+  if (ctx.urbanRoadsDataset) datasets.push(ctx.urbanRoadsDataset);
 
-  if (dataset && dataset.features && dataset.features.length > 0) {
+  datasets.forEach((dataset) => {
+    if (!dataset || !dataset.features || dataset.features.length === 0) return;
+
     const lineFeatures = dataset.features.filter(
       (f) => f.geometry && (f.geometry.type === "LineString" || f.geometry.type === "MultiLineString")
     );
 
     lineFeatures.forEach((feat) => {
+      const featureId = String(feat.properties.featureId ?? feat.properties.id ?? `road_${featureCount}`);
+      if (processedFeatureIds.has(featureId)) return; // Avoid duplicate rendering across overlapping extracts
+      processedFeatureIds.add(featureId);
+
       const lineCoordsList: Array<Array<[number, number, number?]>> = [];
       if (feat.geometry.type === "LineString") {
         lineCoordsList.push(feat.geometry.coordinates);
@@ -103,6 +112,9 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
 
       const roadClass = feat.properties.roadClass || feat.properties.highway || "unclassified";
       const config = getRoadVisualConfig(roadClass);
+      const isOsm = feat.properties.source === "OpenStreetMap" || dataset.sourceType === "OPEN_DATA" || String(feat.properties.id || "").includes("way/");
+      const sourceLabel = isOsm ? "OpenStreetMap" : (feat.properties.source || "TNGIS");
+      const sourceType = isOsm ? "OPEN_DATA" : (feat.properties.sourceType || "REAL");
 
       lineCoordsList.forEach((coords) => {
         if (!Array.isArray(coords) || coords.length < 2) return;
@@ -168,24 +180,26 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
         });
 
         const asphaltMesh = new THREE.Mesh(ribbonGeo, asphaltMat);
-        asphaltMesh.name = `Physical_Road_${String(feat.properties.featureId ?? feat.properties.id)}`;
+        asphaltMesh.name = `${sourceLabel}_Road_${featureId}`;
         asphaltMesh.userData = {
           type: "road",
           isGisFeature: true,
-          source: "TNGIS",
-          sourceType: "REAL",
-          featureId: feat.properties.featureId,
+          source: sourceLabel,
+          sourceType: sourceType,
+          featureId: featureId,
           roadName: feat.properties.name,
           roadClass: roadClass,
-          originalProperties: feat.properties.metadata,
+          originalProperties: feat.properties.metadata || feat.properties,
           data: {
             ...feat.properties,
-            provenanceNote: "Physical road surface rendered from TNGIS vector geometry.",
+            source: sourceLabel,
+            sourceType: sourceType,
+            provenanceNote: `Physical road surface rendered from ${sourceLabel} vector geometry (${sourceType}).`,
           },
         };
 
-        // Restrained lane marking overlay line
-        if (markingPositions.length >= 6) {
+        // Restrained lane marking overlay line for major arterials
+        if (markingPositions.length >= 6 && (roadClass === "primary" || roadClass === "trunk" || roadClass === "secondary")) {
           const markingGeo = new THREE.BufferGeometry();
           markingGeo.setAttribute("position", new THREE.Float32BufferAttribute(markingPositions, 3));
           const markingMat = new THREE.LineBasicMaterial({
@@ -203,7 +217,7 @@ export function buildRoadsLayer(ctx: LayerBuilderContext): RoadsBuilderResult {
         isGisLoaded = true;
       });
     });
-  }
+  });
 
   return {
     roadsGroup,

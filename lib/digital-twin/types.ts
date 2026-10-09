@@ -33,6 +33,7 @@ export interface DigitalTwinLayerToggles {
   river: boolean;
   drainage?: boolean;
   roads?: boolean;
+  urbanRoads?: boolean;
   buildings?: boolean;
   units: boolean;
   /** Explicitly simulated links from demo outfalls to the active waterway. */
@@ -52,7 +53,7 @@ export interface DigitalTwinLayerToggles {
 // HYDROLOGY GIS DATA INTERFACES
 // ---------------------------------------------------------------------------
 export type HydrologyFeatureType = "river" | "tributary_stream" | "canal" | "waterbody";
-export type GISSourceType = "REAL" | "DERIVED" | "SIMULATED";
+export type GISSourceType = "REAL" | "DERIVED" | "SIMULATED" | "OPEN_DATA";
 
 export interface HydrologyFeatureProperties {
   id?: string | number;
@@ -166,6 +167,7 @@ export interface LayerBuilderContext {
   terrainGrid?: TerrainGrid | null;
   hydrologyDataset?: HydrologyGISDataset | null;
   roadsDataset?: RoadGISDataset | null;
+  urbanRoadsDataset?: RoadGISDataset | null;
   buildingsDataset?: BuildingGISDataset | null;
   /** Active Noyyal/waterway curve supplied by the hydrology layer. */
   activeWaterwayCurve?: THREE.CatmullRomCurve3 | null;

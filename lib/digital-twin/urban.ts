@@ -7,36 +7,60 @@ export interface UrbanBuilderResult {
 }
 
 /**
- * Parses OpenStreetMap/Overpass GeoJSON without changing source IDs, tags, or geometry.
+ * Parses OpenStreetMap/Overpass GeoJSON extracts without changing source IDs, tags, or geometry.
+ * Supports merging multiple extracts with stable OSM identity deduplication (@id / featureId).
  */
-export function parseGeoJSONToBuildingDataset(geojson: any): BuildingGISDataset | null {
-  if (!geojson || geojson.type !== "FeatureCollection" || !Array.isArray(geojson.features)) return null;
+export function parseGeoJSONToBuildingDataset(...geojsons: any[]): BuildingGISDataset | null {
+  const featureMap = new Map<string, BuildingGISFeature>();
 
-  const features: BuildingGISFeature[] = geojson.features
-    .filter((feature: any) => feature?.geometry?.type === "Polygon" || feature?.geometry?.type === "MultiPolygon")
-    .map((feature: any) => {
+  geojsons.forEach((geojson) => {
+    if (!geojson || geojson.type !== "FeatureCollection" || !Array.isArray(geojson.features)) return;
+
+    geojson.features.forEach((feature: any) => {
+      if (!feature?.geometry || (feature.geometry.type !== "Polygon" && feature.geometry.type !== "MultiPolygon")) return;
+
       const properties = feature.properties || {};
-      return {
-        type: "Feature",
-        properties: {
-          featureId: feature.id ?? properties["@id"],
-          name: properties.name,
-          building: properties.building,
-          height: properties.height,
-          levels: properties["building:levels"] ?? properties.levels,
-          source: "OpenStreetMap",
-          sourceType: "OPEN_DATA",
-          originalProperties: properties,
-        },
-        geometry: feature.geometry,
-      };
+      const featureId = String(feature.id ?? properties["@id"] ?? properties.id ?? `bldg_${featureMap.size}`);
+
+      if (featureMap.has(featureId)) {
+        // Merge properties safely if feature is already present
+        const existing = featureMap.get(featureId)!;
+        existing.properties.originalProperties = {
+          ...existing.properties.originalProperties,
+          ...properties,
+        };
+        if (!existing.properties.name && properties.name) existing.properties.name = properties.name;
+        if (!existing.properties.building && properties.building) existing.properties.building = properties.building;
+        if (!existing.properties.height && properties.height) existing.properties.height = properties.height;
+        if (!existing.properties.levels && (properties["building:levels"] || properties.levels)) {
+          existing.properties.levels = properties["building:levels"] ?? properties.levels;
+        }
+      } else {
+        featureMap.set(featureId, {
+          type: "Feature",
+          properties: {
+            featureId,
+            name: properties.name,
+            building: properties.building,
+            height: properties.height,
+            levels: properties["building:levels"] ?? properties.levels,
+            source: "OpenStreetMap",
+            sourceType: "OPEN_DATA",
+            originalProperties: properties,
+          },
+          geometry: feature.geometry,
+        });
+      }
     });
+  });
+
+  if (featureMap.size === 0) return null;
 
   return {
     type: "FeatureCollection",
-    datasetName: "Tiruppur OSM Building Footprints (Overpass)",
+    datasetName: "Tiruppur OSM Building Footprints (Deduplicated Overpass Extract)",
     sourceType: "OPEN_DATA",
-    features,
+    features: Array.from(featureMap.values()),
   };
 }
 
