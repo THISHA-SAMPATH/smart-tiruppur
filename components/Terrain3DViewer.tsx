@@ -330,91 +330,61 @@ export default function Terrain3DViewer({
   const targetCamPosRef = useRef<THREE.Vector3 | null>(null);
   const targetLookAtRef = useRef<THREE.Vector3 | null>(null);
 
-  const [hydroGisDataset, setHydroGisDataset] = useState<HydrologyGISDataset | null>(null);
-  const [roadsGisDataset, setRoadsGisDataset] = useState<RoadGISDataset | null>(null);
-  const [urbanRoadsGisDataset, setUrbanRoadsGisDataset] = useState<RoadGISDataset | null>(null);
-  const [buildingsGisDataset, setBuildingsGisDataset] = useState<BuildingGISDataset | null>(null);
+  // Load all geographic sources as one bundle so the Three.js scene does not
+  // initialize repeatedly with a partially loaded river/road/building dataset.
+  const [gisDatasets, setGisDatasets] = useState<{
+    hydro: HydrologyGISDataset | null;
+    roads: RoadGISDataset | null;
+    urbanRoads: RoadGISDataset | null;
+    buildings: BuildingGISDataset | null;
+  } | null>(null);
 
-  // Load the bundled open-data Noyyal River geometry when present.
+  const hydroGisDataset = gisDatasets?.hydro ?? null;
+  const roadsGisDataset = gisDatasets?.roads ?? null;
+  const urbanRoadsGisDataset = gisDatasets?.urbanRoads ?? null;
+  const buildingsGisDataset = gisDatasets?.buildings ?? null;
+
   useEffect(() => {
     let isMounted = true;
-    fetch("/geo/noyyal-river.geojson")
-      .then((res) => {
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then((data) => {
-        if (isMounted && data) {
-          const dataset = parseGeoJSONToHydrologyDataset(data, "OpenStreetMap", "REAL");
-          setHydroGisDataset(dataset);
-        }
-      })
-      .catch(() => {
-        // Fallback procedural geometry handled gracefully by hydrology builder
-      });
-    return () => {
-      isMounted = false;
+
+    const loadGeoJSON = async (path: string): Promise<any | null> => {
+      try {
+        const response = await fetch(path);
+        if (!response.ok) return null;
+        return await response.json();
+      } catch {
+        // A missing optional source should not prevent the rest of the map loading.
+        return null;
+      }
     };
-  }, []);
 
-  // Load the OSM/Overpass footprints (regional + urban core + expanded urban extent extracts) deduplicated by stable feature ID.
-  useEffect(() => {
-    let isMounted = true;
     Promise.all([
-      fetch("/geo/tiruppur-buildings.geojson").then((res) => (res.ok ? res.json() : null)),
-      fetch("/geo/tiruppur-urban-buildings.geojson").then((res) => (res.ok ? res.json() : null)),
-      fetch("/geo/tiruppur-buildings-expanded-urban-extent.geojson").then((res) => (res.ok ? res.json() : null)),
-    ])
-      .then(([b1, b2, b3]) => {
-        if (isMounted) {
-          const geojsons = [b1, b2, b3].filter(Boolean);
-          if (geojsons.length > 0) {
-            setBuildingsGisDataset(parseGeoJSONToBuildingDataset(...geojsons));
-          }
-        }
-      })
-      .catch(() => {
-        // Keep the existing urban layer empty when optional open-data sources are unavailable.
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      loadGeoJSON("/geo/noyyal-river.geojson"),
+      loadGeoJSON("/geo/tiruppur-roads.geojson"),
+      loadGeoJSON("/geo/tiruppur-urban-roads.geojson"),
+      loadGeoJSON("/geo/tiruppur-buildings.geojson"),
+      loadGeoJSON("/geo/tiruppur-urban-buildings.geojson"),
+      loadGeoJSON("/geo/tiruppur-buildings-expanded-urban-extent.geojson"),
+    ]).then(([hydroData, roadsData, urbanRoadsData, b1, b2, b3]) => {
+      if (!isMounted) return;
 
-  // Fetch verified Tiruppur Regional Highway GeoJSON (TNGIS)
-  useEffect(() => {
-    let isMounted = true;
-    fetch("/geo/tiruppur-roads.geojson")
-      .then((res) => {
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then((data) => {
-        if (isMounted && data) {
-          const dataset = parseGeoJSONToRoadDataset(data, "TNGIS", "REAL");
-          setRoadsGisDataset(dataset);
-        }
-      })
-      .catch(() => {
-        // Handled gracefully: empty roads group returned
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      const hydro = hydroData
+        ? parseGeoJSONToHydrologyDataset(hydroData, "OpenStreetMap", "REAL")
+        : null;
+      const roads = roadsData
+        ? parseGeoJSONToRoadDataset(roadsData, "TNGIS", "REAL")
+        : null;
+      const urbanRoads = urbanRoadsData
+        ? parseGeoJSONToRoadDataset(urbanRoadsData, "OpenStreetMap", "OPEN_DATA")
+        : null;
+      const buildingGeoJSONs = [b1, b2, b3].filter(Boolean);
+      const buildings = buildingGeoJSONs.length > 0
+        ? parseGeoJSONToBuildingDataset(...buildingGeoJSONs)
+        : null;
 
-  // Fetch detailed Tiruppur Urban Street Network GeoJSON (OSM 3,117 local road features)
-  useEffect(() => {
-    let isMounted = true;
-    fetch("/geo/tiruppur-urban-roads.geojson")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (isMounted && data) {
-          const dataset = parseGeoJSONToRoadDataset(data, "OpenStreetMap", "OPEN_DATA");
-          setUrbanRoadsGisDataset(dataset);
-        }
-      })
-      .catch(() => {});
+      setGisDatasets({ hydro, roads, urbanRoads, buildings });
+    });
+
     return () => {
       isMounted = false;
     };
@@ -441,9 +411,10 @@ export default function Terrain3DViewer({
     }
 
     // Direct urban core target (11.1085°N, 77.3411°E) in 3D world space
-    const targetX = 0.0;
-    const targetY = 0.5;
-    const targetZ = 0.0;
+    const cityCenter = geoTo3D(11.1085, 77.3411, 0);
+    const targetX = cityCenter.x;
+    const targetY = cityCenter.y;
+    const targetZ = cityCenter.z;
 
     if (viewMode === "2.5D") {
       targetCamPosRef.current = new THREE.Vector3(targetX, targetY + 14.0, targetZ + 12.0);
@@ -726,9 +697,9 @@ export default function Terrain3DViewer({
     }
   }, [lighting]);
 
-  // Scene Setup
+  // Scene Setup: wait until all geographic fetches have settled and been parsed.
   useEffect(() => {
-    if (!threeHostRef.current) return;
+    if (!threeHostRef.current || !gisDatasets) return;
     const host = threeHostRef.current;
     const width = host.clientWidth || window.innerWidth;
     const height = host.clientHeight || window.innerHeight;
@@ -769,9 +740,10 @@ export default function Terrain3DViewer({
     scene.add(selectionRingGroupRef.current);
 
     // Oblique Urban View Perspective framing Tiruppur City Core (11.1085°N, 77.3411°E)
-    const targetX = 0.0;
-    const targetY = 0.5;
-    const targetZ = 0.0;
+    const cityCenter = geoTo3D(11.1085, 77.3411, 0);
+    const targetX = cityCenter.x;
+    const targetY = cityCenter.y;
+    const targetZ = cityCenter.z;
 
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
     if (viewMode === "2.5D") {
@@ -836,10 +808,10 @@ export default function Terrain3DViewer({
       geoTo3D,
       vector3DToGeo,
       sampleElevation: sampleTiruppurElevation,
-      hydrologyDataset: hydroGisDataset,
-      roadsDataset: roadsGisDataset,
-      urbanRoadsDataset: urbanRoadsGisDataset,
-      buildingsDataset: buildingsGisDataset,
+      hydrologyDataset: gisDatasets.hydro,
+      roadsDataset: gisDatasets.roads,
+      urbanRoadsDataset: gisDatasets.urbanRoads,
+      buildingsDataset: gisDatasets.buildings,
     };
 
     // 1. Terrain & Contours Builder
@@ -961,9 +933,10 @@ export default function Terrain3DViewer({
 
     // Frame camera on defined Tiruppur Urban Center (11.1085°N, 77.3411°E)
     if (cameraRef.current && controlsRef.current) {
-      const targetX = 0.0;
-      const targetY = 0.5;
-      const targetZ = 0.0;
+      const cityCenter = geoTo3D(11.1085, 77.3411, 0);
+      const targetX = cityCenter.x;
+      const targetY = cityCenter.y;
+      const targetZ = cityCenter.z;
 
       if (viewMode === "2.5D") {
         buildingsGroupRef.current.scale.set(1.0, 0.25, 1.0);
@@ -1559,7 +1532,7 @@ export default function Terrain3DViewer({
       }
       renderer.dispose();
     };
-  }, [autoRotate, onSelectNode, hydroGisDataset, roadsGisDataset, urbanRoadsGisDataset, buildingsGisDataset]);
+  }, [autoRotate, onSelectNode, gisDatasets]);
 
   return (
     <div
@@ -1582,6 +1555,30 @@ export default function Terrain3DViewer({
           overflow: "hidden",
         }}
       />
+      {!gisDatasets && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 40,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(248, 250, 252, 0.96)",
+            color: "#334155",
+            pointerEvents: "none",
+          }}
+        >
+          <div style={{ textAlign: "center", padding: "16px" }}>
+            <div style={{ fontSize: "14px", fontWeight: 700 }}>Loading Tiruppur map…</div>
+            <div style={{ marginTop: "6px", fontSize: "12px", color: "#64748b" }}>
+              Preparing river, roads and building layers
+            </div>
+          </div>
+        </div>
+      )}
       {/* Active Task Focus Caption Bar */}
       {interactionMode === "TRACE" && (
         <div
