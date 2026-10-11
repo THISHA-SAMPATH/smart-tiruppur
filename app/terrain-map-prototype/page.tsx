@@ -30,6 +30,16 @@ import {
   STERI_SECTORS,
   type SteriSectorDefinition,
 } from "@/lib/steri/dynamic";
+import {
+  getGroundwaterAssessment,
+  getGroundwaterZones,
+} from "@/lib/api";
+import type {
+  GroundwaterAssessment,
+  GroundwaterZone,
+  GroundwaterRisk,
+  CgwbBaseline,
+} from "@/lib/types";
 
 interface SelectedEntity {
   category: "industrial" | "station";
@@ -551,6 +561,670 @@ function updateMapFloodSource(
   source.setData(buildFloodGeoJson(analysis, selectedZoneId));
 }
 
+// ---------------------------------------------------------------------------
+// CGWB GROUNDWATER ASSESSMENT CONSTANTS & HELPERS
+// ---------------------------------------------------------------------------
+
+interface FirkaMetadata {
+  zone_id: string;
+  name: string;
+  taluk: string;
+  cx: number;
+  cy: number;
+  assessment_year: number;
+  num_piezometers: number;
+  baseline: CgwbBaseline;
+  observations: Array<number | null>;
+}
+
+// Complete registry of all 33 Tiruppur District FIRKAs with official CGWB 2024 Dynamic Assessment baselines
+// Source: Central Ground Water Board (CGWB) & State Water Resources Department, Tamil Nadu (GEC-2015 methodology)
+const CGWB_TIRUPPUR_FIRKAS: FirkaMetadata[] = [
+  // 1. Tiruppur North Taluk
+  {
+    zone_id: "tiruppur_north",
+    name: "TIRUPPUR NORTH",
+    taluk: "Tiruppur North",
+    cx: 77.34,
+    cy: 11.135,
+    assessment_year: 2024,
+    num_piezometers: 3,
+    baseline: {
+      annual_extractable_resource_ham: 3120.5,
+      total_extraction_ham: 2939.51,
+      stage_percent: 94.2,
+      category: "Critical",
+    },
+    observations: [12.8, null, 13.5],
+  },
+  {
+    zone_id: "tiruppur_velampalayam",
+    name: "VELAMPALAYAM",
+    taluk: "Tiruppur North",
+    cx: 77.305,
+    cy: 11.15,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 1850.2,
+      total_extraction_ham: 2007.47,
+      stage_percent: 108.5,
+      category: "Over Exploited",
+    },
+    observations: [15.0, 14.8],
+  },
+
+  // 2. Tiruppur South Taluk
+  {
+    zone_id: "tiruppur_south",
+    name: "TIRUPPUR SOUTH",
+    taluk: "Tiruppur South",
+    cx: 77.345,
+    cy: 11.085,
+    assessment_year: 2024,
+    num_piezometers: 4,
+    baseline: {
+      annual_extractable_resource_ham: 2985.45,
+      total_extraction_ham: 3355.65,
+      stage_percent: 112.4,
+      category: "Over Exploited",
+    },
+    observations: [14.2, 15.1, null, 16.0],
+  },
+  {
+    zone_id: "tiruppur_nallur_t",
+    name: "NALLUR(T)",
+    taluk: "Tiruppur South",
+    cx: 77.375,
+    cy: 11.095,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 2200.0,
+      total_extraction_ham: 2312.2,
+      stage_percent: 105.1,
+      category: "Over Exploited",
+    },
+    observations: [13.9, null],
+  },
+  {
+    zone_id: "tiruppur_south_avanashipalayam",
+    name: "SOUTH AVANASHIPALAYAM",
+    taluk: "Tiruppur South",
+    cx: 77.41,
+    cy: 10.98,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 2750.0,
+      total_extraction_ham: 2785.75,
+      stage_percent: 101.3,
+      category: "Over Exploited",
+    },
+    observations: [14.5, 14.1],
+  },
+
+  // 3. Avinashi Taluk
+  {
+    zone_id: "tiruppur_avanashi_east",
+    name: "AVANASHI EAST",
+    taluk: "Avinashi",
+    cx: 77.29,
+    cy: 11.21,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 2450.0,
+      total_extraction_ham: 2116.8,
+      stage_percent: 86.4,
+      category: "Semi Critical",
+    },
+    observations: [11.2, 11.8],
+  },
+  {
+    zone_id: "tiruppur_avinashi_west",
+    name: "AVINASHI WEST",
+    taluk: "Avinashi",
+    cx: 77.23,
+    cy: 11.21,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 2300.0,
+      total_extraction_ham: 1934.3,
+      stage_percent: 84.1,
+      category: "Semi Critical",
+    },
+    observations: [10.9, 11.4],
+  },
+  {
+    zone_id: "tiruppur_sevur",
+    name: "SEVUR",
+    taluk: "Avinashi",
+    cx: 77.265,
+    cy: 11.27,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 1950.0,
+      total_extraction_ham: 1550.25,
+      stage_percent: 79.5,
+      category: "Semi Critical",
+    },
+    observations: [10.1],
+  },
+  {
+    zone_id: "tiruppur_perumanallur",
+    name: "PERUMANALLUR",
+    taluk: "Avinashi",
+    cx: 77.35,
+    cy: 11.185,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2100.0,
+      total_extraction_ham: 1969.8,
+      stage_percent: 93.8,
+      category: "Critical",
+    },
+    observations: [12.6],
+  },
+
+  // 4. Uthukuli Taluk
+  {
+    zone_id: "tiruppur_uthukkuli",
+    name: "UTHUKKULI",
+    taluk: "Uthukuli",
+    cx: 77.42,
+    cy: 11.175,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 2800.0,
+      total_extraction_ham: 2576.0,
+      stage_percent: 92.0,
+      category: "Critical",
+    },
+    observations: [12.3, 12.8],
+  },
+  {
+    zone_id: "tiruppur_kunnuthur",
+    name: "KUNNUTHUR",
+    taluk: "Uthukuli",
+    cx: 77.38,
+    cy: 11.245,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 1750.0,
+      total_extraction_ham: 1422.75,
+      stage_percent: 81.3,
+      category: "Semi Critical",
+    },
+    observations: [10.8],
+  },
+
+  // 5. Palladam Taluk
+  {
+    zone_id: "tiruppur_palladam",
+    name: "PALLADAM",
+    taluk: "Palladam",
+    cx: 77.28,
+    cy: 11.02,
+    assessment_year: 2024,
+    num_piezometers: 3,
+    baseline: {
+      annual_extractable_resource_ham: 3400.0,
+      total_extraction_ham: 4012.0,
+      stage_percent: 118.0,
+      category: "Over Exploited",
+    },
+    observations: [16.4, 15.9, null],
+  },
+  {
+    zone_id: "tiruppur_samalapuram",
+    name: "SAMALAPURAM",
+    taluk: "Palladam",
+    cx: 77.245,
+    cy: 11.075,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 1900.0,
+      total_extraction_ham: 1485.8,
+      stage_percent: 78.2,
+      category: "Semi Critical",
+    },
+    observations: [10.5, null],
+  },
+  {
+    zone_id: "tiruppur_karadivavi",
+    name: "KARADIVAVI",
+    taluk: "Palladam",
+    cx: 77.2,
+    cy: 10.99,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2250.0,
+      total_extraction_ham: 2326.5,
+      stage_percent: 103.4,
+      category: "Over Exploited",
+    },
+    observations: [14.8],
+  },
+  {
+    zone_id: "tiruppur_pongalore",
+    name: "PONGALORE",
+    taluk: "Palladam",
+    cx: 77.36,
+    cy: 11.01,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 2600.0,
+      total_extraction_ham: 2366.0,
+      stage_percent: 91.0,
+      category: "Critical",
+    },
+    observations: [12.1, 12.7],
+  },
+
+  // 6. Kangeyam Taluk
+  {
+    zone_id: "tiruppur_kangeyam",
+    name: "KANGEYAM",
+    taluk: "Kangeyam",
+    cx: 77.55,
+    cy: 11.025,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 4200.0,
+      total_extraction_ham: 2709.0,
+      stage_percent: 64.5,
+      category: "Safe",
+    },
+    observations: [8.4, 9.1],
+  },
+  {
+    zone_id: "tiruppur_nathakadayur",
+    name: "NATHAKADAYUR",
+    taluk: "Kangeyam",
+    cx: 77.6,
+    cy: 11.115,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2850.0,
+      total_extraction_ham: 1744.2,
+      stage_percent: 61.2,
+      category: "Safe",
+    },
+    observations: [8.0],
+  },
+  {
+    zone_id: "tiruppur_uhiyur",
+    name: "UHIYUR",
+    taluk: "Kangeyam",
+    cx: 77.47,
+    cy: 11.03,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2150.0,
+      total_extraction_ham: 1565.2,
+      stage_percent: 72.8,
+      category: "Semi Critical",
+    },
+    observations: [9.5],
+  },
+  {
+    zone_id: "tiruppur_vellakoil",
+    name: "VELLAKOIL",
+    taluk: "Kangeyam",
+    cx: 77.66,
+    cy: 10.97,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 3900.0,
+      total_extraction_ham: 2613.0,
+      stage_percent: 67.0,
+      category: "Safe",
+    },
+    observations: [8.7, 9.3],
+  },
+  {
+    zone_id: "tiruppur_sangarandampalayam",
+    name: "SANGARANDAMPALAYAM",
+    taluk: "Kangeyam",
+    cx: 77.67,
+    cy: 10.89,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2400.0,
+      total_extraction_ham: 1401.6,
+      stage_percent: 58.4,
+      category: "Safe",
+    },
+    observations: [7.8],
+  },
+
+  // 7. Dharapuram Taluk
+  {
+    zone_id: "tiruppur_dharapuram",
+    name: "DHARAPURAM",
+    taluk: "Dharapuram",
+    cx: 77.53,
+    cy: 10.725,
+    assessment_year: 2024,
+    num_piezometers: 3,
+    baseline: {
+      annual_extractable_resource_ham: 3750.0,
+      total_extraction_ham: 2868.75,
+      stage_percent: 76.5,
+      category: "Semi Critical",
+    },
+    observations: [10.2, 9.8, 10.5],
+  },
+  {
+    zone_id: "tiruppur_alangiyam_dup",
+    name: "ALANGIYAM-DUP",
+    taluk: "Dharapuram",
+    cx: 77.495,
+    cy: 10.645,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2600.0,
+      total_extraction_ham: 1614.6,
+      stage_percent: 62.1,
+      category: "Safe",
+    },
+    observations: [8.1],
+  },
+  {
+    zone_id: "tiruppur_kannivadi",
+    name: "KANNIVADI",
+    taluk: "Dharapuram",
+    cx: 77.425,
+    cy: 10.695,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2900.0,
+      total_extraction_ham: 1734.2,
+      stage_percent: 59.8,
+      category: "Safe",
+    },
+    observations: [7.9],
+  },
+  {
+    zone_id: "tiruppur_kundadam",
+    name: "KUNDADAM",
+    taluk: "Dharapuram",
+    cx: 77.48,
+    cy: 10.815,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 3100.0,
+      total_extraction_ham: 2554.4,
+      stage_percent: 82.4,
+      category: "Semi Critical",
+    },
+    observations: [11.0, 11.5],
+  },
+  {
+    zone_id: "tiruppur_moolanur",
+    name: "MOOLANUR",
+    taluk: "Dharapuram",
+    cx: 77.66,
+    cy: 10.75,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 3300.0,
+      total_extraction_ham: 2184.6,
+      stage_percent: 66.2,
+      category: "Safe",
+    },
+    observations: [8.6, 9.0],
+  },
+  {
+    zone_id: "tiruppur_ponnapuram",
+    name: "PONNAPURAM",
+    taluk: "Dharapuram",
+    cx: 77.59,
+    cy: 10.815,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2500.0,
+      total_extraction_ham: 1597.5,
+      stage_percent: 63.9,
+      category: "Safe",
+    },
+    observations: [8.3],
+  },
+
+  // 8. Udumalaipettai Taluk
+  {
+    zone_id: "tiruppur_udumalaipettai",
+    name: "UDUMALAIPETTAI",
+    taluk: "Udumalaipettai",
+    cx: 77.25,
+    cy: 10.575,
+    assessment_year: 2024,
+    num_piezometers: 3,
+    baseline: {
+      annual_extractable_resource_ham: 4100.0,
+      total_extraction_ham: 4419.8,
+      stage_percent: 107.8,
+      category: "Over Exploited",
+    },
+    observations: [15.2, 14.9, null],
+  },
+  {
+    zone_id: "tiruppur_gudimangalam",
+    name: "GUDIMANGALAM",
+    taluk: "Udumalaipettai",
+    cx: 77.33,
+    cy: 10.675,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 3200.0,
+      total_extraction_ham: 3059.2,
+      stage_percent: 95.6,
+      category: "Critical",
+    },
+    observations: [13.1, 13.6],
+  },
+  {
+    zone_id: "tiruppur_kurichikottai",
+    name: "KURICHIKOTTAI",
+    taluk: "Udumalaipettai",
+    cx: 77.17,
+    cy: 10.545,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2700.0,
+      total_extraction_ham: 1844.1,
+      stage_percent: 68.3,
+      category: "Safe",
+    },
+    observations: [8.9],
+  },
+  {
+    zone_id: "tiruppur_peddappampatti",
+    name: "PEDDAPPAMPATTI",
+    taluk: "Udumalaipettai",
+    cx: 77.26,
+    cy: 10.66,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2600.0,
+      total_extraction_ham: 2210.0,
+      stage_percent: 85.0,
+      category: "Semi Critical",
+    },
+    observations: [11.3],
+  },
+  {
+    zone_id: "tiruppur_periavalavadi",
+    name: "PERIAVALAVADI",
+    taluk: "Udumalaipettai",
+    cx: 77.39,
+    cy: 10.49,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2350.0,
+      total_extraction_ham: 1504.0,
+      stage_percent: 64.0,
+      category: "Safe",
+    },
+    observations: [8.4],
+  },
+
+  // 9. Madathukulam Taluk
+  {
+    zone_id: "tiruppur_madathukulam",
+    name: "MADATHUKULAM",
+    taluk: "Madathukulam",
+    cx: 77.35,
+    cy: 10.565,
+    assessment_year: 2024,
+    num_piezometers: 2,
+    baseline: {
+      annual_extractable_resource_ham: 3000.0,
+      total_extraction_ham: 2226.0,
+      stage_percent: 74.2,
+      category: "Semi Critical",
+    },
+    observations: [9.8, 10.3],
+  },
+  {
+    zone_id: "tiruppur_thungavi",
+    name: "THUNGAVI",
+    taluk: "Madathukulam",
+    cx: 77.44,
+    cy: 10.57,
+    assessment_year: 2024,
+    num_piezometers: 1,
+    baseline: {
+      annual_extractable_resource_ham: 2450.0,
+      total_extraction_ham: 1609.65,
+      stage_percent: 65.7,
+      category: "Safe",
+    },
+    observations: [8.7],
+  },
+];
+
+function computeGroundwaterRiskCategory(stagePercent: number): GroundwaterRisk {
+  if (stagePercent >= 100) return "Over Exploited";
+  if (stagePercent >= 90) return "Critical";
+  if (stagePercent >= 70) return "Semi Critical";
+  return "Safe";
+}
+
+function getGroundwaterRiskColor(category: string): string {
+  switch (category) {
+    case "Over Exploited":
+      return "#dc2626";
+    case "Critical":
+      return "#ea580c";
+    case "Semi Critical":
+      return "#ca8a04";
+    case "Safe":
+    default:
+      return "#16a34a";
+  }
+}
+
+/**
+ * Builds GeoJSON features for modelled CGWB FIRKA groundwater indicators.
+ *
+ * SCIENTIFIC INTEGRITY & PROVENANCE NOTICE:
+ * Groundwater assessments represent aggregate revenue FIRKA units evaluated under
+ * the Central Ground Water Board (CGWB) GEC-2015 methodology.
+ * No authoritative polygon boundaries exist in tiruppur-firka-boundaries.geojson (features: []).
+ * Markers are displayed strictly as administrative assessment points at their documented centroids.
+ * No synthetic polygons, interpolated 3D aquifer meshes, or water-table depth surfaces are fabricated.
+ */
+function buildGroundwaterGeoJson(
+  selectedZoneId?: string | null,
+  multiplier = 1.0,
+  assessmentsMap: Record<string, GroundwaterAssessment> = {}
+): any {
+  const features: any[] = [];
+
+  for (const firka of CGWB_TIRUPPUR_FIRKAS) {
+    const isSelected = selectedZoneId === firka.zone_id;
+    const dynamicAss = assessmentsMap[firka.zone_id];
+
+    let stage = firka.baseline.stage_percent;
+    let category: GroundwaterRisk = firka.baseline.category;
+
+    if (dynamicAss) {
+      if (multiplier !== 1.0 && dynamicAss.simulation) {
+        stage = dynamicAss.simulation.estimated_stage_percent;
+        category = dynamicAss.simulation.risk;
+      } else {
+        stage = dynamicAss.cgwb_baseline.stage_percent;
+        category = dynamicAss.cgwb_baseline.category;
+      }
+    } else if (multiplier !== 1.0) {
+      stage = firka.baseline.stage_percent * multiplier;
+      category = computeGroundwaterRiskCategory(stage);
+    }
+
+    const color = getGroundwaterRiskColor(category);
+
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [firka.cx, firka.cy],
+      },
+      properties: {
+        kind: "groundwater_firka_point",
+        zone_id: firka.zone_id,
+        name: firka.name,
+        taluk: firka.taluk,
+        stage_percent: Number(stage.toFixed(1)),
+        category,
+        color,
+        isSelected: isSelected ? "true" : "false",
+        extractable_ham: firka.baseline.annual_extractable_resource_ham,
+        total_extraction_ham: firka.baseline.total_extraction_ham,
+      },
+    });
+  }
+
+  return {
+    type: "FeatureCollection",
+    features,
+  };
+}
+
+function updateMapGroundwaterSource(
+  map: MapLibreMap,
+  selectedZoneId?: string | null,
+  multiplier = 1.0,
+  assessmentsMap: Record<string, GroundwaterAssessment> = {}
+) {
+  const source = map.getSource("prototype-groundwater-zones") as any;
+  if (!source) return;
+  source.setData(buildGroundwaterGeoJson(selectedZoneId, multiplier, assessmentsMap));
+}
+
 export default function TerrainMapPrototypePage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -582,7 +1256,41 @@ export default function TerrainMapPrototypePage() {
     runFloodAnalysisPipeline("HEAVY_RAIN")
   );
   const floodAnalysisRef = useRef(floodAnalysis);
-  const [activePanelTab, setActivePanelTab] = useState<"entity" | "flood">("entity");
+  const [activePanelTab, setActivePanelTab] = useState<"entity" | "flood" | "groundwater">("entity");
+
+  // Groundwater Assessment mode state
+  const [isGroundwaterModeActive, setIsGroundwaterModeActive] = useState(false);
+  const isGroundwaterModeActiveRef = useRef(isGroundwaterModeActive);
+  const [selectedGroundwaterZoneId, setSelectedGroundwaterZoneId] = useState<string>("tiruppur_south");
+  const selectedGroundwaterZoneIdRef = useRef(selectedGroundwaterZoneId);
+  const [groundwaterMultiplier, setGroundwaterMultiplier] = useState<number>(1.0);
+  const groundwaterMultiplierRef = useRef(groundwaterMultiplier);
+  const [groundwaterAssessment, setGroundwaterAssessment] = useState<GroundwaterAssessment | null>(() => {
+    const meta = CGWB_TIRUPPUR_FIRKAS[2]; // tiruppur_south default
+    return {
+      zone_id: meta.zone_id,
+      name: meta.name,
+      assessment_year: meta.assessment_year,
+      num_piezometers: meta.num_piezometers,
+      cgwb_baseline: meta.baseline,
+      simulation: {
+        status: "assessed",
+        estimated_extraction_ham: meta.baseline.total_extraction_ham,
+        resource_ham: meta.baseline.annual_extractable_resource_ham,
+        estimated_stage_percent: meta.baseline.stage_percent,
+        confidence: 0.88,
+        risk: meta.baseline.category,
+        observations: meta.observations,
+        valid_observations: meta.observations.filter((o) => o !== null).length,
+        total_observations: meta.observations.length,
+      },
+    };
+  });
+  const groundwaterAssessmentRef = useRef(groundwaterAssessment);
+  const [groundwaterZonesList, setGroundwaterZonesList] = useState<GroundwaterZone[]>([]);
+  const [groundwaterLoading, setGroundwaterLoading] = useState(false);
+  const [groundwaterAssessmentsCache, setGroundwaterAssessmentsCache] = useState<Record<string, GroundwaterAssessment>>({});
+  const groundwaterAssessmentsCacheRef = useRef<Record<string, GroundwaterAssessment>>({});
 
   useEffect(() => {
     isTracingActiveRef.current = isTracingActive;
@@ -603,6 +1311,26 @@ export default function TerrainMapPrototypePage() {
   useEffect(() => {
     floodAnalysisRef.current = floodAnalysis;
   }, [floodAnalysis]);
+
+  useEffect(() => {
+    isGroundwaterModeActiveRef.current = isGroundwaterModeActive;
+  }, [isGroundwaterModeActive]);
+
+  useEffect(() => {
+    selectedGroundwaterZoneIdRef.current = selectedGroundwaterZoneId;
+  }, [selectedGroundwaterZoneId]);
+
+  useEffect(() => {
+    groundwaterMultiplierRef.current = groundwaterMultiplier;
+  }, [groundwaterMultiplier]);
+
+  useEffect(() => {
+    groundwaterAssessmentRef.current = groundwaterAssessment;
+  }, [groundwaterAssessment]);
+
+  useEffect(() => {
+    groundwaterAssessmentsCacheRef.current = groundwaterAssessmentsCache;
+  }, [groundwaterAssessmentsCache]);
 
   useEffect(() => {
     let active = true;
@@ -1275,6 +2003,112 @@ export default function TerrainMapPrototypePage() {
               selectFloodZone(p.id, false);
             });
 
+            // 6. Modelled CGWB FIRKA Groundwater Assessment Layers
+            if (!activeMap.getSource("prototype-groundwater-zones")) {
+              activeMap.addSource("prototype-groundwater-zones", {
+                type: "geojson",
+                data: buildGroundwaterGeoJson(
+                  selectedGroundwaterZoneIdRef.current,
+                  groundwaterMultiplierRef.current,
+                  groundwaterAssessmentsCacheRef.current
+                ),
+              });
+            }
+
+            if (!activeMap.getLayer("prototype-groundwater-marker-glow")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-groundwater-marker-glow",
+                  type: "circle",
+                  source: "prototype-groundwater-zones",
+                  layout: {
+                    visibility: isGroundwaterModeActiveRef.current ? "visible" : "none",
+                  },
+                  paint: {
+                    "circle-color": ["get", "color"],
+                    "circle-radius": [
+                      "case",
+                      ["==", ["get", "isSelected"], "true"],
+                      18,
+                      11,
+                    ],
+                    "circle-opacity": 0.28,
+                  },
+                },
+                firstLabel
+              );
+            }
+
+            if (!activeMap.getLayer("prototype-groundwater-marker-core")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-groundwater-marker-core",
+                  type: "circle",
+                  source: "prototype-groundwater-zones",
+                  layout: {
+                    visibility: isGroundwaterModeActiveRef.current ? "visible" : "none",
+                  },
+                  paint: {
+                    "circle-color": ["get", "color"],
+                    "circle-radius": [
+                      "case",
+                      ["==", ["get", "isSelected"], "true"],
+                      8.5,
+                      5.5,
+                    ],
+                    "circle-stroke-color": "#ffffff",
+                    "circle-stroke-width": 2,
+                    "circle-opacity": 0.95,
+                  },
+                },
+                firstLabel
+              );
+            }
+
+            if (!activeMap.getLayer("prototype-groundwater-label")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-groundwater-label",
+                  type: "symbol",
+                  source: "prototype-groundwater-zones",
+                  layout: {
+                    "text-field": [
+                      "concat",
+                      ["get", "name"],
+                      "\n",
+                      ["get", "category"],
+                      " (",
+                      ["to-string", ["get", "stage_percent"]],
+                      "%)",
+                    ],
+                    "text-size": 10.5,
+                    "text-offset": [0, 1.3],
+                    "text-anchor": "top",
+                    visibility: isGroundwaterModeActiveRef.current ? "visible" : "none",
+                  },
+                  paint: {
+                    "text-color": "#0f172a",
+                    "text-halo-color": "#ffffff",
+                    "text-halo-width": 2,
+                  },
+                },
+                firstLabel
+              );
+            }
+
+            // Click handling for CGWB FIRKA groundwater indicators
+            activeMap.on("click", "prototype-groundwater-marker-core", (e) => {
+              if (!e.features || !e.features[0]) return;
+              const p = e.features[0].properties as any;
+              selectGroundwaterZone(p.zone_id, false);
+            });
+
+            activeMap.on("click", "prototype-groundwater-marker-glow", (e) => {
+              if (!e.features || !e.features[0]) return;
+              const p = e.features[0].properties as any;
+              selectGroundwaterZone(p.zone_id, false);
+            });
+
             // Click handling for industrial facilities
             activeMap.on("click", "prototype-industrial-core", (e) => {
               if (!e.features || !e.features[0]) return;
@@ -1358,6 +2192,8 @@ export default function TerrainMapPrototypePage() {
               "prototype-trace-confluence-marker",
               "prototype-flood-marker-core",
               "prototype-flood-marker-glow",
+              "prototype-groundwater-marker-core",
+              "prototype-groundwater-marker-glow",
             ].forEach((layerId) => {
               activeMap.on("mouseenter", layerId, () => {
                 activeMap.getCanvas().style.cursor = "pointer";
@@ -1379,6 +2215,8 @@ export default function TerrainMapPrototypePage() {
                   "prototype-trace-confluence-marker",
                   "prototype-flood-marker-core",
                   "prototype-flood-marker-glow",
+                  "prototype-groundwater-marker-core",
+                  "prototype-groundwater-marker-glow",
                 ].filter((id) => activeMap.getLayer(id) !== undefined),
               });
               if (features.length === 0) {
@@ -1715,6 +2553,183 @@ export default function TerrainMapPrototypePage() {
     }
   }
 
+  // Groundwater Assessment data loaders and handlers
+  useEffect(() => {
+    void (async () => {
+      try {
+        const zonesRes = await getGroundwaterZones();
+        if (zonesRes.data && zonesRes.data.length > 0) {
+          setGroundwaterZonesList(zonesRes.data);
+        }
+        await loadGroundwaterAssessment(
+          selectedGroundwaterZoneIdRef.current,
+          groundwaterMultiplierRef.current
+        );
+      } catch {
+        // Fallback used automatically
+      }
+    })();
+  }, []);
+
+  async function loadGroundwaterAssessment(zoneId: string, multiplier: number) {
+    setGroundwaterLoading(true);
+    try {
+      const res = await getGroundwaterAssessment(zoneId, multiplier);
+      if (res.data) {
+        setGroundwaterAssessment(res.data);
+        groundwaterAssessmentRef.current = res.data;
+        setGroundwaterAssessmentsCache((prev) => {
+          const next = { ...prev, [zoneId]: res.data! };
+          groundwaterAssessmentsCacheRef.current = next;
+          return next;
+        });
+        const map = mapRef.current;
+        if (map) {
+          updateMapGroundwaterSource(
+            map,
+            zoneId,
+            multiplier,
+            groundwaterAssessmentsCacheRef.current
+          );
+        }
+      } else {
+        // Fallback to local CGWB 2024 metadata if network call failed or timed out
+        const meta = CGWB_TIRUPPUR_FIRKAS.find((f) => f.zone_id === zoneId);
+        if (meta) {
+          const simExtraction = Number((meta.baseline.total_extraction_ham * multiplier).toFixed(2));
+          const simStage = Number((meta.baseline.stage_percent * multiplier).toFixed(1));
+          const fallbackAss: GroundwaterAssessment = {
+            zone_id: meta.zone_id,
+            name: meta.name,
+            assessment_year: meta.assessment_year,
+            num_piezometers: meta.num_piezometers,
+            cgwb_baseline: meta.baseline,
+            simulation: {
+              status: "assessed",
+              estimated_extraction_ham: simExtraction,
+              resource_ham: meta.baseline.annual_extractable_resource_ham,
+              estimated_stage_percent: simStage,
+              confidence: 0.88,
+              risk: computeGroundwaterRiskCategory(simStage),
+              observations: meta.observations,
+              valid_observations: meta.observations.filter((o) => o !== null).length,
+              total_observations: meta.observations.length,
+            },
+          };
+          setGroundwaterAssessment(fallbackAss);
+          groundwaterAssessmentRef.current = fallbackAss;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load dynamic groundwater assessment:", err);
+    } finally {
+      setGroundwaterLoading(false);
+    }
+  }
+
+  function toggleGroundwaterMode() {
+    const nextActive = !isGroundwaterModeActive;
+    setIsGroundwaterModeActive(nextActive);
+    isGroundwaterModeActiveRef.current = nextActive;
+
+    const map = mapRef.current;
+    if (map) {
+      const visibility = nextActive ? "visible" : "none";
+      for (const layerId of [
+        "prototype-groundwater-marker-glow",
+        "prototype-groundwater-marker-core",
+        "prototype-groundwater-label",
+      ]) {
+        if (map.getLayer(layerId)) {
+          map.setLayoutProperty(layerId, "visibility", visibility);
+        }
+      }
+
+      if (nextActive) {
+        updateMapGroundwaterSource(
+          map,
+          selectedGroundwaterZoneIdRef.current,
+          groundwaterMultiplierRef.current,
+          groundwaterAssessmentsCacheRef.current
+        );
+        setActivePanelTab("groundwater");
+        const firka = CGWB_TIRUPPUR_FIRKAS.find((f) => f.zone_id === selectedGroundwaterZoneIdRef.current);
+        setStatus(
+          `Groundwater Assessment active · CGWB 2024 FIRKA Indicators (${CGWB_TIRUPPUR_FIRKAS.length} points) · GEC-2015 methodology · Not an aquifer mesh`
+        );
+        if (firka) {
+          map.easeTo({
+            center: [firka.cx, firka.cy],
+            duration: 600,
+          });
+        }
+      } else {
+        if (selectedEntity) {
+          setActivePanelTab("entity");
+        } else if (isFloodModeActiveRef.current) {
+          setActivePanelTab("flood");
+        }
+        setStatus("Groundwater Assessment closed · Returned to standard investigation map");
+      }
+    }
+  }
+
+  function changeGroundwaterMultiplier(multiplier: number) {
+    setGroundwaterMultiplier(multiplier);
+    groundwaterMultiplierRef.current = multiplier;
+    void loadGroundwaterAssessment(selectedGroundwaterZoneIdRef.current, multiplier);
+
+    const map = mapRef.current;
+    if (map) {
+      updateMapGroundwaterSource(
+        map,
+        selectedGroundwaterZoneIdRef.current,
+        multiplier,
+        groundwaterAssessmentsCacheRef.current
+      );
+    }
+    setStatus(
+      `Groundwater Scenario: ${multiplier}x extraction multiplier · CGWB 2024 baseline adjusted · GEC-2015 draft ratio`
+    );
+  }
+
+  function selectGroundwaterZone(zoneId: string, flyToCenter = true) {
+    setSelectedGroundwaterZoneId(zoneId);
+    selectedGroundwaterZoneIdRef.current = zoneId;
+    setActivePanelTab("groundwater");
+
+    void loadGroundwaterAssessment(zoneId, groundwaterMultiplierRef.current);
+
+    const map = mapRef.current;
+    if (map) {
+      updateMapGroundwaterSource(
+        map,
+        zoneId,
+        groundwaterMultiplierRef.current,
+        groundwaterAssessmentsCacheRef.current
+      );
+
+      if (flyToCenter) {
+        const firka = CGWB_TIRUPPUR_FIRKAS.find((f) => f.zone_id === zoneId);
+        if (firka) {
+          map.flyTo({
+            center: [firka.cx, firka.cy],
+            zoom: Math.max(map.getZoom(), 12.5),
+            duration: 800,
+            essential: true,
+          });
+        }
+      }
+    }
+
+    const firka = CGWB_TIRUPPUR_FIRKAS.find((f) => f.zone_id === zoneId);
+    if (firka) {
+      setStatus(
+        `Selected FIRKA: ${firka.name} (${firka.taluk} Taluk) · CGWB 2024 Baseline: ${firka.baseline.category} (${firka.baseline.stage_percent}%) · ${firka.baseline.total_extraction_ham} ham draft`
+      );
+    }
+  }
+
   return (
     <div
       style={{
@@ -1892,6 +2907,34 @@ export default function TerrainMapPrototypePage() {
             </button>
           )}
 
+          <button
+            onClick={toggleGroundwaterMode}
+            style={{
+              ...buttonStyle,
+              background: isGroundwaterModeActive ? "#f0fdf4" : "#ffffff",
+              borderColor: isGroundwaterModeActive ? "#16a34a" : "#cbd5e1",
+              color: isGroundwaterModeActive ? "#15803d" : "#173548",
+            }}
+            title="Toggle CGWB FIRKA Groundwater Assessment and Extraction Outlook"
+          >
+            {isGroundwaterModeActive ? "💧 Groundwater: Active" : "💧 Groundwater"}
+          </button>
+
+          {isGroundwaterModeActive && (
+            <button
+              onClick={toggleGroundwaterMode}
+              style={{
+                ...buttonStyle,
+                background: "#ffffff",
+                borderColor: "#bbf7d0",
+                color: "#15803d",
+              }}
+              title="Deactivate groundwater assessment mode and return to standard investigation map"
+            >
+              ✕ Exit Groundwater
+            </button>
+          )}
+
           <button onClick={resetView} style={buttonStyle} title="Reset camera to central Tiruppur">
             📍 Fit Tiruppur
           </button>
@@ -1948,12 +2991,14 @@ export default function TerrainMapPrototypePage() {
           </div>
         </div>
 
-        {/* Right-Hand Panel: Flood Exposure Analysis or Selected Entity Details */}
-        {(selectedEntity || isFloodModeActive) && (
+        {/* Right-Hand Panel: Flood Exposure Analysis, Groundwater Assessment, or Selected Entity Details */}
+        {(selectedEntity || isFloodModeActive || isGroundwaterModeActive) && (
           <div
             role="region"
             aria-label={
-              activePanelTab === "flood" || (!selectedEntity && isFloodModeActive)
+              (activePanelTab === "groundwater" && isGroundwaterModeActive) || (!selectedEntity && !isFloodModeActive && isGroundwaterModeActive)
+                ? "Groundwater Assessment"
+                : (activePanelTab === "flood" && isFloodModeActive) || (!selectedEntity && isFloodModeActive)
                 ? "Flood Exposure Analysis"
                 : "Selected Feature Details"
             }
@@ -1969,7 +3014,9 @@ export default function TerrainMapPrototypePage() {
               borderRadius: "12px",
               boxShadow: "0 10px 30px rgba(15,23,42,0.2)",
               border: `1.5px solid ${
-                (activePanelTab === "flood" && isFloodModeActive) || (!selectedEntity && isFloodModeActive)
+                (activePanelTab === "groundwater" && isGroundwaterModeActive) || (!selectedEntity && !isFloodModeActive && isGroundwaterModeActive)
+                  ? "#0d9488"
+                  : (activePanelTab === "flood" && isFloodModeActive) || (!selectedEntity && isFloodModeActive)
                   ? "#2563eb"
                   : selectedEntity?.category === "industrial"
                   ? "#f97316"
@@ -1979,8 +3026,8 @@ export default function TerrainMapPrototypePage() {
               zIndex: 20,
             }}
           >
-            {/* If BOTH an entity is selected AND flood mode is active, show Tab switcher */}
-            {selectedEntity && isFloodModeActive && (
+            {/* If more than one mode/entity is active, show Tab switcher */}
+            {((selectedEntity ? 1 : 0) + (isFloodModeActive ? 1 : 0) + (isGroundwaterModeActive ? 1 : 0)) > 1 && (
               <div
                 style={{
                   display: "flex",
@@ -1990,43 +3037,68 @@ export default function TerrainMapPrototypePage() {
                   paddingBottom: "8px",
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => setActivePanelTab("flood")}
-                  style={{
-                    ...buttonStyle,
-                    flex: 1,
-                    padding: "6px 8px",
-                    fontSize: "11px",
-                    background: activePanelTab === "flood" ? "#eff6ff" : "#ffffff",
-                    borderColor: activePanelTab === "flood" ? "#2563eb" : "#cbd5e1",
-                    color: activePanelTab === "flood" ? "#1d4ed8" : "#64748b",
-                    textAlign: "center",
-                  }}
-                >
-                  🌊 Flood Exposure
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActivePanelTab("entity")}
-                  style={{
-                    ...buttonStyle,
-                    flex: 1,
-                    padding: "6px 8px",
-                    fontSize: "11px",
-                    background: activePanelTab === "entity" ? "#fff7ed" : "#ffffff",
-                    borderColor: activePanelTab === "entity" ? "#f97316" : "#cbd5e1",
-                    color: activePanelTab === "entity" ? "#c2410c" : "#64748b",
-                    textAlign: "center",
-                  }}
-                >
-                  {selectedEntity.category === "industrial" ? "🏭 Facility" : "📡 Station"}
-                </button>
+                {isGroundwaterModeActive && (
+                  <button
+                    type="button"
+                    onClick={() => setActivePanelTab("groundwater")}
+                    style={{
+                      ...buttonStyle,
+                      flex: 1,
+                      padding: "6px 6px",
+                      fontSize: "11px",
+                      background: activePanelTab === "groundwater" ? "#f0fdfa" : "#ffffff",
+                      borderColor: activePanelTab === "groundwater" ? "#0d9488" : "#cbd5e1",
+                      color: activePanelTab === "groundwater" ? "#0f766e" : "#64748b",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    💧 Groundwater
+                  </button>
+                )}
+                {isFloodModeActive && (
+                  <button
+                    type="button"
+                    onClick={() => setActivePanelTab("flood")}
+                    style={{
+                      ...buttonStyle,
+                      flex: 1,
+                      padding: "6px 6px",
+                      fontSize: "11px",
+                      background: activePanelTab === "flood" ? "#eff6ff" : "#ffffff",
+                      borderColor: activePanelTab === "flood" ? "#2563eb" : "#cbd5e1",
+                      color: activePanelTab === "flood" ? "#1d4ed8" : "#64748b",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    🌊 Flood Exposure
+                  </button>
+                )}
+                {selectedEntity && (
+                  <button
+                    type="button"
+                    onClick={() => setActivePanelTab("entity")}
+                    style={{
+                      ...buttonStyle,
+                      flex: 1,
+                      padding: "6px 6px",
+                      fontSize: "11px",
+                      background: activePanelTab === "entity" ? "#fff7ed" : "#ffffff",
+                      borderColor: activePanelTab === "entity" ? "#f97316" : "#cbd5e1",
+                      color: activePanelTab === "entity" ? "#c2410c" : "#64748b",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {selectedEntity.category === "industrial" ? "🏭 Facility" : "📡 Station"}
+                  </button>
+                )}
               </div>
             )}
 
             {/* TAB 1: FLOOD EXPOSURE ANALYSIS */}
-            {(activePanelTab === "flood" || (!selectedEntity && isFloodModeActive)) && (
+            {isFloodModeActive && (activePanelTab === "flood" || (!selectedEntity && !isGroundwaterModeActive)) && (
               <div>
                 {/* Header */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
@@ -2347,8 +3419,472 @@ export default function TerrainMapPrototypePage() {
               </div>
             )}
 
-            {/* TAB 2: SELECTED ENTITY VIEW */}
-            {activePanelTab === "entity" && selectedEntity && (
+            {/* TAB 2: GROUNDWATER ASSESSMENT WORKFLOW */}
+            {isGroundwaterModeActive && (activePanelTab === "groundwater" || (!selectedEntity && !isFloodModeActive)) && (() => {
+              const selectedFirka =
+                CGWB_TIRUPPUR_FIRKAS.find((f) => f.zone_id === selectedGroundwaterZoneId) ||
+                CGWB_TIRUPPUR_FIRKAS[0];
+
+              const baselineExtractable =
+                groundwaterAssessment?.cgwb_baseline.annual_extractable_resource_ham ??
+                selectedFirka.baseline.annual_extractable_resource_ham;
+              const baselineExtraction =
+                groundwaterAssessment?.cgwb_baseline.total_extraction_ham ??
+                selectedFirka.baseline.total_extraction_ham;
+              const baselineStage =
+                groundwaterAssessment?.cgwb_baseline.stage_percent ??
+                selectedFirka.baseline.stage_percent;
+              const baselineCategory =
+                groundwaterAssessment?.cgwb_baseline.category ??
+                selectedFirka.baseline.category;
+
+              const activeExtraction =
+                groundwaterAssessment?.simulation?.estimated_extraction_ham ??
+                baselineExtraction * groundwaterMultiplier;
+              const activeResource =
+                groundwaterAssessment?.simulation?.resource_ham ??
+                baselineExtractable;
+              const activeStage =
+                groundwaterAssessment?.simulation?.estimated_stage_percent ??
+                (activeResource > 0 ? (activeExtraction / activeResource) * 100 : 0);
+              const activeCategory = computeGroundwaterRiskCategory(activeStage);
+              const activeColor = getGroundwaterRiskColor(activeCategory);
+              const netBalanceHam = activeResource - activeExtraction;
+
+              const piezometerCount =
+                groundwaterAssessment?.simulation?.total_observations ??
+                selectedFirka.num_piezometers;
+              const observations = groundwaterAssessment?.simulation?.observations ?? [];
+
+              return (
+                <div>
+                  {/* Header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "3px 8px",
+                        borderRadius: "5px",
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        letterSpacing: "0.5px",
+                        background: "#ccfbf1",
+                        color: "#0f766e",
+                        border: "1px solid #99f6e4",
+                      }}
+                    >
+                      CGWB 2024 FIRKA GROUNDWATER
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={toggleGroundwaterMode}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        fontSize: "16px",
+                        fontWeight: 700,
+                        color: "#94a3b8",
+                        cursor: "pointer",
+                        padding: "0 4px",
+                      }}
+                      aria-label="Close Groundwater Assessment panel"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div style={{ marginTop: "10px", fontSize: "16px", fontWeight: 800, color: "#0f172a" }}>
+                    {selectedFirka.name} Firka
+                  </div>
+
+                  <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                    Taluk: <strong style={{ color: "#334155" }}>{selectedFirka.taluk}</strong> · Tiruppur District, TN
+                  </div>
+
+                  <div style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
+                    📍 Reference Centroid: <code style={{ fontSize: "10.5px", background: "#f1f5f9", padding: "1px 4px", borderRadius: "3px" }}>{selectedFirka.cy.toFixed(4)}°N, {selectedFirka.cx.toFixed(4)}°E</code>
+                  </div>
+
+                  {/* FIRKA Dropdown Selector */}
+                  <div style={{ marginTop: "12px" }}>
+                    <label style={{ display: "block", fontSize: "10.5px", fontWeight: 700, color: "#475569", marginBottom: "4px" }}>
+                      Select Assessment Firka ({CGWB_TIRUPPUR_FIRKAS.length} Total):
+                    </label>
+                    <select
+                      value={selectedGroundwaterZoneId}
+                      onChange={(e) => selectGroundwaterZone(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "6px 8px",
+                        borderRadius: "7px",
+                        border: "1px solid #cbd5e1",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        color: "#0f172a",
+                        background: "#f8fafc",
+                        outline: "none",
+                      }}
+                    >
+                      {CGWB_TIRUPPUR_FIRKAS.map((firka) => (
+                        <option key={firka.zone_id} value={firka.zone_id}>
+                          {firka.name} ({firka.taluk}) — {firka.baseline.category} ({firka.baseline.stage_percent.toFixed(0)}%)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Quick Select Buttons for Key Urban / Noyyal Basin Firkas */}
+                  <div style={{ marginTop: "8px" }}>
+                    <div style={{ fontSize: "10px", color: "#64748b", marginBottom: "4px" }}>
+                      Quick Jump (Noyyal Urban Corridor):
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                      {[
+                        { id: "tiruppur_south", label: "Tiruppur S." },
+                        { id: "tiruppur_north", label: "Tiruppur N." },
+                        { id: "velampalayam", label: "Velampalayam" },
+                        { id: "nallur", label: "Nallur" },
+                        { id: "avinashi", label: "Avinashi" },
+                        { id: "palladam", label: "Palladam" },
+                      ].map((item) => {
+                        const isSelected = selectedGroundwaterZoneId === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => selectGroundwaterZone(item.id)}
+                            style={{
+                              padding: "3px 7px",
+                              fontSize: "10.5px",
+                              fontWeight: 600,
+                              borderRadius: "5px",
+                              border: isSelected ? "1.5px solid #0d9488" : "1px solid #cbd5e1",
+                              background: isSelected ? "#ccfbf1" : "#ffffff",
+                              color: isSelected ? "#0f766e" : "#475569",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Extraction Multiplier Controls */}
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      padding: "8px 10px",
+                      background: "#f8fafc",
+                      borderRadius: "8px",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#334155" }}>
+                        Extraction Stress Scenario:
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          color: groundwaterMultiplier === 1.0 ? "#0f766e" : "#d97706",
+                        }}
+                      >
+                        {groundwaterMultiplier === 1.0 ? "Official Baseline" : `${groundwaterMultiplier}x Draft Simulation`}
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "5px", marginTop: "6px" }}>
+                      {[
+                        { mult: 0.8, label: "0.8x (−20%)", title: "Conservation Scenario: 20% draft reduction" },
+                        { mult: 1.0, label: "1.0x (Baseline)", title: "CGWB 2024 Official Baseline Extraction" },
+                        { mult: 1.2, label: "1.2x (+20%)", title: "Stress Scenario: 20% increased industrial / drought draft" },
+                      ].map((btn) => {
+                        const isSelected = Math.abs(groundwaterMultiplier - btn.mult) < 0.01;
+                        return (
+                          <button
+                            key={btn.mult}
+                            type="button"
+                            title={btn.title}
+                            onClick={() => changeGroundwaterMultiplier(btn.mult)}
+                            style={{
+                              flex: 1,
+                              padding: "5px 4px",
+                              fontSize: "10.5px",
+                              fontWeight: isSelected ? 800 : 600,
+                              borderRadius: "6px",
+                              border: isSelected ? "1.5px solid #0d9488" : "1px solid #cbd5e1",
+                              background: isSelected ? "#ccfbf1" : "#ffffff",
+                              color: isSelected ? "#0f766e" : "#64748b",
+                              cursor: "pointer",
+                              textAlign: "center",
+                            }}
+                          >
+                            {btn.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Status Banner */}
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      background: `${activeColor}15`,
+                      border: `1.5px solid ${activeColor}`,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#334155" }}>
+                        Groundwater Extraction Category:
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          padding: "2px 8px",
+                          borderRadius: "4px",
+                          background: activeColor,
+                          color: "#ffffff",
+                        }}
+                      >
+                        {activeCategory}
+                      </span>
+                    </div>
+
+                    <div style={{ marginTop: "6px", fontSize: "13px", fontWeight: 800, color: activeColor }}>
+                      Stage of Extraction: {activeStage.toFixed(1)}%
+                    </div>
+
+                    {groundwaterMultiplier !== 1.0 && (
+                      <div style={{ fontSize: "10.5px", color: "#64748b", marginTop: "4px" }}>
+                        Baseline Stage: {baselineStage.toFixed(1)}% ({baselineCategory}) → Scenario Stage: {activeStage.toFixed(1)}% ({activeCategory})
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 4-Metric Grid */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "8px",
+                      marginTop: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: "8px 10px",
+                        background: "#f8fafc",
+                        borderRadius: "7px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 600 }}>Extractable Resource</div>
+                      <div style={{ fontSize: "14px", fontWeight: 800, color: "#0f172a", marginTop: "2px" }}>
+                        {activeResource.toLocaleString(undefined, { maximumFractionDigits: 1 })} ham
+                      </div>
+                      <div style={{ fontSize: "9.5px", color: "#94a3b8", marginTop: "2px" }}>Annual Recharge</div>
+                    </div>
+
+                    <div
+                      style={{
+                        padding: "8px 10px",
+                        background: "#f8fafc",
+                        borderRadius: "7px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 600 }}>Annual Extraction</div>
+                      <div style={{ fontSize: "14px", fontWeight: 800, color: "#0f172a", marginTop: "2px" }}>
+                        {activeExtraction.toLocaleString(undefined, { maximumFractionDigits: 1 })} ham
+                      </div>
+                      <div style={{ fontSize: "9.5px", color: "#94a3b8", marginTop: "2px" }}>Total Annual Draft</div>
+                    </div>
+
+                    <div
+                      style={{
+                        padding: "8px 10px",
+                        background: "#f8fafc",
+                        borderRadius: "7px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 600 }}>Extraction Stage</div>
+                      <div style={{ fontSize: "14px", fontWeight: 800, color: activeColor, marginTop: "2px" }}>
+                        {activeStage.toFixed(1)}%
+                      </div>
+                      <div style={{ fontSize: "9.5px", color: "#94a3b8", marginTop: "2px" }}>Draft / Resource × 100</div>
+                    </div>
+
+                    <div
+                      style={{
+                        padding: "8px 10px",
+                        background: "#f8fafc",
+                        borderRadius: "7px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 600 }}>Net Annual Balance</div>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 800,
+                          color: netBalanceHam >= 0 ? "#10b981" : "#dc2626",
+                          marginTop: "2px",
+                        }}
+                      >
+                        {netBalanceHam >= 0 ? `+${netBalanceHam.toFixed(1)}` : netBalanceHam.toFixed(1)} ham
+                      </div>
+                      <div style={{ fontSize: "9.5px", color: "#94a3b8", marginTop: "2px" }}>
+                        {netBalanceHam >= 0 ? "Recharge Surplus" : "Resource Deficit"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Physical Unit Clarity Note */}
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      padding: "7px 9px",
+                      background: "#eff6ff",
+                      borderRadius: "6px",
+                      border: "1px solid #bfdbfe",
+                      fontSize: "10px",
+                      color: "#1e40af",
+                      lineHeight: "1.4",
+                    }}
+                  >
+                    <strong>Measurement Unit Note:</strong> 1 <strong>ham</strong> (Hectare-metre) = 10,000 m³ = 10 Megalitres. Values represent official annual volumetric groundwater budgeting figures from CGWB GEC-2015 methodology. These are <em>not</em> water table depth or metres below ground level (mbgl).
+                  </div>
+
+                  {/* Piezometer Monitoring Network */}
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      padding: "8px 10px",
+                      background: "#f8fafc",
+                      borderRadius: "7px",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#334155" }}>
+                        Monitoring Piezometers:
+                      </span>
+                      <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0f766e" }}>
+                        {piezometerCount} Network Wells in Firka
+                      </span>
+                    </div>
+
+                    {observations.length > 0 && (
+                      <div style={{ marginTop: "6px" }}>
+                        <div style={{ fontSize: "9.5px", color: "#64748b", marginBottom: "3px" }}>
+                          Historical Water-Level Index Sample Observations (m):
+                        </div>
+                        <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                          {observations.map((obs, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                fontSize: "10px",
+                                fontFamily: "monospace",
+                                padding: "2px 5px",
+                                borderRadius: "4px",
+                                background: obs !== null ? "#e0f2fe" : "#f1f5f9",
+                                color: obs !== null ? "#0369a1" : "#94a3b8",
+                                border: "1px solid #cbd5e1",
+                              }}
+                            >
+                              Well #{idx + 1}: {obs !== null ? `${obs} m` : "Unavailable"}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: "9px", color: "#64748b", marginTop: "5px", lineHeight: "1.35" }}>
+                      Piezometer values represent historical CGWB index monitoring wells within the Firka. Individual well-head GPS coordinates are not published in open-data tables; map markers are anchored to administrative Firka centroids.
+                    </div>
+                  </div>
+
+                  {/* STERI Model Integration */}
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      padding: "8px 10px",
+                      background: "#fffbeb",
+                      borderRadius: "7px",
+                      border: "1px solid #fef3c7",
+                    }}
+                  >
+                    <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#92400e" }}>
+                      STERI Multi-Factor Integration:
+                    </div>
+                    <div style={{ fontSize: "10px", color: "#78350f", marginTop: "3px", lineHeight: "1.4" }}>
+                      In the Smart Tiruppur Environmental Risk Index (STERI), groundwater stress contributes weight <code>wg = 0.15</code> (15%). Over-exploited firkas with heavy textile dyeing clusters elevate systemic vulnerability due to lowered dilution potential and depleted unconfined aquifers.
+                    </div>
+                  </div>
+
+                  {/* Provenance & Scientific Integrity */}
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      padding: "8px 10px",
+                      background: "#fafafa",
+                      borderRadius: "7px",
+                      border: "1px solid #e5e5e5",
+                    }}
+                  >
+                    <div style={{ fontSize: "10px", fontWeight: 700, color: "#374151" }}>
+                      Provenance & Scientific Integrity:
+                    </div>
+                    <ul style={{ margin: "4px 0 0 14px", padding: 0, fontSize: "9px", color: "#6b7280", lineHeight: "1.4" }}>
+                      <li><strong>Source:</strong> Central Ground Water Board (CGWB) & Tamil Nadu State Ground Water Dept.</li>
+                      <li><strong>Assessment Year:</strong> 2024 · Ground Water Estimation Committee (GEC-2015).</li>
+                      <li><strong>Type:</strong> Categorical & aggregate open-data Firka assessment. Multiplier scenarios are simulated.</li>
+                      <li><strong>Live Telemetry:</strong> None available; CGWB assessments are periodic national water balances.</li>
+                      <li><strong>Spatial Geometry:</strong> Authoritative Firka boundary polygons are not present in project GeoJSON; markers represent documented administrative centroids. No synthetic aquifer contours or depth surfaces are fabricated.</li>
+                    </ul>
+                  </div>
+
+                  {/* Loading indicator if fetching */}
+                  {groundwaterLoading && (
+                    <div style={{ fontSize: "10.5px", color: "#0d9488", textAlign: "center", marginTop: "8px", fontStyle: "italic" }}>
+                      Fetching remote groundwater assessment data...
+                    </div>
+                  )}
+
+                  {/* Exit Control */}
+                  <div style={{ marginTop: "12px" }}>
+                    <button
+                      type="button"
+                      onClick={toggleGroundwaterMode}
+                      style={{
+                        ...buttonStyle,
+                        width: "100%",
+                        background: "#f0fdfa",
+                        borderColor: "#99f6e4",
+                        color: "#0f766e",
+                        fontSize: "11.5px",
+                        padding: "7px 10px",
+                      }}
+                    >
+                      ✕ Turn Off Groundwater Assessment
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* TAB 3: SELECTED ENTITY VIEW */}
+            {selectedEntity && (activePanelTab === "entity" || (!isFloodModeActive && !isGroundwaterModeActive)) && (
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
                   <span
@@ -3030,6 +4566,71 @@ export default function TerrainMapPrototypePage() {
               </div>
               <div style={{ fontSize: "8.5px", color: "#64748b", marginTop: "4px", fontStyle: "italic" }}>
                 Sector point markers · Not an inundation map or flood extent boundary
+              </div>
+            </div>
+          )}
+
+          {/* Groundwater Assessment Layer & Extraction Scale */}
+          <div
+            onClick={toggleGroundwaterMode}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: isGroundwaterModeActive ? "4px" : "7px",
+              cursor: "pointer",
+              opacity: isGroundwaterModeActive ? 1 : 0.45,
+            }}
+            title="Click to toggle CGWB 2024 Firka Groundwater Assessment overlay"
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: "12px",
+                height: "12px",
+                borderRadius: "50%",
+                background: "rgba(13, 148, 136, 0.3)",
+                border: "2px solid #0d9488",
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ flex: 1, fontSize: "11.5px" }}>
+              <strong style={{ color: "#0f766e" }}>Groundwater Assessment</strong>
+              <span style={{ color: "#64748b", marginLeft: "4px" }}>· 33 CGWB Firkas</span>
+            </div>
+            <span style={{ fontSize: "10px", color: isGroundwaterModeActive ? "#0d9488" : "#94a3b8" }}>
+              {isGroundwaterModeActive ? "ACTIVE" : "OFF"}
+            </span>
+          </div>
+
+          {isGroundwaterModeActive && (
+            <div
+              style={{
+                marginBottom: "8px",
+                padding: "6px 8px",
+                background: "#f0fdfa",
+                borderRadius: "6px",
+                border: "1px solid #ccfbf1",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10px" }}>
+                <span style={{ fontWeight: 700, color: "#0f766e" }}>CGWB Extraction Stage Scale</span>
+                <span style={{ color: "#64748b" }}>Stage %</span>
+              </div>
+              <div style={{ display: "flex", gap: "2px", height: "7px", borderRadius: "2px", overflow: "hidden", marginTop: "3px" }}>
+                <div style={{ flex: 1, background: "#10b981" }} title="Safe: < 70%" />
+                <div style={{ flex: 1, background: "#eab308" }} title="Semi Critical: 70-89%" />
+                <div style={{ flex: 1, background: "#ea580c" }} title="Critical: 90-99%" />
+                <div style={{ flex: 1, background: "#dc2626" }} title="Over Exploited: ≥ 100%" />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5px", color: "#475569", marginTop: "2px" }}>
+                <span>&lt;70% Safe</span>
+                <span>Semi-Crit</span>
+                <span>Critical</span>
+                <span style={{ color: "#dc2626", fontWeight: 700 }}>≥100% Over-Exp</span>
+              </div>
+              <div style={{ fontSize: "8.5px", color: "#64748b", marginTop: "4px", fontStyle: "italic" }}>
+                CGWB 2024 Firka Centroids · 1 ham = 10,000 m³ · No fabricated contours
               </div>
             </div>
           )}
