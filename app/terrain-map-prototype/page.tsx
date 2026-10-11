@@ -3,8 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { INDUSTRIAL_UNITS_GEO } from "@/lib/digital-twin/industrial";
-import { ENVIRONMENTAL_SENSOR_REGISTRY } from "@/lib/digital-twin/sensors";
+import {
+  INDUSTRIAL_UNITS_GEO,
+  INDUSTRIAL_OUTFALLS,
+  type IndustrialOutfall,
+  type IndustrialUnitGeo,
+} from "@/lib/digital-twin/industrial";
+import {
+  ENVIRONMENTAL_SENSOR_REGISTRY,
+  type EnvironmentalSensor,
+} from "@/lib/digital-twin/sensors";
+import {
+  DEFAULT_FLOW_VELOCITY_MPS,
+  FLOW_VELOCITY_UNCERTAINTY,
+} from "@/lib/attribution/engine";
 
 interface SelectedEntity {
   category: "industrial" | "station";
@@ -25,6 +37,382 @@ interface SelectedEntity {
   source: string;
 }
 
+interface LinkedStation {
+  sensor_id: string;
+  name: string;
+  designation: string;
+  lat: number;
+  lon: number;
+  distanceMeters: number;
+  travelHours: number;
+}
+
+interface ModelledPathway {
+  unitId: string;
+  unitName: string;
+  outfallId: string;
+  outfallCoords: [number, number]; // [lon, lat]
+  riverSnapCoords: [number, number]; // [lon, lat]
+  waterwayName: string;
+  distanceToWaterwayMeters: number;
+  syntheticFlowRate: number; // L/s
+  syntheticPollutant: string;
+  syntheticConcentration: number; // mg/L index
+  hasValidPath: boolean;
+  invalidationReason?: string;
+  linkedStations: LinkedStation[];
+  unlinkedStations: Array<{ sensor_id: string; name: string; reason: string }>;
+  provenance: string;
+  caveat: string;
+}
+
+// Distance helper using equirectangular projection centered on Tiruppur reach
+function computeDistanceMeters(a: [number, number], b: [number, number]): number {
+  const r = 6371000;
+  const p = Math.PI / 180;
+  const dLat = (b[1] - a[1]) * p;
+  const dLon = (b[0] - a[0]) * p;
+  const x = dLon * Math.cos(((a[1] + b[1]) * p) / 2);
+  return r * Math.hypot(dLat, x);
+}
+
+// Orthogonal projection of point P onto line segment [A, B]
+function projectPointOnSegment(
+  p: [number, number],
+  a: [number, number],
+  b: [number, number]
+): [number, number] {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return a;
+  let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return [a[0] + t * dx, a[1] + t * dy];
+}
+
+// Snaps coordinate to nearest waterway segment from local river GeoJSON network
+function findNearestWaterwaySnap(
+  point: [number, number],
+  riverData: any
+): { snap: [number, number]; distanceMeters: number; waterwayName: string } {
+  let bestDist = Infinity;
+  let bestSnap: [number, number] = point;
+  let bestWaterwayName = "Noyyal River Network";
+
+  if (!riverData || !Array.isArray(riverData.features)) {
+    return { snap: point, distanceMeters: Infinity, waterwayName: "Unknown" };
+  }
+
+  for (const feature of riverData.features) {
+    if (feature.geometry?.type !== "LineString") continue;
+    const coords = feature.geometry.coordinates;
+    if (!Array.isArray(coords)) continue;
+    const name = feature.properties?.name || "Waterway Channel";
+
+    for (let i = 1; i < coords.length; i++) {
+      const p0 = coords[i - 1];
+      const p1 = coords[i];
+      if (!Array.isArray(p0) || !Array.isArray(p1)) continue;
+
+      const proj = projectPointOnSegment(point, [p0[0], p0[1]], [p1[0], p1[1]]);
+      const d = computeDistanceMeters(point, proj);
+      if (d < bestDist) {
+        bestDist = d;
+        bestSnap = proj;
+        bestWaterwayName = name;
+      }
+    }
+  }
+
+  return { snap: bestSnap, distanceMeters: bestDist, waterwayName: bestWaterwayName };
+}
+
+// Extracts downstream river coordinates along main channel toward linked sensor
+function getDownstreamRiverReach(
+  fromCoord: [number, number],
+  toStationCoord: [number, number],
+  riverData: any
+): Array<[number, number]> | null {
+  if (!riverData || !Array.isArray(riverData.features) || riverData.features.length === 0) {
+    return null;
+  }
+
+  const mainFeature = riverData.features[0];
+  if (mainFeature?.geometry?.type !== "LineString" || !Array.isArray(mainFeature.geometry.coordinates)) {
+    return null;
+  }
+
+  const noyyalCoords: Array<[number, number]> = mainFeature.geometry.coordinates;
+  let bestFrom = -1;
+  let dFrom = Infinity;
+  let bestTo = -1;
+  let dTo = Infinity;
+
+  noyyalCoords.forEach((pt, idx) => {
+    const df = Math.hypot(pt[0] - fromCoord[0], pt[1] - fromCoord[1]);
+    if (df < dFrom) {
+      dFrom = df;
+      bestFrom = idx;
+    }
+    const dt = Math.hypot(pt[0] - toStationCoord[0], pt[1] - toStationCoord[1]);
+    if (dt < dTo) {
+      dTo = dt;
+      bestTo = idx;
+    }
+  });
+
+  if (bestFrom >= 0 && bestTo >= 0 && bestFrom <= bestTo) {
+    const slice = noyyalCoords.slice(bestFrom, bestTo + 1);
+    return [fromCoord, ...slice, toStationCoord];
+  }
+
+  return [fromCoord, toStationCoord];
+}
+
+// Catchment proximity limit: facilities further than 2,500 m lack direct surface discharge channel in model
+const MAX_OVERLAND_THRESHOLD_METERS = 2500;
+
+function computeModelledPathway(unitId: string, riverData: any): ModelledPathway {
+  const unit = INDUSTRIAL_UNITS_GEO.find((u) => u.unit_id === unitId);
+  if (!unit) {
+    return {
+      unitId,
+      unitName: "Unknown Unit",
+      outfallId: "N/A",
+      outfallCoords: [0, 0],
+      riverSnapCoords: [0, 0],
+      waterwayName: "Unknown",
+      distanceToWaterwayMeters: 0,
+      syntheticFlowRate: 0,
+      syntheticPollutant: "None",
+      syntheticConcentration: 0,
+      hasValidPath: false,
+      invalidationReason: "Facility record not found in industrial registry.",
+      linkedStations: [],
+      unlinkedStations: [],
+      provenance: "Synthetic demonstration dataset",
+      caveat: "No modelled discharge path exists.",
+    };
+  }
+
+  const outfall = INDUSTRIAL_OUTFALLS.find((o) => o.unit_id === unitId);
+  if (!outfall) {
+    return {
+      unitId: unit.unit_id,
+      unitName: unit.name,
+      outfallId: "N/A",
+      outfallCoords: [unit.lon, unit.lat],
+      riverSnapCoords: [unit.lon, unit.lat],
+      waterwayName: "Unknown",
+      distanceToWaterwayMeters: 0,
+      syntheticFlowRate: 0,
+      syntheticPollutant: "None",
+      syntheticConcentration: 0,
+      hasValidPath: false,
+      invalidationReason: "No modelled outfall entry configured for this facility in the industrial layer.",
+      linkedStations: [],
+      unlinkedStations: [],
+      provenance: "Synthetic demonstration dataset",
+      caveat: "No modelled discharge path exists.",
+    };
+  }
+
+  const outfallCoords: [number, number] = [outfall.lon, outfall.lat];
+  const { snap, distanceMeters, waterwayName } = findNearestWaterwaySnap(outfallCoords, riverData);
+
+  if (!Number.isFinite(distanceMeters)) {
+    return {
+      unitId: unit.unit_id,
+      unitName: unit.name,
+      outfallId: outfall.outfall_id,
+      outfallCoords,
+      riverSnapCoords: outfallCoords,
+      waterwayName,
+      distanceToWaterwayMeters: 0,
+      syntheticFlowRate: outfall.flow_rate,
+      syntheticPollutant: outfall.pollutant,
+      syntheticConcentration: outfall.concentration,
+      hasValidPath: false,
+      invalidationReason: "Hydrology river network dataset is not loaded. Cannot compute modelled discharge pathway.",
+      linkedStations: [],
+      unlinkedStations: [],
+      provenance: `${outfall.source} · OpenStreetMap Noyyal GIS network`,
+      caveat: "SIMULATED / MODELLED: Missing hydrological network geometry.",
+    };
+  }
+
+  // Enforce validity boundary: if outfall is beyond catchment snapping buffer, do not fabricate a route
+  if (distanceMeters > MAX_OVERLAND_THRESHOLD_METERS) {
+    return {
+      unitId: unit.unit_id,
+      unitName: unit.name,
+      outfallId: outfall.outfall_id,
+      outfallCoords,
+      riverSnapCoords: snap,
+      waterwayName,
+      distanceToWaterwayMeters: Math.round(distanceMeters),
+      syntheticFlowRate: outfall.flow_rate,
+      syntheticPollutant: outfall.pollutant,
+      syntheticConcentration: outfall.concentration,
+      hasValidPath: false,
+      invalidationReason: `Nearest mapped waterway is ${Math.round(distanceMeters).toLocaleString()} m away, which exceeds the model's overland discharge channel threshold (${MAX_OVERLAND_THRESHOLD_METERS.toLocaleString()} m). In accordance with scientific integrity guidelines, no fabricated overland route is drawn.`,
+      linkedStations: [],
+      unlinkedStations: ENVIRONMENTAL_SENSOR_REGISTRY.map((s) => ({
+        sensor_id: s.sensor_id,
+        name: s.name,
+        reason: "Facility outfall exceeds hydrologic connection threshold; unlinked.",
+      })),
+      provenance: `${outfall.source} · OpenStreetMap Noyyal GIS network`,
+      caveat: "SIMULATED / MODELLED LIMITATION: No direct surface outfall channel modelled beyond 2.5 km catchment buffer.",
+    };
+  }
+
+  // Linked downstream monitoring stations (Noyyal flows west to east: lon increases downstream)
+  const linkedStations: LinkedStation[] = [];
+  const unlinkedStations: Array<{ sensor_id: string; name: string; reason: string }> = [];
+
+  for (const station of ENVIRONMENTAL_SENSOR_REGISTRY) {
+    if (station.lon > snap[0]) {
+      const dStation = computeDistanceMeters(snap, [station.lon, station.lat]);
+      const travelHours = Number((dStation / DEFAULT_FLOW_VELOCITY_MPS / 3600).toFixed(1));
+      linkedStations.push({
+        sensor_id: station.sensor_id,
+        name: station.name,
+        designation: station.designation,
+        lat: station.lat,
+        lon: station.lon,
+        distanceMeters: Math.round(dStation),
+        travelHours,
+      });
+    } else {
+      unlinkedStations.push({
+        sensor_id: station.sensor_id,
+        name: station.name,
+        reason: "Station is located upstream of the discharge confluence entry point.",
+      });
+    }
+  }
+
+  linkedStations.sort((a, b) => a.distanceMeters - b.distanceMeters);
+
+  return {
+    unitId: unit.unit_id,
+    unitName: unit.name,
+    outfallId: outfall.outfall_id,
+    outfallCoords,
+    riverSnapCoords: snap,
+    waterwayName,
+    distanceToWaterwayMeters: Math.round(distanceMeters),
+    syntheticFlowRate: outfall.flow_rate,
+    syntheticPollutant: outfall.pollutant,
+    syntheticConcentration: outfall.concentration,
+    hasValidPath: true,
+    linkedStations,
+    unlinkedStations,
+    provenance: `${outfall.source} · OpenStreetMap Noyyal GIS network`,
+    caveat: `SIMULATED / MODELLED DISCHARGE PATHWAY: Visualisation based on vector snapping to local Noyyal GIS network and synthetic flow rates. Not a measured or calibrated pollutant transport plume. Travel velocity is an uncalibrated model parameter (${FLOW_VELOCITY_UNCERTAINTY}).`,
+  };
+}
+
+// Synchronizes MapLibre GeoJSON source with current modelled pathway
+function updateMapPathwaySource(
+  map: MapLibreMap,
+  pathway: ModelledPathway | null,
+  riverData: any
+) {
+  const source = map.getSource("prototype-trace-pathway") as any;
+  if (!source) return;
+
+  if (!pathway || !pathway.hasValidPath) {
+    source.setData({
+      type: "FeatureCollection",
+      features: [],
+    });
+    return;
+  }
+
+  const features: any[] = [];
+  const unit = INDUSTRIAL_UNITS_GEO.find((u) => u.unit_id === pathway.unitId);
+
+  // 1. Discharge Path LineString (Facility -> Outfall -> River snap point)
+  if (unit) {
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [unit.lon, unit.lat],
+          pathway.outfallCoords,
+          pathway.riverSnapCoords,
+        ],
+      },
+      properties: {
+        kind: "line",
+        lineType: "discharge_path",
+        label: "Modelled Discharge Path to River",
+      },
+    });
+  }
+
+  // 2. Downstream River Reach (from river snap point to nearest downstream station)
+  if (pathway.linkedStations.length > 0 && riverData) {
+    const primaryStation = pathway.linkedStations[0];
+    const reachCoords = getDownstreamRiverReach(
+      pathway.riverSnapCoords,
+      [primaryStation.lon, primaryStation.lat],
+      riverData
+    );
+    if (reachCoords && reachCoords.length >= 2) {
+      features.push({
+        type: "Feature",
+        geometry: {
+          type: "LineString",
+          coordinates: reachCoords,
+        },
+        properties: {
+          kind: "line",
+          lineType: "downstream_reach",
+          label: `Downstream reach toward ${primaryStation.name}`,
+        },
+      });
+    }
+  }
+
+  // 3. Outfall Point
+  features.push({
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: pathway.outfallCoords,
+    },
+    properties: {
+      kind: "point",
+      pointType: "outfall",
+      label: `Outfall ${pathway.outfallId}`,
+    },
+  });
+
+  // 4. Confluence Point
+  features.push({
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: pathway.riverSnapCoords,
+    },
+    properties: {
+      kind: "point",
+      pointType: "confluence",
+      label: `River Inflow (${pathway.waterwayName})`,
+    },
+  });
+
+  source.setData({
+    type: "FeatureCollection",
+    features,
+  });
+}
+
 export default function TerrainMapPrototypePage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -37,6 +425,17 @@ export default function TerrainMapPrototypePage() {
   const [showIndustry, setShowIndustry] = useState(true);
   const [showStations, setShowStations] = useState(true);
   const [selectedEntity, setSelectedEntity] = useState<SelectedEntity | null>(null);
+
+  // Pollution pathway tracing state
+  const [isTracingActive, setIsTracingActive] = useState(false);
+  const isTracingActiveRef = useRef(isTracingActive);
+  const [tracedFacilityId, setTracedFacilityId] = useState<string | null>(null);
+  const [modelledPathway, setModelledPathway] = useState<ModelledPathway | null>(null);
+  const riverDataRef = useRef<any>(null);
+
+  useEffect(() => {
+    isTracingActiveRef.current = isTracingActive;
+  }, [isTracingActive]);
 
   useEffect(() => {
     let active = true;
@@ -203,6 +602,7 @@ export default function TerrainMapPrototypePage() {
             if (riverResponse.ok) {
               const riverData = await riverResponse.json();
               if (active) {
+                riverDataRef.current = riverData;
                 activeMap.addSource("prototype-noyyal-river", {
                   type: "geojson",
                   data: riverData,
@@ -414,6 +814,131 @@ export default function TerrainMapPrototypePage() {
               firstLabel
             );
 
+            // 4. Modelled Pollution Discharge Pathway Layers
+            activeMap.addSource("prototype-trace-pathway", {
+              type: "geojson",
+              data: {
+                type: "FeatureCollection",
+                features: [],
+              },
+            });
+
+            // Downstream channel reach glow (amber halo along river to station)
+            activeMap.addLayer(
+              {
+                id: "prototype-trace-reach-glow",
+                type: "line",
+                source: "prototype-trace-pathway",
+                filter: ["==", ["get", "lineType"], "downstream_reach"],
+                layout: {
+                  "line-join": "round",
+                  "line-cap": "round",
+                },
+                paint: {
+                  "line-color": "#fbbf24",
+                  "line-width": 8,
+                  "line-opacity": 0.45,
+                  "line-blur": 3,
+                },
+              },
+              firstLabel
+            );
+
+            // Downstream channel reach core line
+            activeMap.addLayer(
+              {
+                id: "prototype-trace-reach-core",
+                type: "line",
+                source: "prototype-trace-pathway",
+                filter: ["==", ["get", "lineType"], "downstream_reach"],
+                layout: {
+                  "line-join": "round",
+                  "line-cap": "round",
+                },
+                paint: {
+                  "line-color": "#f59e0b",
+                  "line-width": 3,
+                  "line-opacity": 0.9,
+                },
+              },
+              firstLabel
+            );
+
+            // Discharge path glow (crimson / orange halo)
+            activeMap.addLayer(
+              {
+                id: "prototype-trace-discharge-glow",
+                type: "line",
+                source: "prototype-trace-pathway",
+                filter: ["==", ["get", "lineType"], "discharge_path"],
+                layout: {
+                  "line-join": "round",
+                  "line-cap": "round",
+                },
+                paint: {
+                  "line-color": "#ea580c",
+                  "line-width": 10,
+                  "line-opacity": 0.5,
+                  "line-blur": 3,
+                },
+              },
+              firstLabel
+            );
+
+            // Discharge path core (dashed crimson conduit)
+            activeMap.addLayer(
+              {
+                id: "prototype-trace-discharge-core",
+                type: "line",
+                source: "prototype-trace-pathway",
+                filter: ["==", ["get", "lineType"], "discharge_path"],
+                layout: {
+                  "line-join": "round",
+                  "line-cap": "round",
+                },
+                paint: {
+                  "line-color": "#dc2626",
+                  "line-width": 3.5,
+                  "line-dasharray": [2, 1.5],
+                },
+              },
+              firstLabel
+            );
+
+            // Outfall point marker
+            activeMap.addLayer(
+              {
+                id: "prototype-trace-outfall-marker",
+                type: "circle",
+                source: "prototype-trace-pathway",
+                filter: ["==", ["get", "pointType"], "outfall"],
+                paint: {
+                  "circle-color": "#f97316",
+                  "circle-radius": 6.5,
+                  "circle-stroke-color": "#ffffff",
+                  "circle-stroke-width": 2,
+                },
+              },
+              firstLabel
+            );
+
+            // Confluence point marker at river entry
+            activeMap.addLayer(
+              {
+                id: "prototype-trace-confluence-marker",
+                type: "circle",
+                source: "prototype-trace-pathway",
+                filter: ["==", ["get", "pointType"], "confluence"],
+                paint: {
+                  "circle-color": "#dc2626",
+                  "circle-radius": 7.5,
+                  "circle-stroke-color": "#ffffff",
+                  "circle-stroke-width": 2.5,
+                },
+              },
+              firstLabel
+            );
+
             // Click handling for industrial facilities
             activeMap.on("click", "prototype-industrial-core", (e) => {
               if (!e.features || !e.features[0]) return;
@@ -432,6 +957,10 @@ export default function TerrainMapPrototypePage() {
                 sourceType: p.sourceType,
                 source: p.source,
               });
+
+              if (isTracingActiveRef.current) {
+                traceFacility(p.id);
+              }
             });
 
             // Click handling for monitoring stations
@@ -457,7 +986,14 @@ export default function TerrainMapPrototypePage() {
             });
 
             // Pointer cursor on hover over interactive markers
-            ["prototype-industrial-core", "prototype-stations-core"].forEach((layerId) => {
+            [
+              "prototype-industrial-core",
+              "prototype-stations-core",
+              "prototype-trace-discharge-core",
+              "prototype-trace-reach-core",
+              "prototype-trace-outfall-marker",
+              "prototype-trace-confluence-marker",
+            ].forEach((layerId) => {
               activeMap.on("mouseenter", layerId, () => {
                 activeMap.getCanvas().style.cursor = "pointer";
               });
@@ -469,7 +1005,13 @@ export default function TerrainMapPrototypePage() {
             // Clicking outside on map clears selected entity
             activeMap.on("click", (e) => {
               const features = activeMap.queryRenderedFeatures(e.point, {
-                layers: ["prototype-industrial-core", "prototype-stations-core"],
+                layers: [
+                  "prototype-industrial-core",
+                  "prototype-stations-core",
+                  "prototype-trace-discharge-core",
+                  "prototype-trace-outfall-marker",
+                  "prototype-trace-confluence-marker",
+                ],
               });
               if (features.length === 0) {
                 setSelectedEntity(null);
@@ -581,6 +1123,78 @@ export default function TerrainMapPrototypePage() {
     }
   }
 
+  function traceFacility(unitId: string) {
+    const map = mapRef.current;
+    const riverData = riverDataRef.current;
+    setIsTracingActive(true);
+    isTracingActiveRef.current = true;
+    setTracedFacilityId(unitId);
+
+    const pathway = computeModelledPathway(unitId, riverData);
+    setModelledPathway(pathway);
+
+    if (map) {
+      updateMapPathwaySource(map, pathway, riverData);
+    }
+
+    if (pathway.hasValidPath) {
+      setStatus(
+        `Tracing ${pathway.unitName} · Modelled discharge ${pathway.distanceToWaterwayMeters}m to ${pathway.waterwayName} · ${pathway.linkedStations.length} linked downstream station(s)`
+      );
+    } else {
+      setStatus(
+        `Tracing ${pathway.unitName} · ${pathway.invalidationReason || "No valid modelled discharge path available"}`
+      );
+    }
+  }
+
+  function clearTracing() {
+    setIsTracingActive(false);
+    isTracingActiveRef.current = false;
+    setTracedFacilityId(null);
+    setModelledPathway(null);
+
+    const map = mapRef.current;
+    if (map) {
+      updateMapPathwaySource(map, null, null);
+    }
+    setStatus("Pathway tracing cleared · All standard layers active");
+  }
+
+  function selectAndTrace(unitId: string) {
+    const unit = INDUSTRIAL_UNITS_GEO.find((u) => u.unit_id === unitId);
+    if (!unit) return;
+
+    setSelectedEntity({
+      category: "industrial",
+      id: unit.unit_id,
+      name: unit.name,
+      type: unit.type,
+      status: unit.status,
+      lat: unit.lat,
+      lon: unit.lon,
+      reuse: unit.reuse,
+      flow: unit.flow,
+      sourceType: unit.sourceType,
+      source: unit.source,
+    });
+
+    traceFacility(unitId);
+  }
+
+  function toggleTracePollution() {
+    if (isTracingActive) {
+      clearTracing();
+    } else {
+      if (selectedEntity && selectedEntity.category === "industrial") {
+        traceFacility(selectedEntity.id);
+      } else {
+        // Start tracing with central representative unit_004
+        selectAndTrace("unit_004");
+      }
+    }
+  }
+
   function toggleIndustry() {
     const nextVisible = !showIndustry;
     setShowIndustry(nextVisible);
@@ -594,8 +1208,13 @@ export default function TerrainMapPrototypePage() {
       }
     }
 
-    if (!nextVisible && selectedEntity?.category === "industrial") {
-      setSelectedEntity(null);
+    if (!nextVisible) {
+      if (selectedEntity?.category === "industrial") {
+        setSelectedEntity(null);
+      }
+      if (isTracingActive) {
+        clearTracing();
+      }
     }
   }
 
@@ -745,6 +1364,34 @@ export default function TerrainMapPrototypePage() {
             {showStations ? "● Stations (3): On" : "○ Stations: Off"}
           </button>
 
+          <button
+            onClick={toggleTracePollution}
+            style={{
+              ...buttonStyle,
+              background: isTracingActive ? "#fef2f2" : "#ffffff",
+              borderColor: isTracingActive ? "#ef4444" : "#cbd5e1",
+              color: isTracingActive ? "#b91c1c" : "#173548",
+            }}
+            title="Toggle pollution discharge pathway tracing from facility to river"
+          >
+            {isTracingActive ? "⚡ Trace: Active" : "⚡ Trace Pollution"}
+          </button>
+
+          {isTracingActive && (
+            <button
+              onClick={clearTracing}
+              style={{
+                ...buttonStyle,
+                background: "#ffffff",
+                borderColor: "#fca5a5",
+                color: "#b91c1c",
+              }}
+              title="Clear active pollution pathway trace"
+            >
+              ✕ Clear Trace
+            </button>
+          )}
+
           <button onClick={resetView} style={buttonStyle} title="Reset camera to central Tiruppur">
             📍 Fit Tiruppur
           </button>
@@ -810,8 +1457,10 @@ export default function TerrainMapPrototypePage() {
               position: "absolute",
               top: "16px",
               right: "60px",
-              width: "330px",
+              width: "350px",
               maxWidth: "calc(100% - 80px)",
+              maxHeight: "calc(100vh - 250px)",
+              overflowY: "auto",
               background: "#ffffff",
               borderRadius: "12px",
               boxShadow: "0 10px 30px rgba(15,23,42,0.2)",
@@ -870,6 +1519,151 @@ export default function TerrainMapPrototypePage() {
               📍 {selectedEntity.lat.toFixed(5)}°N, {selectedEntity.lon.toFixed(5)}°E
             </div>
 
+            {/* Industrial facility: Trace pathway button */}
+            {selectedEntity.category === "industrial" && (
+              <div style={{ marginTop: "10px" }}>
+                {isTracingActive && tracedFacilityId === selectedEntity.id ? (
+                  <button
+                    onClick={clearTracing}
+                    style={{
+                      ...buttonStyle,
+                      width: "100%",
+                      background: "#fef2f2",
+                      borderColor: "#fca5a5",
+                      color: "#b91c1c",
+                      fontSize: "12px",
+                      padding: "8px 10px",
+                    }}
+                  >
+                    ✕ Clear Modelled Pathway Trace
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => traceFacility(selectedEntity.id)}
+                    style={{
+                      ...buttonStyle,
+                      width: "100%",
+                      background: "#fff7ed",
+                      borderColor: "#fdba74",
+                      color: "#c2410c",
+                      fontSize: "12px",
+                      padding: "8px 10px",
+                    }}
+                  >
+                    ⚡ Trace Modelled Pathway toward River
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Active Modelled Pathway Section */}
+            {isTracingActive && tracedFacilityId === selectedEntity.id && modelledPathway && (
+              <div
+                style={{
+                  marginTop: "12px",
+                  padding: "11px 12px",
+                  borderRadius: "8px",
+                  background: modelledPathway.hasValidPath ? "#fef7ee" : "#fff1f2",
+                  border: `1.5px solid ${modelledPathway.hasValidPath ? "#f97316" : "#f43f5e"}`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "10.5px",
+                    fontWeight: 800,
+                    letterSpacing: "0.5px",
+                    color: modelledPathway.hasValidPath ? "#c2410c" : "#e11d48",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {modelledPathway.hasValidPath
+                    ? "Modelled Discharge Pathway (Simulated)"
+                    : "No Valid Modelled Discharge Path"}
+                </div>
+
+                {modelledPathway.hasValidPath ? (
+                  <div style={{ marginTop: "8px", fontSize: "11.5px", lineHeight: "1.55", color: "#1e293b" }}>
+                    <div>
+                      <strong>Modelled Outfall:</strong> <code>{modelledPathway.outfallId}</code>
+                    </div>
+                    <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#64748b" }}>
+                      📍 {modelledPathway.outfallCoords[1].toFixed(5)}°N, {modelledPathway.outfallCoords[0].toFixed(5)}°E
+                    </div>
+                    <div style={{ marginTop: "4px" }}>
+                      <strong>Synthetic Discharge:</strong> {modelledPathway.syntheticFlowRate} L/s ({modelledPathway.syntheticPollutant}, {modelledPathway.syntheticConcentration} mg/L index)
+                    </div>
+                    <div style={{ marginTop: "4px" }}>
+                      <strong>Waterway Entry:</strong> {modelledPathway.waterwayName}
+                    </div>
+                    <div>
+                      <strong>Overland Snapping Distance:</strong>{" "}
+                      <span style={{ color: "#c2410c", fontWeight: 700 }}>
+                        {modelledPathway.distanceToWaterwayMeters} meters
+                      </span>
+                    </div>
+
+                    {/* Linked Downstream Stations */}
+                    <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px dashed #fdba74" }}>
+                      <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#9a3412", textTransform: "uppercase" }}>
+                        Linked Downstream Monitoring ({modelledPathway.linkedStations.length})
+                      </div>
+                      {modelledPathway.linkedStations.length > 0 ? (
+                        <div style={{ marginTop: "4px" }}>
+                          {modelledPathway.linkedStations.map((station) => (
+                            <div
+                              key={station.sensor_id}
+                              style={{
+                                marginTop: "4px",
+                                padding: "5px 7px",
+                                background: "#ffffff",
+                                borderRadius: "5px",
+                                border: "1px solid #fed7aa",
+                                fontSize: "11px",
+                              }}
+                            >
+                              <strong style={{ color: "#0e7490" }}>{station.name}</strong>
+                              <div style={{ color: "#64748b", fontSize: "10px" }}>
+                                {station.designation} · ~{(station.distanceMeters / 1000).toFixed(1)} km downstream · Modelled travel: ~{station.travelHours} hrs
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: "11px", color: "#64748b", marginTop: "3px" }}>
+                          No downstream telemetry stations in the current model scope.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Unlinked upstream stations note */}
+                    {modelledPathway.unlinkedStations.length > 0 && (
+                      <div style={{ marginTop: "6px", fontSize: "10.5px", color: "#64748b" }}>
+                        <em>Upstream stations ({modelledPathway.unlinkedStations.map((s) => s.name).join(", ")}) are unlinked as flow is directed downstream.</em>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ marginTop: "8px", fontSize: "11.5px", lineHeight: "1.5", color: "#881337" }}>
+                    <p style={{ margin: "0 0 6px 0" }}>
+                      {modelledPathway.invalidationReason}
+                    </p>
+                    <div
+                      style={{
+                        padding: "6px 8px",
+                        background: "#ffffff",
+                        borderRadius: "5px",
+                        border: "1px solid #fecdd3",
+                        fontSize: "10.5px",
+                        color: "#9f1239",
+                      }}
+                    >
+                      <strong>Scientific Integrity Note:</strong> The prototype will not draw a fabricated route across town when the hydrology model does not support an overland channel connection.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Simulated demonstration metrics */}
             <div
               style={{
@@ -915,7 +1709,104 @@ export default function TerrainMapPrototypePage() {
                 lineHeight: "1.4",
               }}
             >
-              <strong>Data Provenance:</strong> {selectedEntity.source}. Simulation data generated for workflow demonstration. Not field-measured observations.
+              <strong>Data Provenance:</strong> {modelledPathway && tracedFacilityId === selectedEntity.id ? modelledPathway.provenance : selectedEntity.source}. Simulation data generated for workflow demonstration. Not field-measured observations.
+              {modelledPathway && tracedFacilityId === selectedEntity.id && (
+                <div style={{ marginTop: "4px", fontSize: "10px", color: "#78350f" }}>
+                  {modelledPathway.caveat}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Floating guidance card when tracing is active with no facility selected */}
+        {isTracingActive && !selectedEntity && (
+          <div
+            role="region"
+            aria-label="Active Tracing Guide"
+            style={{
+              position: "absolute",
+              top: "16px",
+              right: "60px",
+              width: "330px",
+              maxWidth: "calc(100% - 80px)",
+              background: "#ffffff",
+              borderRadius: "12px",
+              boxShadow: "0 10px 30px rgba(15,23,42,0.2)",
+              border: "1.5px solid #ea580c",
+              padding: "16px",
+              zIndex: 20,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span
+                style={{
+                  display: "inline-block",
+                  padding: "3px 8px",
+                  borderRadius: "5px",
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  letterSpacing: "0.5px",
+                  background: "#ffedd5",
+                  color: "#9a3412",
+                }}
+              >
+                TRACING MODE ACTIVE
+              </span>
+              <button
+                type="button"
+                onClick={clearTracing}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "16px",
+                  fontWeight: 700,
+                  color: "#94a3b8",
+                  cursor: "pointer",
+                }}
+                aria-label="Clear trace"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ marginTop: "10px", fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>
+              Select a Facility to Trace Pathway
+            </div>
+
+            <p style={{ fontSize: "12px", color: "#475569", margin: "6px 0 12px 0", lineHeight: "1.4" }}>
+              Click any of the 12 industrial facilities on the map to visualize its modelled discharge pathway toward the waterway network.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <button
+                onClick={() => selectAndTrace("unit_004")}
+                style={{
+                  ...buttonStyle,
+                  fontSize: "11px",
+                  padding: "6px 9px",
+                  background: "#f0fdf4",
+                  borderColor: "#86efac",
+                  color: "#166534",
+                  textAlign: "left",
+                }}
+              >
+                ➔ Test Unit 004 (Kasipalayam · 26m to river)
+              </button>
+              <button
+                onClick={() => selectAndTrace("unit_009")}
+                style={{
+                  ...buttonStyle,
+                  fontSize: "11px",
+                  padding: "6px 9px",
+                  background: "#fff1f2",
+                  borderColor: "#fecdd3",
+                  color: "#9f1239",
+                  textAlign: "left",
+                }}
+              >
+                ➔ Test Unit 009 (Nallur · 3.7km, beyond threshold)
+              </button>
             </div>
           </div>
         )}
@@ -1033,6 +1924,64 @@ export default function TerrainMapPrototypePage() {
             </div>
             <span style={{ fontSize: "10px", color: showStations ? "#0891b2" : "#94a3b8" }}>{showStations ? "ON" : "OFF"}</span>
           </div>
+
+          {/* Modelled Discharge Pathway Item */}
+          <div
+            onClick={toggleTracePollution}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "7px",
+              cursor: "pointer",
+              opacity: isTracingActive ? 1 : 0.45,
+            }}
+            title="Click to toggle modelled discharge pathway tracing"
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: "18px",
+                height: "3px",
+                borderTop: "2px dashed #dc2626",
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ flex: 1, fontSize: "11.5px" }}>
+              <strong style={{ color: "#dc2626" }}>Modelled Discharge Path</strong>
+              <span style={{ color: "#64748b", marginLeft: "4px" }}>· simulated route</span>
+            </div>
+            <span style={{ fontSize: "10px", color: isTracingActive ? "#dc2626" : "#94a3b8" }}>
+              {isTracingActive ? "ACTIVE" : "OFF"}
+            </span>
+          </div>
+
+          {/* Downstream Channel Reach Item (when active) */}
+          {isTracingActive && modelledPathway?.hasValidPath && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "7px",
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-block",
+                  width: "18px",
+                  height: "3px",
+                  background: "#f59e0b",
+                  flexShrink: 0,
+                }}
+              />
+              <div style={{ flex: 1, fontSize: "11.5px" }}>
+                <strong style={{ color: "#d97706" }}>Downstream Channel</strong>
+                <span style={{ color: "#64748b", marginLeft: "4px" }}>· to linked station</span>
+              </div>
+              <span style={{ fontSize: "10px", color: "#d97706" }}>LINKED</span>
+            </div>
+          )}
 
           {/* 3D Buildings Item */}
           <div
