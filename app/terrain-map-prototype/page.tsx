@@ -32,6 +32,7 @@ export default function TerrainMapPrototypePage() {
   const [status, setStatus] = useState("Preparing map...");
   const [is3D, setIs3D] = useState(true);
   const is3DRef = useRef(is3D);
+  const [activePreset, setActivePreset] = useState<"overview" | "detail" | null>("overview");
   const [showRiver, setShowRiver] = useState(true);
   const [showIndustry, setShowIndustry] = useState(true);
   const [showStations, setShowStations] = useState(true);
@@ -76,6 +77,18 @@ export default function TerrainMapPrototypePage() {
           }),
           "bottom-left"
         );
+
+        map.on("moveend", () => {
+          if (!active || !map) return;
+          const z = map.getZoom();
+          if (z >= 15.5) {
+            setActivePreset("detail");
+          } else if (z <= 14.2) {
+            setActivePreset("overview");
+          } else {
+            setActivePreset(null);
+          }
+        });
 
         map.on("load", async () => {
           if (!active || !map) return;
@@ -512,12 +525,46 @@ export default function TerrainMapPrototypePage() {
         );
       }
 
+      const currentZoom = map.getZoom();
+      const targetPitch = nextIs3D ? (currentZoom >= 15 ? 60 : 52) : 0;
+      const targetBearing = nextIs3D ? (currentZoom >= 15 ? -20 : -18) : 0;
+
       map.easeTo({
-        pitch: nextIs3D ? 52 : 0,
-        bearing: nextIs3D ? -18 : 0,
+        pitch: targetPitch,
+        bearing: targetBearing,
         duration: 700,
       });
     }
+  }
+
+  function goToCityOverview() {
+    setActivePreset("overview");
+    const map = mapRef.current;
+    if (!map) return;
+
+    map.flyTo({
+      center: [77.3411, 11.1085],
+      zoom: 13.5,
+      pitch: is3D ? 48 : 0,
+      bearing: is3D ? -18 : 0,
+      duration: 1200,
+      essential: true,
+    });
+  }
+
+  function goToUrbanDetail() {
+    setActivePreset("detail");
+    const map = mapRef.current;
+    if (!map) return;
+
+    map.flyTo({
+      center: [77.3411, 11.1085],
+      zoom: 16.5,
+      pitch: is3D ? 60 : 0,
+      bearing: is3D ? -20 : 0,
+      duration: 1200,
+      essential: true,
+    });
   }
 
   function toggleRiver() {
@@ -571,6 +618,7 @@ export default function TerrainMapPrototypePage() {
   }
 
   function resetView() {
+    setActivePreset("overview");
     mapRef.current?.easeTo({
       center: [77.3411, 11.1085],
       zoom: 13.5,
@@ -630,6 +678,32 @@ export default function TerrainMapPrototypePage() {
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
           <button onClick={toggleView} style={buttonStyle} title="Toggle between 3D oblique perspective with building extrusions and 2D flat top-down view">
             {is3D ? "● 3D View (Extruded)" : "○ 2D View (Flat)"}
+          </button>
+
+          <button
+            onClick={goToCityOverview}
+            style={{
+              ...buttonStyle,
+              background: activePreset === "overview" ? "#f0fdf4" : "#ffffff",
+              borderColor: activePreset === "overview" ? "#16a34a" : "#cbd5e1",
+              color: activePreset === "overview" ? "#15803d" : "#173548",
+            }}
+            title="City Overview: moderate zoom (13.5) with road network and surrounding context"
+          >
+            🏙️ City Overview
+          </button>
+
+          <button
+            onClick={goToUrbanDetail}
+            style={{
+              ...buttonStyle,
+              background: activePreset === "detail" ? "#f0fdf4" : "#ffffff",
+              borderColor: activePreset === "detail" ? "#16a34a" : "#cbd5e1",
+              color: activePreset === "detail" ? "#15803d" : "#173548",
+            }}
+            title="Urban Detail: close zoom (16.5) with 60° pitch to inspect 3D building extrusions"
+          >
+            🏢 Urban Detail
           </button>
 
           <button
@@ -1014,6 +1088,7 @@ export default function TerrainMapPrototypePage() {
 
       <p style={{ fontSize: "12px", color: "#526477", marginTop: "10px" }}>
         Prototype for comparison only. Vector basemap and 3D buildings supplied by OpenFreeMap (openmaptiles schema).
+        Use <strong>City Overview</strong> for regional road & river context or <strong>Urban Detail</strong> to inspect 3D building extrusions (~200m scale).
         Building extrusion uses tile <code>render_height</code> / <code>render_min_height</code> when available, with a conservative 6m (~2 storeys) fallback clearly designated as estimated display height—not measured building height.
         River geometry uses local project dataset. Facility and telemetry markers reuse project demo coordinates with explicit simulation labeling.
       </p>
