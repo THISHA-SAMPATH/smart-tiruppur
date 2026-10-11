@@ -170,48 +170,87 @@ graph LR
 
 ## 7. Comparative Methodologies
 
-The benchmark compares four distinct architectures, explicitly separating the task of **anomaly detection** from the task of **source attribution / localization**:
+The benchmark compares genuinely distinct architectures, explicitly separating the task of **anomaly detection** from the task of **source attribution / localization**:
 
-| Method ID | Method Name | Architecture & Operational Role | Uncertainty Mechanism | Attribution & Abstention Capability |
-| :--- | :--- | :--- | :---: | :---: |
-| **M1** | **Threshold Alarm Detector + Heuristic Attribution** | **Two-stage decoupled baseline:** Stage 1 performs rule-based anomaly detection when Kasipalayam ($m_2$) exceeds $\text{EC} > 2500\ \mu\text{S/cm}$ or $\text{pH} \notin [6.5, 8.5]$. A threshold alarm alone cannot identify a source; Stage 2 therefore uses an ad-hoc heuristic blaming the largest upstream nominal emitter. | None | **None** (Alarms whenever threshold is breached; attributes to highest-volume unit without reject option) |
-| **M2** | **Nearest-Sensor Heuristic Attributor** | Spatial advective proximity engine matching current [`lib/attribution/engine.ts`](file:///c:/Users/S.Thisha/Downloads/smart-tiruppur/lib/attribution/engine.ts). Ranks candidate sources based on snapped Euclidean distance and advective travel time. | None (Hardcoded scalar 0.35) | **None** (Always ranks and outputs all 12 candidate facilities) |
-| **M3** | **Standard Multi-Class Classifier** | Supervised Random Forest / Gradient Boosted Trees trained on multi-sensor temporal features. Directly outputs $\hat{s}_t = \arg\max_{k} P(s_k \mid \mathbf{Z}_t)$. | Raw softmax / tree vote fraction | **None (Forced Choice)** (Forced to output a facility label for every detected event) |
-| **M4 (Proposed)** | **Selective Attribution with Fault-Gated Abstention** | Dual-stage integrated framework: (1) Hardware diagnostics (CUSUM drift, zero-variance stuck checks, latency checks) identify sensor corruption; (2) Temperature-calibrated posterior probabilities evaluate confidence $\tau_{\text{conf}}$ and margin $\delta_{\text{margin}}$ before accepting an attribution. | Temperature-calibrated posteriors + Sensor health diagnostics | **Explicit Abstention** (Emits `ABSTAIN` with diagnostic cause code $\mathcal{R}_t$; accepts attribution only when evidence is conclusive) |
+| Method ID | Method Name | Architecture & Operational Role | Uncertainty Mechanism | Attribution & Abstention Capability | Fair Information Availability Status |
+| :--- | :--- | :--- | :---: | :---: | :---: |
+| **Detection Baseline** | **Threshold Alarm Detector** | **Decoupled Task 1 Detection:** Monitors observed concentration against a synthetic screening threshold ($2.0\text{ g/m}^3$). Identifies that an abnormal event exists without blaming any source. | None | **None** (Detection only; does not perform source localization) | **Unprivileged:** Observable telemetry only. (Note: $2.0\text{ g/m}^3$ is an experimental screening threshold, NOT a regulatory limit or calibrated Noyyal standard). |
+| **M1 (Primary)** | **Nearest-Upstream Spatial Heuristic** | **Unprivileged Primary Spatial Baseline:** Following threshold alarm at earliest station $s^*$, attributes to the candidate source located closest upstream ($x_k \le x_{s^*}$) based solely on topological channel chainage. | None | **None** (Attributes to nearest upstream facility without reject option) | **Unprivileged:** Uses only observable station alarms and physical coordinate chainages available at decision time. |
+| **M3 (Primary)** | **Standard Multi-Class Classifier** | Supervised Random Forest trained on multi-sensor summary features. Directly outputs $\hat{s}_t = \arg\max_{k} P(s_k \mid \mathbf{Z}_t)$. | Raw softmax / tree vote fraction | **None (Forced Choice)** (Forced to output a facility label for every detected event, $\Phi = 1.0$) | **Unprivileged:** Observable telemetry features only. |
+| **M3-Selective (Primary)** | **Matched-Coverage Confidence Baseline** | Conventional Random Forest with confidence-only thresholding (Chow, 1970; Geifman & El-Yaniv, 2017). Accepts if $\max_k P(s_k \mid \mathbf{Z}_t) \ge \tau_{\text{conf}}$, otherwise emits `ABSTAIN`. Excludes margin filtering and sensor health diagnostics. | Base classifier prediction confidence | **Confidence-Only Abstention** (Abstains when top class confidence is below threshold; operating threshold locked on validation data) | **Unprivileged:** Uses identical features and probabilities as M3 and M4. Directly isolates the incremental value of M4's margin rule and sensor diagnostics. |
+| **M4 (Proposed Primary)** | **Selective Attribution with Multi-Gated Abstention** | Integrated framework: (1) Hardware diagnostics (missingness, stuck register checks, latency checks, drift slopes); (2) Temperature-calibrated posterior probabilities; (3) Operating thresholds $(\tau_{\text{conf}}, \delta_{\text{margin}})$ tuned strictly on validation split and locked before test evaluation. | Temperature-calibrated posteriors ($T > 0$) + probability margin + sensor health diagnostics | **Multi-Signal Explicit Abstention** (Emits `ABSTAIN` with diagnostic cause code $\mathcal{R}_t$; accepts attribution only when confidence, margin, and sensor health gates are satisfied) | **Unprivileged:** Observable telemetry features and arrival timestamps only. |
+| **M1 (Secondary Benchmark)** | **Privileged Capacity-Weighted Heuristic** | **Secondary Sensitivity Benchmark:** Attributes to the upstream unit with highest nominal emission capacity (`nominal_mass_rate_gps`). | None | **None** (Attributes to largest nominal emitter) | **Privileged Prior (Secondary Only):** Relies on simulator injection capacity metadata unobservable during illicit field spills. Preserved as a separate secondary benchmark; excluded from primary fair comparison. |
+
+> [!NOTE]
+> **Resolution of Baseline Redundancy (Phase 3.3 Audit):**
+> Prior drafts included *M2 Spatial Transit Advection Heuristic*. Mathematical auditing revealed that M2's scoring formula ($\text{score} = \frac{1}{1 + dx / 1000}$) is a strictly monotonic transformation of upstream channel distance $dx$. Consequently, $\arg\max(\text{score}) \equiv \arg\min(dx)$, producing predictions 100% identical to M1 across all test episodes.
+> In accordance with scientific integrity guidelines, M2 was removed from the primary comparison suite rather than introducing artificial differences solely to inflate baseline counts. M3-Selective (confidence-only rejection) takes its place as a genuinely distinct, principled selective baseline.
 
 ---
 
 ## 8. Evaluation Metrics (Decoupled by Task)
 
-To evaluate system performance rigorously, the metrics are partitioned into two distinct evaluation tasks:
+To evaluate system performance rigorously, the metrics are partitioned into two distinct evaluation tasks, supplemented by probabilistic calibration metrics.
+
+> [!IMPORTANT]
+> **Undefined Zero-Denominator Convention (Phase 2.1 Audit):**
+> When a metric denominator is zero, the metric is mathematically undefined and is strictly represented as `None` (or `NaN` in floating-point arrays). Undefined metrics must NEVER be silently coerced to zero or one.
 
 ### 8.1 Task 1: Anomaly Detection Performance
 Evaluates how accurately the system identifies that a contamination event is occurring in the river, regardless of which source caused it:
 
 1. **Detection Rate ($\text{DR}$, Sensitivity / Recall):**
    $$\text{DR} = \frac{\text{True Contamination Episodes Detected}}{\text{Total Ground-Truth Contamination Episodes}}$$
+   * *Denominator:* Positive contamination event count $N_{\text{pos}}$. Undefined (`None`) when $N_{\text{pos}} = 0$.
 2. **False Alarm Rate ($\text{FAR}$, Fall-out):**
    $$\text{FAR} = \frac{\text{Alarms Triggered During Clean Background Flow}}{\text{Total Clean Evaluation Windows}}$$
+   * *Denominator:* Clean background episode count $N_{\text{clean}}$. Undefined (`None`) when $N_{\text{clean}} = 0$.
 3. **Time-to-Detect ($\text{TTD}$):**
-   Mean elapsed time (hours) from contaminant discharge onset to the first alarm or accepted detection at downstream sensors.
+   Mean elapsed time (hours) from contaminant discharge onset to the first alarm at downstream sensors. Undefined (`None`) when zero episodes are detected.
 
 ### 8.2 Task 2: Source Attribution & Selective Classification Performance
 Evaluates how accurately the system attributes a detected contamination event to the true emitting industrial facility, and how safely it abstains:
 
 1. **Overall Attribution Accuracy ($\text{Acc}_{\text{overall}}$, Forced-Choice):**
    $$\text{Acc}_{\text{overall}} = \frac{1}{N} \sum_{i=1}^N \mathbb{I}(\hat{s}_i = y_i)$$
-   Measures accuracy if the model were forced to guess on every episode ($D_i = \text{ATTRIBUTE}$ for all $i$).
+   Measures accuracy if the model were forced to guess on every episode ($D_i = \text{ATTRIBUTE}$ for all $i$). Undefined (`None`) when $N = 0$.
 2. **Coverage ($\Phi$, Acceptance Rate):**
    $$\Phi = \frac{|\{i : D_i = \text{ATTRIBUTE}\}|}{N}$$
-   The fraction of evaluation episodes on which the model accepts an attribution decision rather than abstaining.
+   The fraction of evaluation episodes on which the model accepts an attribution decision rather than abstaining. Undefined (`None`) when $N = 0$.
 3. **Selective Risk / Error on Accepted Predictions ($\mathcal{R}(\Phi)$):**
    $$\mathcal{R}(\Phi) = \frac{\sum_{i : D_i = \text{ATTRIBUTE}} \mathbb{I}(\hat{s}_i \neq y_i)}{|\{i : D_i = \text{ATTRIBUTE}\}|}$$
    The fraction of false accusations among decisions the model actually accepted.
-4. **Risk–Coverage Trade-Off Curve:**
-   Plot of $\mathcal{R}(\Phi)$ as a function of coverage $\Phi \in [0.10, 1.00]$, generated by sweeping confidence threshold $\tau_{\text{conf}}$.
-5. **Abstention Appropriateness Rate ($\text{AAR}$):**
-   Fraction of abstain decisions that were genuinely justified by severe sensor faults ($\mathcal{F}_{\text{drift}}, \mathcal{F}_{\text{stuck}}, \mathcal{F}_{\text{missing}} \ge 25\%$) or unidentifiable overlapping plumes:
-   $$\text{AAR} = \frac{\sum_{i : D_i = \text{ABSTAIN}} \mathbb{I}(\text{Fault Present}_i \lor \text{Plume Ambiguous}_i)}{|\{i : D_i = \text{ABSTAIN}\}|}$$
+   * *Denominator:* Number of accepted predictions $N_{\text{accepted}}$.
+   * *Critical Invariant:* Undefined (`None`) when $N_{\text{accepted}} = 0$ (all decisions abstained). Must not be reported as 0.0.
+   * *Abstention Invariant:* Abstentions are NEVER counted as correct source attributions.
+4. **Selective Accuracy ($\text{Acc}(\Phi)$):**
+   $$\text{Acc}(\Phi) = 1.0 - \mathcal{R}(\Phi) = \frac{\sum_{i : D_i = \text{ATTRIBUTE}} \mathbb{I}(\hat{s}_i = y_i)}{|\{i : D_i = \text{ATTRIBUTE}\}|}$$
+   Undefined (`None`) when $N_{\text{accepted}} = 0$.
+5. **Risk–Coverage Trade-Off Curve:**
+   Plot of $\mathcal{R}(\Phi)$ as a function of coverage $\Phi \in [0.10, 1.00]$, generated by sweeping confidence threshold $\tau_{\text{conf}}$. Points with $\Phi = 0$ are plotted as undefined/NaN.
+6. **Selective Error Avoidance Rate ($\text{EAR}$):**
+   $$\text{EAR} = \frac{|\{i : D_i = \text{ABSTAIN} \land \hat{s}_{\text{forced}, i} \neq y_i\}|}{|\{i : D_i = \text{ABSTAIN}\}|}$$
+   In selective classification theory (Geifman & El-Yaniv, 2017; Chow, 1970), an abstention is objectively error-avoiding if and only if the underlying forced-choice classifier would have committed an attribution error on that episode. Abstaining when the model was already correct sacrifices operational coverage without preventing a false accusation. Undefined (`None`) when $N_{\text{abstained}} = 0$.
+7. **Fault Diagnostic Precision:**
+   $$\text{Prec}_{\text{diag}} = \frac{|\{i : D_i = \text{ABSTAIN} \land \mathcal{R}_i \in \text{SENSOR\_FAULT\_*} \land \text{Fault Present}_i\}|}{|\{i : D_i = \text{ABSTAIN} \land \mathcal{R}_i \in \text{SENSOR\_FAULT\_*}\} |}$$
+   Evaluates whether hardware diagnostic vetoes were triggered by actual injected sensor corruptions. Ground-truth fault metadata is strictly used for evaluating diagnostic alarm precision, NEVER as a predictive feature during inference. Undefined (`None`) when no diagnostic abstentions occur.
+8. **Abstention–Fault Co-occurrence Rate:**
+   Empirical co-occurrence rate between abstentions and hardware corruptions. Clearly documented as an associative co-occurrence metric rather than causal proof of abstention correctness. Undefined (`None`) when $N_{\text{abstained}} = 0$.
+
+### 8.3 Calibration Evaluation Metrics (Phase 2.1 Audit)
+Evaluates whether predicted posterior probabilities accurately reflect empirical correctness:
+
+1. **Multiclass Brier Score ($\text{BS}$):**
+   $$\text{BS} = \frac{1}{N} \sum_{i=1}^N \sum_{k=1}^K (P_{i, k} - Y_{i, k})^2$$
+   Strictly proper scoring rule bounded in $[0, 2]$. Lower is better (0 is perfect calibration and sharpness). Undefined (`None`) when $N = 0$.
+2. **Multiclass Negative Log-Likelihood / Log Loss ($\text{NLL}$):**
+   $$\text{NLL} = -\frac{1}{N} \sum_{i=1}^N \sum_{k=1}^K Y_{i, k} \log(\max(P_{i, k}, \epsilon))$$
+   Evaluates cross-entropy loss with numerical probability floor $\epsilon = 10^{-15}$. Undefined (`None`) when $N = 0$.
+3. **Expected Calibration Error ($\text{ECE}$):**
+   Divides predicted top-label confidence $[0, 1]$ into $M = 10$ uniform bins $B_m = ((m-1)/M, m/M]$:
+   $$\text{ECE} = \sum_{m=1}^M \frac{|B_m|}{N} \left| \text{acc}(B_m) - \text{conf}(B_m) \right|$$
+   * *Empty Bin Handling:* If $|B_m| = 0$, its sample weight $|B_m|/N = 0.0$, contributing $0.0$ to the sum without numerical division artifacts.
+   * *Caveat:* Temperature scaling optimizes NLL on calibration data, but does not guarantee zero ECE on held-out test data. Empirical values must be reported directly without claims of perfect calibration. Undefined (`None`) when $N = 0$.
 
 ---
 
@@ -221,9 +260,9 @@ To isolate the contribution of each algorithmic component in the proposed method
 
 | Ablation ID | Model Configuration | Description & Scientific Purpose |
 | :--- | :--- | :--- |
-| **ABL-1** | **Full Proposed Model** | Calibrated probabilities + Margin threshold $\delta_{\text{margin}}$ + Sensor health fault gate (CUSUM, zero-variance, freshness). |
+| **ABL-1** | **Full Proposed Model** | Calibrated probabilities + Margin threshold $\delta_{\text{margin}}$ + Sensor health fault gate (missingness, zero-variance, freshness, drift). |
 | **ABL-2** | **w/o Sensor Fault Checks** | Removes hardware diagnostic filters. The model abstains solely based on low classification confidence ($\hat{c}_t < \tau_{\text{conf}}$). Evaluates whether statistical confidence alone detects hardware drift and stuck sensors. |
-| **ABL-3** | **w/o Probability Calibration** | Uses uncalibrated raw softmax scores for thresholding without temperature scaling or Platt scaling. Evaluates the impact of miscalibration on selective risk. |
+| **ABL-3** | **w/o Probability Calibration** | Uses uncalibrated raw tree vote fractions without temperature scaling. Evaluates the impact of miscalibration on selective risk. |
 | **ABL-4** | **w/o Margin Gap Check** | Sets $\delta_{\text{margin}} = 0$, evaluating confidence $\tau_{\text{conf}}$ only. Measures false attributions occurring when two top candidates are tied (e.g., $P_{(1)} = 0.51, P_{(2)} = 0.49$). |
 | **ABL-5** | **Forced-Choice (No Abstention)** | Sets $\tau_{\text{conf}} = 0, \delta_{\text{margin}} = 0$, forcing an attribution on all events ($\Phi = 1.0$). Reverts to conventional unselective classification. |
 
@@ -231,19 +270,42 @@ To isolate the contribution of each algorithmic component in the proposed method
 
 ## 10. Experimental Splits, Statistical Rigor & Sensitivity Protocol
 
-### 10.1 Data Partitioning & Independence
-* **Total Simulated Episodes:** $N = 2,400$ independent discharge and background episodes.
-* **Train Set (60%, $n = 1,440$):** Used strictly for model training under clean and baseline noise conditions.
-* **Calibration & Tuning Set (20%, $n = 480$):** Used for temperature scaling optimization, threshold tuning ($\tau_{\text{conf}}, \delta_{\text{margin}}$), and CUSUM drift calibration.
-* **Held-Out Test Set (20%, $n = 480$):** Evaluated strictly once per experiment under full fault-injection suites.
-* **Spatial Stratification:** Ensures episodes from all 12 industrial locations (upstream Mangalam cluster, central urban cluster, and downstream corridor) are balanced across splits.
+### 10.1 Four-Way Data Partitioning & Independence
+To strictly prevent data leakage and ensure fair operating threshold selection, data is split into four mutually disjoint partitions:
+* **Train Split (50%):** Fits the underlying probabilistic multi-class classifier.
+* **Calibration Split (20%):** Dedicated solely to optimizing temperature scaling parameter $T > 0$.
+* **Validation Split (15%):** Tunes confidence threshold $\tau_{\text{conf}}$ and margin gap $\delta_{\text{margin}}$ to satisfy target selective risk. Operating thresholds are locked on this split.
+* **Held-Out Test Split (15%):** Evaluated strictly once under locked, frozen model and threshold parameters. No test set feedback or threshold adjustment is permitted.
+* **Disjointness Invariant:** $\text{Split}_A \cap \text{Split}_B = \emptyset$ for all split pairs. Zero episode ID overlap across partitions.
 
-### 10.2 Independent Random Seeds & Statistical Confidence
-* All experiments are repeated across **10 independent random seeds**:
-  `SEEDS = [42, 101, 202, 303, 404, 505, 606, 707, 808, 909]`
-* All reported metrics ($\text{Acc}, \mathcal{R}(\Phi), \Phi, \text{TTD}$) must report the mean and **95% bootstrap confidence intervals** computed over 1,000 resamples.
+### 10.2 Statistical Protocol, Resampling & Sample Size Rationale (Phase 3.3 Audit)
 
-### 10.3 Parameter Sensitivity Sweep
+> [!IMPORTANT]
+> **Exploratory Pilot vs Confirmatory Study:**
+> The completed two-seed pilot (`SEEDS = [42, 101]`, 65 episodes/seed) is strictly exploratory. Its sole function is verifying software pipeline execution, memory bounds, numerical stability, and metric denominator handling. It does not provide inferential confirmation or formal statistical power.
+
+1. **Reservation of Fresh Held-Out Seeds:**
+   To guarantee statistical validity and prevent tuning overfitting, fresh held-out random seeds are strictly reserved for the full confirmatory experiment:
+   $$\text{CONFIRMATORY\_SEEDS} = [202, 303, 404, 505, 606, 707, 808, 909, 1010, 1111]$$
+   The exploratory pilot seeds (`42, 101`) will not be repurposed as confirmatory test evidence.
+
+2. **Distinguishing Episodes from Repeated-Condition Evaluations:**
+   The protocol explicitly distinguishes the number of independent physical simulation episodes ($N_{\text{episodes}}$) from the number of repeated-condition evaluations. Evaluating $N_{\text{test}} = 520$ held-out test episodes across clean and faulted sensor conditions yields $1,040$ evaluation instances, but the effective sample size for inferential comparisons remains $N_{\text{test}} = 520$ distinct physical events. Statistical power must not be claimed based solely on the inflated instance count.
+
+3. **Episode-Level Cluster Bootstrap Resampling:**
+   Standard i.i.d. observation-level resampling invalidates uncertainty estimates because clean and corrupted evaluations originating from the same physical event share identical underlying discharge hydraulics and true source labels. Resampling is therefore conducted strictly via **episode-level cluster bootstrap**:
+   * The complete physical event (including its clean baseline and all associated corrupted condition realizations) is resampled with replacement as an atomic unit.
+   * Model predictions on the resampled episodes are paired, preserving within-event correlation across conditions and models.
+   * 95% bootstrap confidence intervals are computed over 1,000 cluster resamples using the percentile method.
+
+4. **Sample Size & Precision Estimation Rationale:**
+   Rather than making ungrounded power claims without historical variance estimates, the full sample size is pre-registered using a **defensible precision target** (and explicitly designated as a pragmatic computational design):
+   * For $K = 13$ candidate classes (12 industrial facilities + 1 background class) across 10 confirmatory seeds, $N_{\text{total}} = 3,467$ total episodes are generated ($267$ episodes per class; $26$ episodes per class per seed).
+   * The held-out test partition (15%) yields $N_{\text{test}} = 520$ independent test episodes ($40$ test episodes per class; $4$ per class per seed).
+   * Under a baseline accuracy or coverage proportion near $p = 0.85$, the 95% normal approximation / Clopper-Pearson confidence interval half-width is:
+     $$\text{Margin of Error} = 1.96 \sqrt{\frac{p(1 - p)}{N_{\text{test}}}} = 1.96 \sqrt{\frac{0.85 \times 0.15}{520}} \approx \pm 3.07\%$$
+   * A precision half-width of $\approx \pm 3.1\%$ provides sufficient statistical resolution to detect meaningful differences in selective risk ($\ge 5\%$) between M3-Selective and M4 at matched coverage.
+   * Because fine-scale fluvial boundary conditions exhibit uncalibrated environmental stochasticity, this design is explicitly acknowledged as a **pragmatic pre-registered benchmark design** bounded by discrete simulation runtime.
 To satisfy scientific integrity regarding uncalibrated environmental parameters:
 * **River Velocity Sensitivity:** Sweep $u \in [0.125, 0.187, 0.250, 0.312, 0.375]\text{ m/s}$ ($\pm 50\%$ around baseline $0.25\text{ m/s}$).
 * **Dispersion Coefficient Sensitivity:** Sweep $D_L \in [2.0, 4.5, 9.0, 15.0]\text{ m}^2/\text{s}$.

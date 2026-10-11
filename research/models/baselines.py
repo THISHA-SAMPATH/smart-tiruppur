@@ -1,21 +1,26 @@
 """Baseline Methodologies for River Contamination Detection and Attribution.
 
-Implements three comparison baselines with explicit, documented assumptions:
-- Threshold Event Detector: Decoupled binary anomaly detector.
-- M1: Threshold Alarm Detector + Declared Localization Heuristic.
-- M2: Deterministic Spatial/Transit Advection Heuristic.
-- M3: Conventional Multi-Class Random Forest Classifier (Forced Choice).
-
-Strict Constraints:
-- Detection outcomes are recorded separately from attribution outcomes.
-- No access to true source labels, injection schedules, or simulated fault flags.
-- Filtering ensures observations beyond decision time or un-arrived packets are never visible.
+Architectural Design & Fair Comparison Invariants (Phase 2.1 Audit):
+1. Separation of Detection from Attribution:
+   - ThresholdEventDetector is strictly a detection baseline (Task 1). It identifies
+     abnormal concentration excursions above a synthetic experimental threshold (2.0 g/m³).
+     A threshold breach alone does not identify the responsible source.
+   - The 2.0 g/m³ threshold is explicitly documented as a synthetic screening parameter,
+     NOT a regulatory standard or empirically calibrated Noyyal River limit.
+2. Fair Information Availability in Primary Attribution Comparison:
+   - Primary baselines (M2 Spatial Transit, M3 Conventional Classifier, M4 Selective Attributor)
+     rely strictly on observable telemetry measurements and topological network coordinates.
+   - M1's use of nominal discharge capacity (nominal_mass_rate_gps) relies on privileged
+     simulator metadata that would be unobservable in field operations during illicit spills.
+   - The capacity-based rule is therefore segregated as a secondary benchmark
+     (SecondaryPrivilegedCapacityHeuristicAttributor), while NearestUpstreamHeuristicAttributor
+     and SpatialTransitHeuristicAttributor serve as unprivileged primary spatial baselines.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -29,9 +34,10 @@ class DetectionResult:
     event_id: str
     detected: bool
     peak_concentration_gpm3: float
-    threshold_gpm3: float
+    threshold_gpm3: float  # Synthetic experimental threshold
     detection_time_sec: Optional[float]
     triggering_station: Optional[str]
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -50,9 +56,11 @@ class BaselineAttributionResult:
 class ThresholdEventDetector:
     """Decoupled threshold-based anomaly detector.
 
-    Assumptions:
-    - Monitors observed concentration against a declared screening threshold (default 2.0 g/m³).
-    - Can monitor a single urban exit station (e.g., Kasipalayam sensor_002) or any station.
+    Assumptions & Provenance:
+    - Identifies anomalous concentration excursions exceeding threshold_gpm3.
+    - Scientific Calibration Caveat: The default threshold (2.0 g/m³) is a synthetic
+      screening experimental threshold chosen for controlled benchmark SNR.
+      It is NOT a statutory effluent standard (CPCB/TNPCB) or a calibrated real-river threshold.
     - A detection alarm indicates an anomaly exists, but does NOT identify the source.
     """
 
@@ -78,6 +86,8 @@ class ThresholdEventDetector:
 
         for s_id in self.monitored_stations:
             vals = station_values.get(s_id, np.array([]))
+            if len(vals) == 0:
+                continue
             arrivals = station_arrival_times.get(s_id, sample_times_sec)
 
             valid_mask = (arrivals <= decision_time_sec) & (sample_times_sec <= decision_time_sec)
@@ -114,18 +124,19 @@ class ThresholdEventDetector:
             threshold_gpm3=self.threshold_gpm3,
             detection_time_sec=earliest_time,
             triggering_station=trigger_station,
+            metadata={"threshold_type": "synthetic_screening_benchmark_only"},
         )
 
 
-class ThresholdHeuristicAttributor:
-    """M1 Baseline: Threshold Detection + Highest-Volume Upstream Emitter Heuristic.
+class NearestUpstreamHeuristicAttributor:
+    """M1 (Unprivileged Primary): Threshold Detection + Nearest Upstream Facility Heuristic.
 
-    Two-stage architecture:
-    - Stage 1: Threshold detection on telemetry observations. If no anomaly is detected,
-      assigns 's0_background' (no false accusation).
-    - Stage 2 (Localization Rule): If an anomaly is detected, blames the candidate source
-      with the highest nominal discharge capacity located upstream of the earliest alarmed station.
-    - Forced choice: Does not have an abstention option once an anomaly is confirmed.
+    Fair Information Availability:
+    - Uses only topological channel distance (chainage_m) and sensor telemetry available at decision time.
+    - Does NOT use synthetic generator emission rate metadata (nominal_mass_rate_gps).
+    - If no anomaly is detected, attributes to 's0_background'.
+    - If an anomaly is detected, blames the candidate source located nearest upstream
+      of the earliest alarmed monitoring station.
     """
 
     def __init__(
@@ -157,7 +168,7 @@ class ThresholdHeuristicAttributor:
         if not det.detected:
             return BaselineAttributionResult(
                 event_id=event_id,
-                method_name="M1_Threshold_Heuristic",
+                method_name="M1_Nearest_Upstream_Heuristic",
                 decision="ATTRIBUTE",
                 predicted_source="s0_background",
                 confidence=1.0,
@@ -166,7 +177,6 @@ class ThresholdHeuristicAttributor:
                 metadata={"rule": "below_detection_threshold"},
             )
 
-        # Localization rule: highest nominal emitter upstream of triggering station
         trigger_chainage = self.stations.get(det.triggering_station or "sensor_002", 14800.0)
         upstream_sources = [
             s for s in self.sources if float(s["chainage_m"]) <= trigger_chainage
@@ -175,7 +185,87 @@ class ThresholdHeuristicAttributor:
         if not upstream_sources:
             upstream_sources = self.sources
 
-        # Sort descending by nominal mass rate
+        # Sort descending by chainage (nearest upstream to the station)
+        sorted_sources = sorted(
+            upstream_sources,
+            key=lambda s: float(s["chainage_m"]),
+            reverse=True,
+        )
+
+        chosen = sorted_sources[0]["source_id"]
+
+        return BaselineAttributionResult(
+            event_id=event_id,
+            method_name="M1_Nearest_Upstream_Heuristic",
+            decision="ATTRIBUTE",
+            predicted_source=chosen,
+            confidence=0.50,
+            margin=0.10,
+            detection=det,
+            metadata={
+                "rule": "nearest_upstream_facility",
+                "trigger_station": det.triggering_station,
+                "candidate_upstream_count": len(upstream_sources),
+            },
+        )
+
+
+class SecondaryPrivilegedCapacityHeuristicAttributor:
+    """M1 Secondary Benchmark: Capacity-Weighted Heuristic (Privileged Information).
+
+    Audit & Fairness Notice:
+    - This baseline utilizes simulator metadata (`nominal_mass_rate_gps`) to rank emitters.
+    - Because illicit discharge capacity is unobservable in live field telemetry,
+      this heuristic represents a privileged upper bound rather than an operational model.
+    - Excluded from the primary fair comparison suite; retained solely as a secondary benchmark.
+    """
+
+    def __init__(
+        self,
+        candidate_sources: List[Dict[str, Any]],
+        monitoring_stations: List[Dict[str, Any]],
+        threshold_gpm3: float = 2.0,
+    ) -> None:
+        self.detector = ThresholdEventDetector(threshold_gpm3=threshold_gpm3)
+        self.sources = candidate_sources
+        self.stations = {s["station_id"]: float(s["chainage_m"]) for s in monitoring_stations}
+
+    def attribute(
+        self,
+        event_id: str,
+        sample_times_sec: np.ndarray,
+        station_arrival_times: Dict[str, np.ndarray],
+        station_values: Dict[str, np.ndarray],
+        decision_time_sec: float,
+    ) -> BaselineAttributionResult:
+        det = self.detector.detect(
+            event_id=event_id,
+            sample_times_sec=sample_times_sec,
+            station_arrival_times=station_arrival_times,
+            station_values=station_values,
+            decision_time_sec=decision_time_sec,
+        )
+
+        if not det.detected:
+            return BaselineAttributionResult(
+                event_id=event_id,
+                method_name="M1_Secondary_Privileged_Capacity_Heuristic",
+                decision="ATTRIBUTE",
+                predicted_source="s0_background",
+                confidence=1.0,
+                margin=1.0,
+                detection=det,
+                metadata={"rule": "below_detection_threshold"},
+            )
+
+        trigger_chainage = self.stations.get(det.triggering_station or "sensor_002", 14800.0)
+        upstream_sources = [
+            s for s in self.sources if float(s["chainage_m"]) <= trigger_chainage
+        ]
+
+        if not upstream_sources:
+            upstream_sources = self.sources
+
         sorted_sources = sorted(
             upstream_sources,
             key=lambda s: float(s.get("nominal_mass_rate_gps", 0.0)),
@@ -186,28 +276,34 @@ class ThresholdHeuristicAttributor:
 
         return BaselineAttributionResult(
             event_id=event_id,
-            method_name="M1_Threshold_Heuristic",
+            method_name="M1_Secondary_Privileged_Capacity_Heuristic",
             decision="ATTRIBUTE",
             predicted_source=chosen,
-            confidence=0.50,  # Uncalibrated heuristic score
+            confidence=0.50,
             margin=0.10,
             detection=det,
             metadata={
-                "rule": "highest_nominal_volume_upstream",
+                "rule": "highest_nominal_capacity_upstream",
                 "trigger_station": det.triggering_station,
-                "candidate_upstream_count": len(upstream_sources),
+                "is_privileged_prior": True,
             },
         )
 
 
-class SpatialTransitHeuristicAttributor:
-    """M2 Baseline: Deterministic Spatial/Transit Advection Heuristic.
+# Backward-compatibility alias
+ThresholdHeuristicAttributor = SecondaryPrivilegedCapacityHeuristicAttributor
 
-    Assumptions:
-    - Transport physics: nominal longitudinal flow velocity u = 0.25 m/s.
-    - If observations do not exceed threshold across all stations, assigns 's0_background'.
-    - If an anomaly is observed, computes the first downstream station observing a peak
-      and ranks upstream candidate sources based on advective distance and transit time compatibility.
+
+class SpatialTransitHeuristicAttributor:
+    """M2 Benchmark: Deterministic Spatial/Transit Advection Heuristic.
+
+    Audit & Redundancy Notice (Phase 3.3 Audit):
+    - Mathematical Equivalence: Because the candidate scoring function score = 1 / (1 + dx/1000)
+      is strictly monotonically decreasing in upstream distance dx, argmax(score) is identical
+      to argmin(dx), making this heuristic produce 100% identical predictions to M1 Nearest
+      Upstream Heuristic across all episodes.
+    - Status: Preserved for backwards compatibility and ablation records, but excluded from
+      the primary distinct baseline suite to prevent presenting duplicate comparisons.
     - Forced choice: Returns highest-scoring candidate facility without reject option.
     """
 
@@ -232,13 +328,14 @@ class SpatialTransitHeuristicAttributor:
         station_values: Dict[str, np.ndarray],
         decision_time_sec: float,
     ) -> BaselineAttributionResult:
-        # Check peaks at each station
-        station_peaks: Dict[str, Tuple[float, float]] = {}  # station_id -> (peak_val, peak_time)
+        station_peaks: Dict[str, Tuple[float, float]] = {}
         max_overall = 0.0
 
         for s in self.stations:
             s_id = s["station_id"]
             vals = station_values.get(s_id, np.array([]))
+            if len(vals) == 0:
+                continue
             arrivals = station_arrival_times.get(s_id, sample_times_sec)
 
             valid_mask = (arrivals <= decision_time_sec) & (sample_times_sec <= decision_time_sec)
@@ -268,6 +365,7 @@ class SpatialTransitHeuristicAttributor:
             threshold_gpm3=self.threshold,
             detection_time_sec=None,
             triggering_station=None,
+            metadata={"threshold_type": "synthetic_screening_benchmark_only"},
         )
 
         if not det.detected:
@@ -282,13 +380,12 @@ class SpatialTransitHeuristicAttributor:
                 metadata={"rule": "below_detection_threshold"},
             )
 
-        # Find earliest station observing peak > threshold
         alarmed_stations = [
             (s_id, p_val, p_time)
             for s_id, (p_val, p_time) in station_peaks.items()
             if p_val >= self.threshold
         ]
-        alarmed_stations.sort(key=lambda x: x[2])  # Sort by earliest peak time
+        alarmed_stations.sort(key=lambda x: x[2])
 
         earliest_station_id = alarmed_stations[0][0]
         det.triggering_station = earliest_station_id
@@ -296,19 +393,16 @@ class SpatialTransitHeuristicAttributor:
 
         station_chainage = float(self.stations_by_id[earliest_station_id]["chainage_m"])
 
-        # Candidate sources strictly upstream of earliest station
         candidates = [
             s for s in self.sources if float(s["chainage_m"]) <= station_chainage
         ]
         if not candidates:
             candidates = self.sources
 
-        # Rank candidates by proximity to the detection station
-        # In 1D advection, sources closer upstream reach the station with less attenuation
         scored = []
         for src in candidates:
             dx = station_chainage - float(src["chainage_m"])
-            score = 1.0 / (1.0 + (dx / 1000.0))  # Distance attenuation weighting
+            score = 1.0 / (1.0 + (dx / 1000.0))
             scored.append((src["source_id"], score))
 
         scored.sort(key=lambda x: x[1], reverse=True)
@@ -326,6 +420,7 @@ class SpatialTransitHeuristicAttributor:
             metadata={
                 "earliest_station": earliest_station_id,
                 "candidate_count": len(candidates),
+                "is_unprivileged": True,
             },
         )
 
@@ -396,4 +491,111 @@ class ConventionalClassifier:
             margin=margin,
             detection=None,
             metadata={"raw_probabilities": {str(c): float(p) for c, p in zip(self.classes_, probs)}},
+        )
+
+
+class ConfidenceSelectiveClassifier:
+    """M3-Selective Baseline: Conventional Classifier with Confidence-Only Abstention.
+
+    Ablation & Benchmark Context:
+    - Implements standard confidence thresholding (Chow, 1970; Geifman & El-Yaniv, 2017).
+    - Threshold condition: Accepts if max_k P(s_k | Z) >= tau_conf, otherwise emits ABSTAIN.
+    - Excludes probability margin filtering (delta_margin = 0).
+    - Excludes sensor hardware diagnostic vetting (no sensor health gate).
+    - Uses identical features and probability outputs as M3 and M4.
+    - Serves as the primary selective baseline to isolate whether M4's margin rule and
+      sensor health diagnostics deliver incremental value at matched coverage levels.
+    """
+
+    def __init__(
+        self,
+        base_classifier: Optional[ConventionalClassifier] = None,
+        tau_conf: float = 0.50,
+    ) -> None:
+        self.base_classifier = base_classifier
+        self.tau_conf = tau_conf
+
+    def tune_threshold_on_validation(
+        self,
+        X_val: np.ndarray,
+        y_val: np.ndarray,
+        tau_candidates: Sequence[float] = (0.30, 0.40, 0.50, 0.60, 0.70, 0.80),
+        target_max_risk: float = 0.10,
+    ) -> float:
+        """Selects tau_conf strictly on validation data to maximize coverage while bounding risk."""
+        if self.base_classifier is None or not self.base_classifier.is_fitted:
+            raise RuntimeError("Base classifier must be fitted before validation tuning")
+
+        probs = self.base_classifier.rf.predict_proba(X_val)
+        classes = self.base_classifier.classes_
+
+        best_tau = float(tau_candidates[0])
+        best_cov = -1.0
+
+        for tau in sorted(tau_candidates):
+            accepted_mask = np.max(probs, axis=1) >= tau
+            cov = float(np.mean(accepted_mask))
+            if np.sum(accepted_mask) == 0:
+                risk = None
+            else:
+                pred_indices = np.argmax(probs[accepted_mask], axis=1)
+                preds = classes[pred_indices]
+                trues = y_val[accepted_mask]
+                risk = float(np.mean(preds != trues))
+
+            if risk is not None and risk <= target_max_risk:
+                if cov > best_cov:
+                    best_cov = cov
+                    best_tau = float(tau)
+
+        # Fallback to strictest threshold if target risk is unsatisfied
+        if best_cov < 0:
+            best_tau = float(max(tau_candidates))
+
+        self.tau_conf = best_tau
+        return best_tau
+
+    def predict_single(
+        self,
+        event_id: str,
+        sample_times_sec: np.ndarray,
+        station_arrival_times: Dict[str, np.ndarray],
+        station_values: Dict[str, np.ndarray],
+        decision_time_sec: float,
+    ) -> BaselineAttributionResult:
+        if self.base_classifier is None or not self.base_classifier.is_fitted:
+            raise RuntimeError("Base classifier must be fitted before predict_single")
+
+        m3_res = self.base_classifier.predict_single(
+            event_id=event_id,
+            sample_times_sec=sample_times_sec,
+            station_arrival_times=station_arrival_times,
+            station_values=station_values,
+            decision_time_sec=decision_time_sec,
+        )
+
+        conf = m3_res.confidence
+        if conf >= self.tau_conf:
+            decision = "ATTRIBUTE"
+            pred_source = m3_res.predicted_source
+            abstain_cause = None
+        else:
+            decision = "ABSTAIN"
+            pred_source = None
+            abstain_cause = "LOW_CONFIDENCE"
+
+        return BaselineAttributionResult(
+            event_id=event_id,
+            method_name="M3_Selective_Confidence_Only",
+            decision=decision,
+            predicted_source=pred_source,
+            confidence=conf,
+            margin=m3_res.margin,
+            detection=m3_res.detection,
+            metadata={
+                "tau_conf": self.tau_conf,
+                "raw_confidence": conf,
+                "abstain_cause": abstain_cause,
+                "raw_probabilities": m3_res.metadata.get("raw_probabilities", {}),
+            },
         )

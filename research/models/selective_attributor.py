@@ -1,22 +1,25 @@
 """Proposed Selective Source Attributor with Calibrated Confidence and Fault-Gated Abstention (M4).
 
 Implements the uncertainty-aware selective attribution architecture:
-1. Probabilistic Classifier fitted on training split.
+1. Probabilistic Classifier fitted on training split only.
 2. Temperature-scaled Probability Calibration fitted strictly on the dedicated calibration split.
-3. Sensor-Quality Diagnostic Gate evaluating hardware integrity from observable telemetry.
-4. Predefined Acceptance Criteria (confidence threshold tau_conf, margin gap delta_margin).
-5. Explicit Abstention emitting operational diagnostic cause codes.
+3. Acceptance Threshold Selection (tau_conf, delta_margin) tuned strictly on the validation split.
+4. Sensor-Quality Diagnostic Gate evaluating hardware integrity from observable telemetry.
+5. Final Evaluation strictly on held-out test split without tuning or feedback.
 
-Operational Meaning of Abstention:
-An abstention is a request for further physical evidence or sensor inspection—not proof
-that no pollution event occurred, and not a silent accusation of an innocent facility.
+Calibration Caveat (Phase 2.1 Audit):
+Temperature scaling scales unnormalized logits by a single scalar parameter T > 0 to optimize
+cross-entropy on calibration data without altering class ranking. While parameter-efficient,
+it does NOT theoretically guarantee zero calibration error under non-stationary noise or
+skewed class distributions. All calibration quality must be explicitly evaluated on held-out
+predictions using Brier score, log loss, and Expected Calibration Error (ECE).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from scipy.optimize import minimize_scalar
@@ -89,6 +92,7 @@ class SelectiveAttributor:
         self.temperature_: float = 1.0
         self.is_fitted: bool = False
         self.is_calibrated: bool = False
+        self.thresholds_locked: bool = False
 
     def fit_base_model(self, X_train: np.ndarray, y_train: np.ndarray) -> "SelectiveAttributor":
         """Fits the base classifier strictly on the training partition."""
@@ -120,21 +124,17 @@ class SelectiveAttributor:
             self.is_calibrated = True
             return self
 
-        # Extract raw probability predictions on calibration set
         raw_probs = self.base_model.predict_proba(X_cal)
         eps = 1e-12
         raw_probs = np.clip(raw_probs, eps, 1.0 - eps)
-        # Normalize rows
         raw_probs = raw_probs / np.sum(raw_probs, axis=1, keepdims=True)
 
         logits = np.log(raw_probs)
 
-        # Target integer labels mapped to class indices
         target_indices = np.array([
             self.class_to_idx_.get(str(label), -1) for label in y_cal
         ])
 
-        # Filter out any unmapped labels
         valid_mask = target_indices >= 0
         if not np.any(valid_mask):
             self.temperature_ = 1.0
@@ -144,10 +144,8 @@ class SelectiveAttributor:
         valid_logits = logits[valid_mask]
         valid_targets = target_indices[valid_mask]
 
-        # Optimization objective: Cross-Entropy / NLL as function of T
         def _nll(temp: float) -> float:
             scaled = valid_logits / temp
-            # Stable log-sum-exp
             max_s = np.max(scaled, axis=1, keepdims=True)
             log_denom = max_s + np.log(np.sum(np.exp(scaled - max_s), axis=1, keepdims=True))
             log_probs = scaled - log_denom
@@ -174,6 +172,114 @@ class SelectiveAttributor:
         scaled = logits / self.temperature_
         exp_scaled = np.exp(scaled - np.max(scaled))
         return exp_scaled / np.sum(exp_scaled)
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        """Returns calibrated probability distributions for a batch of feature vectors."""
+        if not self.is_fitted:
+            raise RuntimeError("Model must be fitted before predict_proba")
+        raw_probs = self.base_model.predict_proba(X)
+        return np.array([self._scale_probabilities(p) for p in raw_probs])
+
+    def tune_thresholds_on_validation(
+        self,
+        X_val: np.ndarray,
+        y_val: np.ndarray,
+        target_max_risk: float = 0.05,
+        tau_candidates: Optional[Sequence[float]] = None,
+        delta_candidates: Optional[Sequence[float]] = None,
+    ) -> Dict[str, Any]:
+        """Selects acceptance thresholds (tau_conf, delta_margin) strictly using validation episodes.
+
+        Fairness & Leakage Safeguards (Phase 2.1 Audit):
+        - Operates strictly on validation features and ground-truth labels.
+        - Has ZERO access to the held-out test partition.
+        - Selects the operating point (tau, delta) maximizing decision coverage subject
+          to validation selective risk <= target_max_risk.
+        - Locks the thresholds so test evaluation uses only fixed frozen parameters.
+        """
+        if not self.is_fitted:
+            raise RuntimeError("Model must be fitted before threshold tuning")
+        if not self.is_calibrated:
+            raise RuntimeError("Model must be calibrated before threshold tuning")
+
+        if len(X_val) == 0 or len(y_val) == 0:
+            raise ValueError("Validation set must not be empty")
+
+        if tau_candidates is None:
+            tau_candidates = [0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
+        if delta_candidates is None:
+            delta_candidates = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25]
+
+        cal_probs = self.predict_proba(X_val)
+        sorted_indices = np.argsort(cal_probs, axis=1)[:, ::-1]
+        top_indices = sorted_indices[:, 0]
+        runner_up_indices = sorted_indices[:, 1]
+
+        top_classes = np.array([self.classes_[idx] for idx in top_indices])
+        top_confs = cal_probs[np.arange(len(X_val)), top_indices]
+        margins = top_confs - cal_probs[np.arange(len(X_val)), runner_up_indices]
+
+        best_tau = self.config.tau_conf
+        best_delta = self.config.delta_margin
+        best_cov = -1.0
+        best_risk: Optional[float] = None
+
+        grid_results = []
+
+        for tau in tau_candidates:
+            for delta in delta_candidates:
+                accepted_mask = (top_confs >= tau) & (margins >= delta)
+                n_acc = int(np.sum(accepted_mask))
+                cov = n_acc / len(X_val)
+
+                if n_acc == 0:
+                    risk = None  # Undefined
+                else:
+                    err_count = int(np.sum(top_classes[accepted_mask] != y_val[accepted_mask]))
+                    risk = err_count / n_acc
+
+                grid_results.append({
+                    "tau": float(tau),
+                    "delta": float(delta),
+                    "coverage": float(cov),
+                    "selective_risk": risk,
+                })
+
+                if risk is not None and risk <= target_max_risk:
+                    if cov > best_cov:
+                        best_cov = cov
+                        best_risk = risk
+                        best_tau = tau
+                        best_delta = delta
+
+        # Fallback to minimum risk configuration if target is unattainable
+        if best_cov < 0.0:
+            valid_risks = [r for r in grid_results if r["selective_risk"] is not None]
+            if valid_risks:
+                min_risk_cfg = min(valid_risks, key=lambda r: (r["selective_risk"], -r["coverage"]))
+                best_tau = min_risk_cfg["tau"]
+                best_delta = min_risk_cfg["delta"]
+                best_cov = min_risk_cfg["coverage"]
+                best_risk = min_risk_cfg["selective_risk"]
+            else:
+                best_tau = tau_candidates[0]
+                best_delta = delta_candidates[0]
+                best_cov = 0.0
+                best_risk = None
+
+        # Lock thresholds
+        self.config.tau_conf = float(best_tau)
+        self.config.delta_margin = float(best_delta)
+        self.thresholds_locked = True
+
+        return {
+            "selected_tau": float(best_tau),
+            "selected_delta": float(best_delta),
+            "validation_coverage": float(best_cov),
+            "validation_selective_risk": best_risk,
+            "target_max_risk": target_max_risk,
+            "grid_evaluated_count": len(grid_results),
+        }
 
     def predict_single(
         self,
@@ -303,26 +409,21 @@ def create_ablation_model(
     cfg = base_config or SelectiveAttributionConfig()
 
     if ablation_variant in ("ABL_1_FULL", "ABL-1"):
-        # Full Proposed Model
         return SelectiveAttributor(cfg)
 
     elif ablation_variant in ("ABL_2_NO_DIAGNOSTICS", "ABL-2"):
-        # w/o Sensor Fault Checks
         cfg.enable_sensor_diagnostics = False
         return SelectiveAttributor(cfg)
 
     elif ablation_variant in ("ABL_3_NO_CALIBRATION", "ABL-3"):
-        # w/o Probability Calibration
         cfg.calibration_mode = "none"
         return SelectiveAttributor(cfg)
 
     elif ablation_variant in ("ABL_4_NO_MARGIN", "ABL-4"):
-        # w/o Margin Gap Check
         cfg.delta_margin = 0.0
         return SelectiveAttributor(cfg)
 
     elif ablation_variant in ("ABL_5_FORCED_CHOICE", "ABL-5"):
-        # Forced Choice (No Abstention)
         cfg.tau_conf = 0.0
         cfg.delta_margin = 0.0
         cfg.enable_sensor_diagnostics = False

@@ -2,8 +2,11 @@
 
 from .baselines import (
     BaselineAttributionResult,
+    ConfidenceSelectiveClassifier,
     ConventionalClassifier,
     DetectionResult,
+    NearestUpstreamHeuristicAttributor,
+    SecondaryPrivilegedCapacityHeuristicAttributor,
     SpatialTransitHeuristicAttributor,
     ThresholdEventDetector,
     ThresholdHeuristicAttributor,
@@ -25,9 +28,12 @@ from .sensor_diagnostics import (
 
 __all__ = [
     "ThresholdEventDetector",
+    "NearestUpstreamHeuristicAttributor",
+    "SecondaryPrivilegedCapacityHeuristicAttributor",
     "ThresholdHeuristicAttributor",
     "SpatialTransitHeuristicAttributor",
     "ConventionalClassifier",
+    "ConfidenceSelectiveClassifier",
     "ObservableFeatureExtractor",
     "SelectiveAttributor",
     "SelectiveAttributionConfig",

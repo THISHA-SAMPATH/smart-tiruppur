@@ -1,0 +1,63 @@
+{
+  "pilot_metadata": {
+    "name": "NoyyalSense-Attribution-Pilot",
+    "version": "1.0.0",
+    "description": "Controlled end-to-end synthetic attribution pilot verifying pipeline execution and reproducibility under clean and faulted sensor conditions.",
+    "is_synthetic": true,
+    "disclaimer": "Synthetic screening pilot benchmark only. Not measured data or historical pollution records from the Noyyal River."
+  },
+  "seeds": [42, 101],
+  "episodes_per_class": 5,
+  "background_class_id": "s0_background",
+  "detection_threshold_gpm3": 2.0,
+  "decision_time_sec": 86400.0,
+  "split_allocation": {
+    "train_per_class": 2,
+    "cal_per_class": 1,
+    "val_per_class": 1,
+    "test_per_class": 1
+  },
+  "conditions": {
+    "clean": {
+      "name": "clean",
+      "display_name": "Clean Baseline",
+      "description": "Baseline telemetry without added hardware faults."
+    },
+    "faulted": {
+      "name": "faulted",
+      "display_name": "Sensor Faults (Stuck & Missing)",
+      "description": "Controlled hardware corruption with stuck register on sensor_002 and random missingness.",
+      "fault_suite": {
+        "stuck_value": {
+          "enabled": true,
+          "start_time_sec": 21600.0,
+          "duration_sec": 28800.0,
+          "affected_stations": ["sensor_002"]
+        },
+        "random_missingness": {
+          "enabled": true,
+          "dropout_probability": 0.10
+        },
+        "telemetry_delay": {
+          "enabled": false,
+          "delay_sec": 7200.0,
+          "affected_stations": ["sensor_002"]
+        }
+      }
+    }
+  },
+  "models": {
+    "conventional_rf": {
+      "n_estimators": 50,
+      "random_state": 42
+    },
+    "selective_m4": {
+      "n_estimators": 50,
+      "random_state": 42,
+      "target_max_risk": 0.10,
+      "tau_candidates": [0.30, 0.40, 0.50, 0.60, 0.70, 0.80],
+      "delta_candidates": [0.00, 0.05, 0.10, 0.15, 0.20]
+    }
+  },
+  "output_dir": "research/results/pilot"
+}

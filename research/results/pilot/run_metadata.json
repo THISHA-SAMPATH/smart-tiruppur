@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-10-11T15:36:17.469275+00:00",
+  "python_version": "3.14.2 (tags/v3.14.2:df79316, Dec  5 2025, 17:18:21) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "libraries": {
+    "numpy": "2.4.6",
+    "scipy": "1.17.0",
+    "scikit_learn": "1.8.0"
+  },
+  "seeds": [
+    42,
+    101
+  ],
+  "classes_count": 13,
+  "episodes_per_class": 5,
+  "total_episodes_per_seed": 65,
+  "test_episodes_per_seed": 13,
+  "split_allocation": {
+    "train_per_class": 2,
+    "cal_per_class": 1,
+    "val_per_class": 1,
+    "test_per_class": 1
+  },
+  "conditions": [
+    "clean",
+    "faulted"
+  ],
+  "output_directory": "research\\results\\pilot"
+}

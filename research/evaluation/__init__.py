@@ -2,15 +2,22 @@
 
 from .attribution_metrics import (
     abstention_appropriateness_rate,
+    abstention_fault_cooccurrence_rate,
     abstention_rate,
     attribution_macro_f1,
     compute_risk_coverage_curve,
     decision_coverage,
     detection_rate,
+    expected_calibration_error,
     false_alarm_rate,
+    fault_diagnostic_precision,
+    format_metric,
     mean_time_to_detect_hours,
+    multiclass_brier_score,
+    multiclass_log_loss,
     overall_accuracy,
     selective_accuracy,
+    selective_error_avoidance_rate,
     selective_risk,
 )
 
@@ -25,5 +32,12 @@ __all__ = [
     "selective_accuracy",
     "attribution_macro_f1",
     "abstention_appropriateness_rate",
+    "abstention_fault_cooccurrence_rate",
+    "selective_error_avoidance_rate",
+    "fault_diagnostic_precision",
     "compute_risk_coverage_curve",
+    "multiclass_brier_score",
+    "multiclass_log_loss",
+    "expected_calibration_error",
+    "format_metric",
 ]

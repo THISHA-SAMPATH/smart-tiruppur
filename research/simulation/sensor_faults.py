@@ -132,13 +132,7 @@ class FaultSuiteConfig:
         self.telemetry_delay.validate()
 
     @classmethod
-    def from_json(cls, path_or_str: str | Path) -> "FaultSuiteConfig":
-        path = Path(path_or_str)
-        if path.is_file():
-            data = json.loads(path.read_text(encoding="utf-8"))
-        else:
-            data = json.loads(str(path_or_str))
-
+    def from_dict(cls, data: Dict[str, Any]) -> "FaultSuiteConfig":
         noise_d = data.get("additive_noise", {})
         miss_d = data.get("random_missingness", {})
         burst_d = data.get("burst_dropout", {})
@@ -187,6 +181,17 @@ class FaultSuiteConfig:
         )
         cfg.validate()
         return cfg
+
+    @classmethod
+    def from_json(cls, path_or_str: str | Path | Dict[str, Any]) -> "FaultSuiteConfig":
+        if isinstance(path_or_str, dict):
+            return cls.from_dict(path_or_str)
+        path = Path(path_or_str)
+        if path.is_file():
+            data = json.loads(path.read_text(encoding="utf-8"))
+        else:
+            data = json.loads(str(path_or_str))
+        return cls.from_dict(data)
 
 
 @dataclass

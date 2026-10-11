@@ -23,14 +23,29 @@ import numpy as np
 
 @dataclass
 class DiagnosticConfig:
-    """Configurable thresholds for deterministic sensor health diagnostics."""
+    """Configurable thresholds for deterministic sensor health diagnostics.
+
+    Conceptual Distinctions:
+    - baseline_value: Assumed nominal physical background concentration (g/m³). In conservative
+      tracer transport modeling, the ambient clean baseline is nominally 0.0 g/m³.
+    - numerical_floor: Configured synthetic numerical / resolution screening floor (g/m³). Readings
+      whose deviation from baseline is strictly <= numerical_floor are within the quiescent
+      background / ADE numerical dispersion tail region. Constant series in this region provide
+      insufficient observable evidence to confirm an ADC register freeze.
+      (Note: This is an explicitly configured screening parameter for simulation noise and numerical
+      precision floors; it is not an empirically established physical sensor detection limit).
+    - stuck_tolerance: Maximum allowable difference between consecutive samples (g/m³) for them
+      to be considered identical register readings.
+    - min_stuck_steps: Minimum consecutive identical readings required to constitute a hardware freeze.
+    """
     # Missingness diagnostic
     max_missing_ratio: float = 0.20  # Max acceptable fraction of NaNs in observation window
 
     # Stuck value diagnostic
     min_stuck_steps: int = 6  # Minimum consecutive identical readings (30 min at 5-min sample rate)
-    stuck_tolerance: float = 1e-6  # Tolerance in g/m³ for identical readings
+    stuck_tolerance: float = 1e-4  # Tolerance in g/m³ for identical readings
     baseline_value: float = 0.0  # Physical clean baseline (g/m³)
+    numerical_floor: float = 1e-3  # Synthetic numerical/resolution floor (g/m³)
 
     # Telemetry latency diagnostic
     max_allowed_delay_sec: float = 3600.0  # Max acceptable packet transmission delay (1 hour)
@@ -91,14 +106,18 @@ class SensorDiagnostics:
     ) -> Tuple[bool, int, float]:
         """Detects whether sensor hardware is frozen at an unvarying register value.
 
-        Operational Context:
-        - In clean river flow, tracer concentration is naturally 0.0 g/m³. A steady 0.0 reading
-          during clean flow is normal physical quiescent state, not a hardware fault.
-        - If readings are non-baseline (> baseline_value + tolerance) and remain identical for
-          >= min_stuck_steps consecutive readings, it indicates an analog-to-digital converter
-          freeze or stuck memory register.
-        - Alternatively, if variance is identically zero across the entire non-empty window
-          at a non-baseline level, it indicates a frozen sensor.
+        Diagnostic Evidence & Screening Boundary:
+        - In clean river flow, tracer concentration is naturally at or near baseline. An unvarying
+          reading <= numerical_floor is physically consistent with quiescent clean water and
+          provides insufficient observable evidence to confirm a hardware failure.
+        - Physical Screening Limitation: An ADC sensor that fails by freezing exactly at 0.0 g/m³
+          during clean river flow cannot be distinguished from genuine clean background using
+          telemetry concentration data alone. We do not invent certainty where evidence is absent.
+        - To confirm a stuck-value fault, the telemetry must exhibit an unvarying sequence of at least
+          min_stuck_steps consecutive readings whose value deviates from baseline by more than
+          numerical_floor (|v - baseline_value| > numerical_floor).
+        - Missing observations (NaNs) are filtered out when evaluating consecutive valid readings,
+          allowing detection of frozen values across packet dropout.
 
         Returns:
             (is_stuck, max_consecutive_stuck_steps, stuck_value)
@@ -108,28 +127,26 @@ class SensorDiagnostics:
             return False, 0, 0.0
 
         valid_vals = values[valid_mask]
-        consecutive = 1
-        max_consecutive = 1
+        stuck_detected = False
+        max_stuck_steps = 0
         stuck_val = 0.0
 
+        cur_len = 1
         for i in range(1, len(valid_vals)):
             diff = abs(valid_vals[i] - valid_vals[i - 1])
             if diff <= self.config.stuck_tolerance:
-                consecutive += 1
-                if consecutive > max_consecutive:
-                    max_consecutive = consecutive
-                    stuck_val = float(valid_vals[i])
+                cur_len += 1
+                if cur_len >= self.config.min_stuck_steps:
+                    val = float(valid_vals[i])
+                    if abs(val - self.config.baseline_value) > self.config.numerical_floor:
+                        stuck_detected = True
+                        if cur_len > max_stuck_steps:
+                            max_stuck_steps = cur_len
+                            stuck_val = val
             else:
-                consecutive = 1
+                cur_len = 1
 
-        # Only flag as stuck if the frozen reading is above baseline
-        # (clean water sitting at 0.0 g/m³ is physically normal)
-        is_stuck = (
-            max_consecutive >= self.config.min_stuck_steps
-            and abs(stuck_val - self.config.baseline_value) > self.config.stuck_tolerance
-        )
-
-        return is_stuck, max_consecutive, stuck_val
+        return stuck_detected, max_stuck_steps, stuck_val
 
     def check_telemetry_latency(
         self,
