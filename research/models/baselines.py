@@ -555,6 +555,39 @@ class ConfidenceSelectiveClassifier:
         self.tau_conf = best_tau
         return best_tau
 
+    def tune_threshold_for_target_coverage(
+        self,
+        X_val: np.ndarray,
+        target_coverage: float,
+        tau_candidates: Optional[Sequence[float]] = None,
+    ) -> float:
+        """Selects tau_conf strictly on validation data to achieve empirical coverage closest to target_coverage.
+        
+        Evaluates candidate thresholds on validation data and selects the tau minimizing |Phi_val(tau) - target_coverage|.
+        Locks the threshold for downstream held-out testing.
+        """
+        if self.base_classifier is None or not self.base_classifier.is_fitted:
+            raise RuntimeError("Base classifier must be fitted before validation tuning")
+
+        if tau_candidates is None:
+            tau_candidates = (0.10, 0.20, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90)
+
+        probs = self.base_classifier.rf.predict_proba(X_val)
+        top_confs = np.max(probs, axis=1)
+
+        best_tau = float(tau_candidates[0])
+        min_cov_diff = float("inf")
+
+        for tau in sorted(tau_candidates):
+            cov = float(np.mean(top_confs >= tau))
+            diff = abs(cov - target_coverage)
+            if diff < min_cov_diff:
+                min_cov_diff = diff
+                best_tau = float(tau)
+
+        self.tau_conf = best_tau
+        return best_tau
+
     def predict_single(
         self,
         event_id: str,

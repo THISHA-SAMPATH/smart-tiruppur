@@ -173,7 +173,7 @@ Adjust `DiagnosticConfig.stuck_tolerance` and `baseline_value` thresholding, re-
 
 Once the diagnostic threshold is recalibrated, the full experiment should be executed according to the following design:
 
-#### 1. Episode Allocation & Statistical Power
+#### 1. Episode Allocation & Pragmatic Precision Rationale (Phase 3.4 Audit)
 - **Candidate Classes ($K$):** 13 (12 industrial facilities + 1 background).
 - **Episodes Per Class Per Seed:** **20 episodes** (260 episodes per seed).
 - **Stratified Partitioning Per Class:**
@@ -182,11 +182,17 @@ Once the diagnostic threshold is recalibrated, the full experiment should be exe
   - **Validation:** 3 episodes/class ($N = 39$ episodes/seed).
   - **Test (Held-Out):** 4 episodes/class ($N = 52$ episodes/seed).
 - **Random Seeds:** **10 fixed seeds** (`[42, 101, 202, 303, 404, 505, 606, 707, 808, 909]`).
-- **Total Episodes Across Experiment:** $260 \times 10 = \mathbf{2,600\text{ episodes}}$.
-- **Statistical Power Rationale:** 
-  - 10 independent seeds provide 9 degrees of freedom for two-sided Student's $t$-tests and Wilcoxon signed-rank tests.
-  - Across 10 seeds, the pooled held-out test set contains $52 \times 10 = \mathbf{520\text{ test evaluations}}$ per condition ($40$ test episodes per class).
-  - At $N = 520$, estimating a nominal selective risk of $10\%$ yields a standard error of $\text{SE} = \sqrt{0.10 \times 0.90 / 520} \approx 1.3\%$, providing narrow $95\%$ confidence bounds of $\pm 2.6\%$.
+- **Total Physical Episodes Across Experiment:** $260 \times 10 = \mathbf{2,600\text{ episodes}}$.
+- **Pragmatic Sample Size & Precision Estimation Rationale:**
+  - Across 10 seeds, the pooled held-out test partition contains $52 \times 10 = \mathbf{520\text{ independent physical test episodes}}$ ($40$ test episodes per class).
+  - **Repeated Conditions vs Independent Episodes:** Evaluating 520 physical episodes across multiple fault conditions generates repeated instances, but the inferential degrees of freedom remain bounded by 520 independent physical events. Repeated conditions are paired across conditions and must not be counted as independent episodes.
+  - **Paired Model Comparisons:** M3-Selective and M4 are evaluated on the exact same physical episodes. Comparisons must use paired methods (e.g. McNemar's test or episode cluster bootstrap).
+  - **Selective Risk Denominator Shrinkage:** In selective classification, selective risk $\mathcal{R}(\Phi)$ is evaluated exclusively on accepted predictions ($N_{\text{accepted}} = \Phi \cdot N_{\text{test}}$). For $N_{\text{test}} = 520$:
+    * At forced-choice ($\Phi = 1.0$), $N_{\text{accepted}} = 520$, yielding normal approximation margin of error $\pm 3.1\%$ at $p = 0.85$.
+    * At target coverage $\Phi^* = 0.50$, $N_{\text{accepted}} = 260$, yielding margin of error $\pm 5.8\%$ at selective risk $r \approx 0.35$.
+    * At target coverage $\Phi^* = 0.30$, $N_{\text{accepted}} = 156$, yielding margin of error $\pm 7.5\%$ at selective risk $r \approx 0.35$.
+    * Prior claims of detecting a 5-percentage-point difference with $\pm 2.6\%$ margin of error failed to account for this coverage shrinkage.
+  - **Pragmatic Benchmark Design:** The confirmatory study is explicitly framed as a pragmatic pre-registered computational benchmark design bounded by discrete simulation runtime, not an ungrounded high-power claim. Cluster bootstrap resampling ($B = 1,000$) provides non-parametric inferential bounds.
 
 #### 2. Experimental Conditions & Fault Matrix
 Each seed will evaluate 5 distinct conditions:
@@ -196,17 +202,20 @@ Each seed will evaluate 5 distinct conditions:
 4. `cond_dropout`: Random $20\%$ packet dropout + 2-hour burst outage on `sensor_003`.
 5. `cond_compound`: Compound fault combining stuck value on `sensor_002`, drift on `sensor_001`, and $15\%$ random dropout.
 
-#### 3. Metrics & Statistical Evaluation Protocol
-- **Primary Metrics:**
-  - Decision Coverage ($\Phi = N_{\text{accepted}} / N_{\text{eligible}}$).
-  - Selective Risk ($\mathcal{R}(\Phi) = N_{\text{incorrect, accepted}} / N_{\text{accepted}}$).
-  - Selective Accuracy ($1 - \mathcal{R}(\Phi)$).
-  - Abstention Appropriateness Rate ($N_{\text{fault\_abstained}} / N_{\text{fault\_episodes}}$).
-- **Secondary Metrics:**
-  - Detection Rate and False Alarm Rate (Task 1).
-  - Expected Calibration Error (ECE), Multiclass Brier Score, and Multiclass Log Loss.
+#### 3. Metrics, Reporting Protocol & Matched Coverage (Phase 3.4 Audit)
+- **Primary Reporting Protocol (Dual Disclosure):**
+  - For every primary metric, report both the pooled episode-level rate ($\sum \text{Errors} / \sum N_{\text{accepted}}$) and the per-seed distribution ($\text{Mean} \pm \text{Std}$).
+  - *Reconciliation Audit Finding:* Clean M4 selective risk is 35.29% pooled (6/17) vs 34.85% seed-average; Faulted M4 selective risk is 40.00% pooled (6/15) vs 40.18% seed-average. Both must be reported side by side.
+  - Undefined metrics due to zero denominators must remain `N/A`, never coerced to zero.
+- **Diagnostic Metric Labeling:**
+  - M3-Selective has no sensor diagnostics; mark its Fault Diagnostic Precision as `N/A (no diagnostic)`.
+  - Abstention–Fault Co-occurrence is reported as a separate associative statistic, not diagnostic precision or causal justification.
+- **Pre-Registered Matched-Coverage Protocol:**
+  - Target coverages $\Phi^* \in \{0.30, 0.50, 0.70\}$ are pre-registered and thresholds are tuned strictly on validation splits, then frozen before held-out testing.
+  - Report both achieved test coverage $\Phi_{\text{test}}$ and selective risk $\mathcal{R}(\Phi_{\text{test}})$.
+  - *Diagnostic Gating Feasibility Limit:* Under sensor faults, M4's sensor diagnostics veto frozen sensors unconditionally (`SENSOR_FAULT_STUCK`), bounding achievable coverage at $\approx 61.5\%$. This limitation is reported transparently as a domain safety constraint rather than forcing an artificial match or disabling diagnostics.
 - **Resampling Unit for Confidence Intervals:**
-  - Resampling must occur at the **Episode level** using a stratified cluster bootstrap ($B = 1,000$ iterations). Windows or time slices within the same episode must never be resampled independently.
+  - Resampling occurs strictly at the **Episode level** using an atomic cluster bootstrap ($B = 1,000$). Time slices or repeated conditions within an episode are never resampled independently.
 
 #### 4. Parameter Locking & Test Set Protection
 - **Validation Tuning:** Acceptance thresholds $\tau_{\text{conf}} \in [0.4, 0.85]$ and $\delta_{\text{margin}} \in [0.0, 0.25]$ must be selected strictly on `splits["val"]` targeting $\mathcal{R}(\Phi) \le 0.10$.

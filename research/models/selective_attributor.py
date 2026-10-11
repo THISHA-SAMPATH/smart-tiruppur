@@ -281,6 +281,87 @@ class SelectiveAttributor:
             "grid_evaluated_count": len(grid_results),
         }
 
+    def tune_thresholds_for_target_coverage(
+        self,
+        X_val: np.ndarray,
+        y_val: np.ndarray,
+        target_coverage: float,
+        tau_candidates: Optional[Sequence[float]] = None,
+        delta_candidates: Optional[Sequence[float]] = None,
+    ) -> Dict[str, Any]:
+        """Selects acceptance thresholds (tau_conf, delta_margin) strictly using validation episodes to match target_coverage.
+
+        Evaluates candidate pairs on validation data and selects the pair whose validation coverage is closest
+        to target_coverage. If multiple pairs achieve the same closest coverage, selects the one minimizing validation selective risk.
+        Locks the thresholds for downstream held-out testing.
+        """
+        if not self.is_fitted:
+            raise RuntimeError("Model must be fitted before threshold tuning")
+        if not self.is_calibrated:
+            raise RuntimeError("Model must be calibrated before threshold tuning")
+
+        if len(X_val) == 0 or len(y_val) == 0:
+            raise ValueError("Validation set must not be empty")
+
+        if tau_candidates is None:
+            tau_candidates = [0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
+        if delta_candidates is None:
+            delta_candidates = [0.00, 0.05, 0.10, 0.15, 0.20]
+
+        cal_probs = self.predict_proba(X_val)
+        sorted_indices = np.argsort(cal_probs, axis=1)[:, ::-1]
+        top_indices = sorted_indices[:, 0]
+        runner_up_indices = sorted_indices[:, 1]
+
+        top_classes = np.array([self.classes_[idx] for idx in top_indices])
+        top_confs = cal_probs[np.arange(len(X_val)), top_indices]
+        margins = top_confs - cal_probs[np.arange(len(X_val)), runner_up_indices]
+
+        grid_results = []
+        for tau in tau_candidates:
+            for delta in delta_candidates:
+                accepted_mask = (top_confs >= tau) & (margins >= delta)
+                n_acc = int(np.sum(accepted_mask))
+                cov = n_acc / len(X_val)
+
+                if n_acc == 0:
+                    risk = None
+                else:
+                    err_count = int(np.sum(top_classes[accepted_mask] != y_val[accepted_mask]))
+                    risk = err_count / n_acc
+
+                grid_results.append({
+                    "tau": float(tau),
+                    "delta": float(delta),
+                    "coverage": float(cov),
+                    "selective_risk": risk,
+                    "diff": abs(cov - target_coverage),
+                })
+
+        # Select configuration closest to target coverage, breaking ties by lowest selective risk
+        best_cfg = min(
+            grid_results,
+            key=lambda r: (r["diff"], r["selective_risk"] if r["selective_risk"] is not None else 1.0),
+        )
+
+        best_tau = best_cfg["tau"]
+        best_delta = best_cfg["delta"]
+        best_cov = best_cfg["coverage"]
+        best_risk = best_cfg["selective_risk"]
+
+        self.config.tau_conf = float(best_tau)
+        self.config.delta_margin = float(best_delta)
+        self.thresholds_locked = True
+
+        return {
+            "selected_tau": float(best_tau),
+            "selected_delta": float(best_delta),
+            "validation_coverage": float(best_cov),
+            "validation_selective_risk": best_risk,
+            "target_coverage": float(target_coverage),
+            "grid_evaluated_count": len(grid_results),
+        }
+
     def predict_single(
         self,
         event_id: str,

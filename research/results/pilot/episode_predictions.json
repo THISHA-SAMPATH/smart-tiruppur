@@ -17,6 +17,12 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "s0_background",
     "m3_confidence": 0.76,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.76,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "s0_background",
@@ -43,12 +49,18 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_002",
     "m3_confidence": 0.66,
-    "m4_selective": {
+    "m3_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "confidence": 0.66,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
+    "m4_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_002",
+      "calibrated_confidence": 0.9008917858828167,
+      "probability_margin": 0.8071372793763402,
+      "abstain_cause": null
     }
   },
   {
@@ -69,12 +81,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_001",
     "m3_confidence": 0.64,
-    "m4_selective": {
+    "m3_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "confidence": 0.64,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
+    "m4_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_001",
+      "calibrated_confidence": 0.9350938647689291,
+      "probability_margin": 0.9028472998998044,
+      "abstain_cause": null
     }
   },
   {
@@ -95,12 +113,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_001",
     "m3_confidence": 0.52,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.52,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "calibrated_confidence": 0.7789252252902303,
+      "probability_margin": 0.5741563905118411,
+      "abstain_cause": "LOW_CONFIDENCE"
     }
   },
   {
@@ -121,12 +145,18 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_004",
     "m3_confidence": 0.32,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.32,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "calibrated_confidence": 0.5037087098160722,
+      "probability_margin": 0.19951851316620395,
+      "abstain_cause": "LOW_CONFIDENCE"
     }
   },
   {
@@ -147,12 +177,18 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_005",
     "m3_confidence": 0.52,
-    "m4_selective": {
+    "m3_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "confidence": 0.52,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
+    "m4_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_005",
+      "calibrated_confidence": 0.8215853448341691,
+      "probability_margin": 0.6690161660042862,
+      "abstain_cause": null
     }
   },
   {
@@ -173,12 +209,18 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_006",
     "m3_confidence": 0.44,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.44,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "calibrated_confidence": 0.7214225442165112,
+      "probability_margin": 0.48076446853923316,
+      "abstain_cause": "LOW_CONFIDENCE"
     }
   },
   {
@@ -199,12 +241,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_007",
     "m3_confidence": 0.66,
-    "m4_selective": {
+    "m3_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "confidence": 0.66,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
+    "m4_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_007",
+      "calibrated_confidence": 0.9800167712131856,
+      "probability_margin": 0.9700028353540352,
+      "abstain_cause": null
     }
   },
   {
@@ -225,12 +273,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_007",
     "m3_confidence": 0.32,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.32,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "calibrated_confidence": 0.5434659951025886,
+      "probability_margin": 0.3247319370296219,
+      "abstain_cause": "LOW_CONFIDENCE"
     }
   },
   {
@@ -251,12 +305,18 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_009",
     "m3_confidence": 0.7,
-    "m4_selective": {
+    "m3_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "confidence": 0.7,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
+    "m4_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_009",
+      "calibrated_confidence": 0.9298827132344857,
+      "probability_margin": 0.8608201288477745,
+      "abstain_cause": null
     }
   },
   {
@@ -277,12 +337,18 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_010",
     "m3_confidence": 0.5,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.5,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "calibrated_confidence": 0.7997853283802074,
+      "probability_margin": 0.6909076337859951,
+      "abstain_cause": "LOW_CONFIDENCE"
     }
   },
   {
@@ -303,6 +369,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_010",
     "m3_confidence": 0.48,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.48,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -329,6 +401,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_012",
     "m3_confidence": 0.48,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.48,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -366,6 +444,12 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "s0_background",
     "m3_confidence": 0.76,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.76,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "s0_background",
@@ -403,6 +487,12 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_002",
     "m3_confidence": 0.66,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.66,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "unit_002",
@@ -440,6 +530,12 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_001",
     "m3_confidence": 0.68,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.68,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "unit_001",
@@ -477,12 +573,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_001",
     "m3_confidence": 0.52,
-    "m4_selective": {
+    "m3_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "confidence": 0.52,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
+    "m4_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_001",
+      "calibrated_confidence": 0.8610549668426567,
+      "probability_margin": 0.7544878336067664,
+      "abstain_cause": null
     }
   },
   {
@@ -514,6 +616,12 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_005",
     "m3_confidence": 0.3,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.3,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -551,6 +659,12 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_005",
     "m3_confidence": 0.46,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.46,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -588,6 +702,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_005",
     "m3_confidence": 0.3,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.3,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -625,12 +745,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_007",
     "m3_confidence": 0.62,
-    "m4_selective": {
+    "m3_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "confidence": 0.62,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
+    "m4_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_007",
+      "calibrated_confidence": 0.9751941912762231,
+      "probability_margin": 0.9684485306001881,
+      "abstain_cause": null
     }
   },
   {
@@ -662,12 +788,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_007",
     "m3_confidence": 0.32,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.32,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "calibrated_confidence": 0.5258382289302534,
+      "probability_margin": 0.26439186911348345,
+      "abstain_cause": "LOW_CONFIDENCE"
     }
   },
   {
@@ -699,6 +831,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_009",
     "m3_confidence": 0.64,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.64,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "unit_009",
@@ -736,6 +874,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_010",
     "m3_confidence": 0.56,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.56,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "unit_010",
@@ -773,6 +917,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_010",
     "m3_confidence": 0.4,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.4,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -810,6 +960,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_012",
     "m3_confidence": 0.44,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.44,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -836,6 +992,12 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "s0_background",
     "m3_confidence": 0.76,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "s0_background",
+      "confidence": 0.76,
+      "abstain_cause": null
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "s0_background",
@@ -862,12 +1024,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_001",
     "m3_confidence": 0.8,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_001",
+      "confidence": 0.8,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_001",
+      "calibrated_confidence": 0.9820065951315167,
+      "probability_margin": 0.9762270021958095,
+      "abstain_cause": null
     }
   },
   {
@@ -888,12 +1056,18 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_001",
     "m3_confidence": 0.42,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_001",
+      "confidence": 0.42,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_001",
+      "calibrated_confidence": 0.5707272007857007,
+      "probability_margin": 0.237842416638545,
+      "abstain_cause": null
     }
   },
   {
@@ -914,12 +1088,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_003",
     "m3_confidence": 0.58,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_003",
+      "confidence": 0.58,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_003",
+      "calibrated_confidence": 0.8431014307052203,
+      "probability_margin": 0.7409686716905164,
+      "abstain_cause": null
     }
   },
   {
@@ -940,12 +1120,18 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_006",
     "m3_confidence": 0.48,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_006",
+      "confidence": 0.48,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_006",
+      "calibrated_confidence": 0.6893969738221084,
+      "probability_margin": 0.48494697970295597,
+      "abstain_cause": null
     }
   },
   {
@@ -966,12 +1152,18 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_006",
     "m3_confidence": 0.34,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.34,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
+      "calibrated_confidence": 0.43158147679906156,
       "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "abstain_cause": "LOW_CONFIDENCE"
     }
   },
   {
@@ -992,12 +1184,18 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_006",
     "m3_confidence": 0.66,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_006",
+      "confidence": 0.66,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_006",
+      "calibrated_confidence": 0.9417249906602926,
+      "probability_margin": 0.9193810780931048,
+      "abstain_cause": null
     }
   },
   {
@@ -1018,12 +1216,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_008",
     "m3_confidence": 0.54,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_008",
+      "confidence": 0.54,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_008",
+      "calibrated_confidence": 0.7223971510082741,
+      "probability_margin": 0.4663853682715031,
+      "abstain_cause": null
     }
   },
   {
@@ -1044,12 +1248,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_008",
     "m3_confidence": 0.48,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_008",
+      "confidence": 0.48,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_008",
+      "calibrated_confidence": 0.7985398349004645,
+      "probability_margin": 0.6843036507072061,
+      "abstain_cause": null
     }
   },
   {
@@ -1070,12 +1280,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_008",
     "m3_confidence": 0.5,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_008",
+      "confidence": 0.5,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_008",
+      "calibrated_confidence": 0.8388953942457331,
+      "probability_margin": 0.7512647191335085,
+      "abstain_cause": null
     }
   },
   {
@@ -1096,6 +1312,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_010",
     "m3_confidence": 0.26,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.26,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -1122,6 +1344,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_011",
     "m3_confidence": 0.46,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_011",
+      "confidence": 0.46,
+      "abstain_cause": null
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "unit_011",
@@ -1148,12 +1376,18 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_012",
     "m3_confidence": 0.58,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_012",
+      "confidence": 0.58,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_012",
+      "calibrated_confidence": 0.8076068341931455,
+      "probability_margin": 0.6430255057124552,
+      "abstain_cause": null
     }
   },
   {
@@ -1185,6 +1419,12 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "s0_background",
     "m3_confidence": 0.76,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "s0_background",
+      "confidence": 0.76,
+      "abstain_cause": null
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "s0_background",
@@ -1222,6 +1462,12 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_001",
     "m3_confidence": 0.8,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_001",
+      "confidence": 0.8,
+      "abstain_cause": null
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "unit_001",
@@ -1259,6 +1505,12 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_001",
     "m3_confidence": 0.48,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_001",
+      "confidence": 0.48,
+      "abstain_cause": null
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "unit_001",
@@ -1296,6 +1548,12 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "s0_background",
     "m3_confidence": 0.32,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.32,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -1333,6 +1591,12 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_007",
     "m3_confidence": 0.2,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.2,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -1370,6 +1634,12 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_006",
     "m3_confidence": 0.28,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.28,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -1407,6 +1677,12 @@
     "m2_spatial_predicted": "unit_006",
     "m3_conventional_predicted": "unit_006",
     "m3_confidence": 0.62,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_006",
+      "confidence": 0.62,
+      "abstain_cause": null
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -1444,12 +1720,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_008",
     "m3_confidence": 0.48,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_008",
+      "confidence": 0.48,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_008",
+      "calibrated_confidence": 0.8261313468831166,
+      "probability_margin": 0.7543230278950903,
+      "abstain_cause": null
     }
   },
   {
@@ -1481,12 +1763,18 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_008",
     "m3_confidence": 0.34,
-    "m4_selective": {
+    "m3_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "confidence": 0.34,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
+    "m4_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_008",
+      "calibrated_confidence": 0.5247568271742171,
+      "probability_margin": 0.2616897978505934,
+      "abstain_cause": null
     }
   },
   {
@@ -1518,6 +1806,12 @@
     "m2_spatial_predicted": "s0_background",
     "m3_conventional_predicted": "unit_008",
     "m3_confidence": 0.4,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_008",
+      "confidence": 0.4,
+      "abstain_cause": null
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "unit_008",
@@ -1555,6 +1849,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_011",
     "m3_confidence": 0.36,
+    "m3_selective": {
+      "decision": "ABSTAIN",
+      "predicted_source": null,
+      "confidence": 0.36,
+      "abstain_cause": "LOW_CONFIDENCE"
+    },
     "m4_selective": {
       "decision": "ABSTAIN",
       "predicted_source": null,
@@ -1592,6 +1892,12 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_011",
     "m3_confidence": 0.46,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_011",
+      "confidence": 0.46,
+      "abstain_cause": null
+    },
     "m4_selective": {
       "decision": "ATTRIBUTE",
       "predicted_source": "unit_011",
@@ -1629,12 +1935,18 @@
     "m2_spatial_predicted": "unit_012",
     "m3_conventional_predicted": "unit_012",
     "m3_confidence": 0.58,
+    "m3_selective": {
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_012",
+      "confidence": 0.58,
+      "abstain_cause": null
+    },
     "m4_selective": {
-      "decision": "ABSTAIN",
-      "predicted_source": null,
-      "calibrated_confidence": 0.0,
-      "probability_margin": 0.0,
-      "abstain_cause": "SENSOR_FAULT_STUCK"
+      "decision": "ATTRIBUTE",
+      "predicted_source": "unit_012",
+      "calibrated_confidence": 0.8076068341931455,
+      "probability_margin": 0.6430255057124552,
+      "abstain_cause": null
     }
   }
 ]

@@ -788,6 +788,60 @@ class TestAttributionFramework(unittest.TestCase):
             self.assertIsNotNone(res.predicted_source)
             self.assertGreaterEqual(res.confidence, m3_sel.tau_conf)
 
+    # --------------------------------------------------------------------------
+    # 19. Target-Coverage Threshold Tuning for M3-Selective and M4 (Phase 3.4 Audit)
+    # --------------------------------------------------------------------------
+    def test_tune_threshold_for_target_coverage_m3_selective(self) -> None:
+        """Verifies validation-calibrated target coverage tuning for M3-Selective."""
+        rng = np.random.default_rng(101)
+        n_samples = 60
+        n_features = len(ObservableFeatureExtractor().get_feature_names())
+        X_train = rng.normal(size=(n_samples, n_features))
+        y_train = np.array(["s1", "s2", "s3"] * (n_samples // 3))
+
+        base_clf = ConventionalClassifier(n_estimators=10, random_state=101)
+        base_clf.fit(X_train, y_train)
+
+        m3_sel = ConfidenceSelectiveClassifier(base_classifier=base_clf)
+        X_val = rng.normal(size=(30, n_features))
+
+        tau_selected = m3_sel.tune_threshold_for_target_coverage(
+            X_val=X_val,
+            target_coverage=0.50,
+            tau_candidates=[0.20, 0.40, 0.60, 0.80],
+        )
+        self.assertIn(tau_selected, [0.20, 0.40, 0.60, 0.80])
+        self.assertEqual(m3_sel.tau_conf, tau_selected)
+
+    def test_tune_thresholds_for_target_coverage_m4(self) -> None:
+        """Verifies validation-calibrated target coverage tuning for M4 Selective Attributor."""
+        rng = np.random.default_rng(202)
+        n_features = len(ObservableFeatureExtractor().get_feature_names())
+        X_train = rng.normal(size=(30, n_features))
+        y_train = np.array(["s1", "s2", "s3"] * 10)
+        X_cal = rng.normal(size=(15, n_features))
+        y_cal = np.array(["s1", "s2", "s3"] * 5)
+        X_val = rng.normal(size=(15, n_features))
+        y_val = np.array(["s1", "s2", "s3"] * 5)
+
+        m4 = SelectiveAttributor(SelectiveAttributionConfig(n_estimators=10, random_state=202))
+        m4.fit_base_model(X_train, y_train)
+        m4.calibrate(X_cal, y_cal)
+
+        report = m4.tune_thresholds_for_target_coverage(
+            X_val=X_val,
+            y_val=y_val,
+            target_coverage=0.50,
+            tau_candidates=[0.30, 0.50, 0.70],
+            delta_candidates=[0.00, 0.10],
+        )
+        self.assertTrue(m4.thresholds_locked)
+        self.assertIn("selected_tau", report)
+        self.assertIn("selected_delta", report)
+        self.assertIn("validation_coverage", report)
+        self.assertEqual(report["target_coverage"], 0.50)
+
 
 if __name__ == "__main__":
     unittest.main()
+

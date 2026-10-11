@@ -270,6 +270,46 @@ class TestAttributionPilot(unittest.TestCase):
         with self.assertRaises(ValueError):
             stratified_split_episodes(eps, meta, allocation, seed=10)
 
+    # --------------------------------------------------------------------------
+    # 9. Target Coverage Aggregation in Pipeline Summary
+    # --------------------------------------------------------------------------
+    def test_aggregate_seed_metrics_with_target_coverage(self) -> None:
+        dummy_seed_metrics = [
+            {
+                "seed": 42,
+                "condition": "clean",
+                "target_coverage_evaluations": {
+                    "0.5": {
+                        "target_coverage": 0.5,
+                        "m3_selective": {"accepted_count": 5, "accepted_errors": 1, "total_episodes": 10, "achieved_coverage": 0.5, "selective_risk": 0.2, "locked_tau": 0.55},
+                        "m4_selective": {"accepted_count": 6, "accepted_errors": 1, "total_episodes": 10, "achieved_coverage": 0.6, "selective_risk": 0.1667, "locked_tau": 0.8, "locked_delta": 0.0},
+                    }
+                },
+            },
+            {
+                "seed": 101,
+                "condition": "clean",
+                "target_coverage_evaluations": {
+                    "0.5": {
+                        "target_coverage": 0.5,
+                        "m3_selective": {"accepted_count": 6, "accepted_errors": 2, "total_episodes": 10, "achieved_coverage": 0.6, "selective_risk": 0.3333, "locked_tau": 0.50},
+                        "m4_selective": {"accepted_count": 5, "accepted_errors": 1, "total_episodes": 10, "achieved_coverage": 0.5, "selective_risk": 0.2, "locked_tau": 0.7, "locked_delta": 0.0},
+                    }
+                },
+            },
+        ]
+        summary = aggregate_seed_metrics(dummy_seed_metrics)
+        self.assertIn("target_coverage_summary", summary["clean"])
+        tgt_summary = summary["clean"]["target_coverage_summary"]["0.5"]
+        self.assertEqual(tgt_summary["m3_selective"]["pooled_accepted"], 11)
+        self.assertEqual(tgt_summary["m3_selective"]["pooled_errors"], 3)
+        self.assertEqual(tgt_summary["m3_selective"]["pooled_total"], 20)
+        self.assertAlmostEqual(tgt_summary["m3_selective"]["pooled_coverage"], 11 / 20)
+        self.assertAlmostEqual(tgt_summary["m3_selective"]["pooled_risk"], 3 / 11)
+        self.assertEqual(tgt_summary["m4_selective"]["pooled_accepted"], 11)
+        self.assertEqual(tgt_summary["m4_selective"]["pooled_errors"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()
+

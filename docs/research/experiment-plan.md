@@ -298,18 +298,47 @@ To strictly prevent data leakage and ensure fair operating threshold selection, 
    * Model predictions on the resampled episodes are paired, preserving within-event correlation across conditions and models.
    * 95% bootstrap confidence intervals are computed over 1,000 cluster resamples using the percentile method.
 
-4. **Sample Size & Precision Estimation Rationale:**
-   Rather than making ungrounded power claims without historical variance estimates, the full sample size is pre-registered using a **defensible precision target** (and explicitly designated as a pragmatic computational design):
-   * For $K = 13$ candidate classes (12 industrial facilities + 1 background class) across 10 confirmatory seeds, $N_{\text{total}} = 3,467$ total episodes are generated ($267$ episodes per class; $26$ episodes per class per seed).
-   * The held-out test partition (15%) yields $N_{\text{test}} = 520$ independent test episodes ($40$ test episodes per class; $4$ per class per seed).
-   * Under a baseline accuracy or coverage proportion near $p = 0.85$, the 95% normal approximation / Clopper-Pearson confidence interval half-width is:
-     $$\text{Margin of Error} = 1.96 \sqrt{\frac{p(1 - p)}{N_{\text{test}}}} = 1.96 \sqrt{\frac{0.85 \times 0.15}{520}} \approx \pm 3.07\%$$
-   * A precision half-width of $\approx \pm 3.1\%$ provides sufficient statistical resolution to detect meaningful differences in selective risk ($\ge 5\%$) between M3-Selective and M4 at matched coverage.
-   * Because fine-scale fluvial boundary conditions exhibit uncalibrated environmental stochasticity, this design is explicitly acknowledged as a **pragmatic pre-registered benchmark design** bounded by discrete simulation runtime.
+4. **Pragmatic Sample Size, Precision Estimation & Denominator Shrinkage (Phase 3.4 Audit):**
+   The full sample-size plan ($N_{\text{test}} = 520$ held-out episodes across 10 confirmatory seeds) is an explicitly **pragmatic computational benchmark design** bounded by discrete ADE simulation runtime and synthetic dataset generation. Rather than asserting unsubstantiated statistical power, the inferential rationale is based on precision targets, with strict recognition of the following design-specific constraints:
+   * **Independent Physical Episodes vs. Repeated-Condition Evaluations:** Clean baseline and faulted conditions derived from the same physical event are paired. Evaluating 520 physical episodes across 2 conditions yields 1,040 evaluation runs, but the effective sample size for inferential comparisons remains $N_{\text{test}} = 520$ independent episodes. Repeated conditions are never counted as independent physical episodes.
+   * **Within-Episode Model Pairing:** Competing models (M3-Selective vs M4) evaluate the identical physical episodes. Comparisons between selective models are paired, requiring paired non-parametric tests (e.g. McNemar's test on discordant decisions) or episode-level cluster bootstrap rather than independent two-sample tests.
+   * **Effective Sample Size Shrinkage for Selective Risk:** Selective risk $\mathcal{R}(\Phi)$ is evaluated exclusively on accepted predictions ($N_{\text{accepted}} = \Phi \cdot N_{\text{test}}$). When models abstain, the effective sample size shrinks in direct proportion to coverage $\Phi$:
+     - Forced-choice baseline ($\Phi = 1.0$): $N_{\text{accepted}} = 520$. At $p = 0.85$, the standard normal approximation margin of error is:
+       $$\text{MoE} = 1.96 \sqrt{\frac{p(1 - p)}{N_{\text{test}}}} = 1.96 \sqrt{\frac{0.85 \times 0.15}{520}} \approx \pm 3.07\%$$
+     - Pre-registered target coverage $\Phi^* = 0.50$: $N_{\text{accepted}} = 260$ episodes. At selective risk $r \approx 0.35$, the precision margin of error expands:
+       $$\text{MoE}_{\Phi=0.50} = 1.96 \sqrt{\frac{0.35 \times 0.65}{260}} \approx \pm 5.79\%$$
+     - Pre-registered target coverage $\Phi^* = 0.30$: $N_{\text{accepted}} = 156$ episodes. At selective risk $r \approx 0.35$, the precision margin of error expands:
+       $$\text{MoE}_{\Phi=0.30} = 1.96 \sqrt{\frac{0.35 \times 0.65}{156}} \approx \pm 7.48\%$$
+   * **Approximation Caveat for Binomial Confidence Intervals:** Binomial normal approximations assume independent and identically distributed trials. Because episodes are clustered within 10 random seeds (where each seed fits an independent model instance), cluster variance may exceed binomial sampling variance. Binomial calculations are treated strictly as idealized approximations; final inferential bounds are computed via **episode-level cluster bootstrap** ($B = 1,000$).
+   * **Absence of Grounded Power Claims:** Detecting small selective-risk differences ($\le 5\%$) with high statistical power is not guaranteed at low coverage levels ($\Phi \le 0.30$) due to denominator shrinkage. The protocol does not claim guaranteed statistical power; instead, it specifies a precision-focused benchmark protocol with cluster bootstrap uncertainty estimation.
+
+### 10.3 Pre-Registered Matched-Coverage Protocol & Diagnostic Gating Limits (Phase 3.4 Audit)
+
+Comparing selective models at disparate test coverages invalidates risk comparisons. The confirmatory study enforces a rigorous matched-coverage evaluation protocol:
+
+1. **Common Target Coverages Pre-Registered in Advance:**
+   Common target coverages are pre-registered: $\Phi^* \in \{0.30, 0.50, 0.70\}$, provided they are feasible on validation data.
+2. **Threshold Selection Exclusively on Validation Data:**
+   - M3-Selective tunes confidence threshold $\tau_{\text{conf}}$ to minimize $|\Phi_{\text{val}}(\tau) - \Phi^*|$.
+   - M4 tunes pair $(\tau_{\text{conf}}, \delta_{\text{margin}})$ to minimize $|\Phi_{\text{val}}(\tau, \delta) - \Phi^*|$, breaking ties by validation selective risk.
+   - All thresholds are locked and frozen before held-out test set evaluation.
+3. **Dual Reporting of Achieved Coverage and Selective Risk:**
+   Because empirical held-out test coverage may differ slightly from validation target coverage, both achieved test coverage $\Phi_{\text{test}}$ and selective risk $\mathcal{R}(\Phi_{\text{test}})$ are reported. Operating points are never selected post-hoc based on favorable test results.
+4. **Physical Diagnostic Gating Feasibility Limitation:**
+   Where strict coverage matching is infeasible because diagnostic gating rejects an entire observation (e.g. M4's stuck-sensor detector unconditionally vetoes episodes with frozen registers, bounding coverage at $\approx 61.5\%$ under the pilot fault suite), the protocol **reports the limitation transparently as a domain safety constraint** rather than forcing a match or disabling diagnostic health checks. Model behavior is never modified simply to make M4 appear superior.
+5. **Dual Reporting of Pooled and Per-Seed Distributions:**
+   Every primary metric reports both:
+   - Pooled episode-level counts and rate across all eligible episodes ($\sum \text{Errors} / \sum N_{\text{accepted}}$).
+   - Per-seed distribution ($\text{Mean} \pm \text{Std}$ across the 10 seeds).
+   Averaged percentages are never displayed alongside counts that imply a different pooled percentage without explicit labelling. Undefined metrics remain `N/A`.
+6. **Diagnostic Metric Labeling:**
+   M3-Selective does not have a sensor-health diagnostic; its Fault Diagnostic Precision is marked strictly as `N/A (no diagnostic)`. Abstention–Fault Co-occurrence is reported as a separate associative statistic and never presented as diagnostic precision or proof of justified abstention.
+
+### 10.4 Sensitivity Analysis Protocols
 To satisfy scientific integrity regarding uncalibrated environmental parameters:
 * **River Velocity Sensitivity:** Sweep $u \in [0.125, 0.187, 0.250, 0.312, 0.375]\text{ m/s}$ ($\pm 50\%$ around baseline $0.25\text{ m/s}$).
 * **Dispersion Coefficient Sensitivity:** Sweep $D_L \in [2.0, 4.5, 9.0, 15.0]\text{ m}^2/\text{s}$.
-* **Background Flow Variability:** Vary baseflow $Q_{\text{base}} \in [5, 10, 25]\text{ m}^3/\text{s}$.
+341: * **Background Flow Variability:** Vary baseflow $Q_{\text{base}} \in [5, 10, 25]\text{ m}^3/\text{s}$.
 
 ---
 
