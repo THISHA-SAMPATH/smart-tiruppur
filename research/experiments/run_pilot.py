@@ -1088,6 +1088,15 @@ def run_pilot_pipeline(
 
 
 if __name__ == "__main__":
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("usage: run_pilot.py [-h] [--output-dir OUTPUT_DIR]")
+        print("\nNoyyalSense Attribution Pilot Pipeline Runner")
+        print("\noptions:")
+        print("  -h, --help            show this help message and exit")
+        print("  --output-dir OUTPUT_DIR")
+        print("                        directory to store output artifacts (default: research/results/pilot)")
+        sys.exit(0)
+
     out_dir_arg = None
     if "--output-dir" in sys.argv:
         idx = sys.argv.index("--output-dir")

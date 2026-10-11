@@ -562,7 +562,6 @@ class ConfidenceSelectiveClassifier:
         tau_candidates: Optional[Sequence[float]] = None,
     ) -> float:
         """Selects tau_conf strictly on validation data to achieve empirical coverage closest to target_coverage.
-        
         Evaluates candidate thresholds on validation data and selects the tau minimizing |Phi_val(tau) - target_coverage|.
         Locks the threshold for downstream held-out testing.
         """

@@ -338,7 +338,7 @@ Comparing selective models at disparate test coverages invalidates risk comparis
 To satisfy scientific integrity regarding uncalibrated environmental parameters:
 * **River Velocity Sensitivity:** Sweep $u \in [0.125, 0.187, 0.250, 0.312, 0.375]\text{ m/s}$ ($\pm 50\%$ around baseline $0.25\text{ m/s}$).
 * **Dispersion Coefficient Sensitivity:** Sweep $D_L \in [2.0, 4.5, 9.0, 15.0]\text{ m}^2/\text{s}$.
-341: * **Background Flow Variability:** Vary baseflow $Q_{\text{base}} \in [5, 10, 25]\text{ m}^3/\text{s}$.
+* **Background Flow Variability:** Vary baseflow $Q_{\text{base}} \in [5, 10, 25]\text{ m}^3/\text{s}$.
 
 ---
 
