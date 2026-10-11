@@ -110,12 +110,12 @@ export default function TerrainMapPrototypePage() {
 
             // 1. 3D Building Extrusions from Vector Basemap (openmaptiles tile source)
             // Reuses tile schema: source="openmaptiles", source-layer="building", render_height, render_min_height
-            // Robust expressions safely handle missing, null, string, non-numeric, or zero values
+            // Ensures buildings are visibly raised in 3D perspective with safe type coercion and clear display height fallback
             const safeHeightExpr: any = [
               "case",
               [">", ["to-number", ["get", "render_height"], 0], 0],
-              ["to-number", ["get", "render_height"], 0],
-              6, // Documented conservative estimated display height fallback (~2 storeys) for footprints lacking height tags
+              ["max", 12, ["to-number", ["get", "render_height"], 0]],
+              16, // Illustrative estimated display height fallback (~4-5 storeys) to ensure unmeasured footprints are visibly raised in 3D view
             ];
 
             const safeBaseExpr: any = [
@@ -133,54 +133,54 @@ export default function TerrainMapPrototypePage() {
               "interpolate",
               ["linear"],
               safeHeightExpr,
-              0,
-              "#e2e8f0",
               12,
               "#cbd5e1",
-              25,
+              16,
               "#94a3b8",
+              25,
+              "#64748b",
+              40,
+              "#475569",
             ];
 
             if (activeMap.getSource("openmaptiles")) {
+              // Re-create building-3d layer cleanly before labels to ensure fresh bucket generation in web worker
               if (activeMap.getLayer("building-3d")) {
-                // Avoid adding a duplicate building layer: configure the existing Liberty building-3d layer in place
-                try {
-                  activeMap.setLayerZoomRange("building-3d", 13, 24);
-                  activeMap.setLayoutProperty(
-                    "building-3d",
-                    "visibility",
-                    is3DRef.current ? "visible" : "none"
-                  );
-                  activeMap.setPaintProperty("building-3d", "fill-extrusion-base", safeBaseExpr);
-                  activeMap.setPaintProperty("building-3d", "fill-extrusion-height", safeHeightExpr);
-                  activeMap.setPaintProperty("building-3d", "fill-extrusion-color", safeColorExpr);
-                  activeMap.setPaintProperty("building-3d", "fill-extrusion-opacity", 0.82);
-                  activeMap.setPaintProperty("building-3d", "fill-extrusion-vertical-gradient", true);
-                } catch (err) {
-                  console.warn("Failed to configure existing building-3d layer:", err);
-                }
-              } else {
-                activeMap.addLayer(
-                  {
-                    id: "building-3d",
-                    type: "fill-extrusion",
-                    source: "openmaptiles",
-                    "source-layer": "building",
-                    minzoom: 13,
-                    layout: {
-                      visibility: is3DRef.current ? "visible" : "none",
-                    },
-                    paint: {
-                      "fill-extrusion-base": safeBaseExpr,
-                      "fill-extrusion-height": safeHeightExpr,
-                      "fill-extrusion-color": safeColorExpr,
-                      "fill-extrusion-opacity": 0.82,
-                      "fill-extrusion-vertical-gradient": true,
-                    },
-                  } as any,
-                  firstLabel
-                );
+                activeMap.removeLayer("building-3d");
               }
+
+              // Set directional lighting for distinct sun-angle contrast on extruded building walls
+              try {
+                activeMap.setLight({
+                  anchor: "viewport",
+                  color: "#ffffff",
+                  intensity: 0.45,
+                  position: [1.15, 210, 30],
+                });
+              } catch {
+                // Ignore if unsupported
+              }
+
+              activeMap.addLayer(
+                {
+                  id: "building-3d",
+                  type: "fill-extrusion",
+                  source: "openmaptiles",
+                  "source-layer": "building",
+                  minzoom: 13,
+                  layout: {
+                    visibility: is3DRef.current ? "visible" : "none",
+                  },
+                  paint: {
+                    "fill-extrusion-base": safeBaseExpr,
+                    "fill-extrusion-height": safeHeightExpr,
+                    "fill-extrusion-color": safeColorExpr,
+                    "fill-extrusion-opacity": 0.88,
+                    "fill-extrusion-vertical-gradient": true,
+                  },
+                } as any,
+                firstLabel
+              );
 
               // Manage 2D building footprints: extend zoom range so flat footprints display in 2D mode,
               // but hide them when 3D extrusion is active so they don't obscure or z-fight with 3D buildings.
@@ -1045,7 +1045,7 @@ export default function TerrainMapPrototypePage() {
               cursor: "pointer",
               opacity: is3D ? 1 : 0.45,
             }}
-            title="Click to toggle 3D Buildings (openmaptiles tile render_height / estimated display height fallback)"
+            title="Click to toggle 3D Buildings (openmaptiles tile render_height / illustrative estimated display height fallback)"
           >
             <span
               style={{
@@ -1053,8 +1053,8 @@ export default function TerrainMapPrototypePage() {
                 width: "12px",
                 height: "12px",
                 borderRadius: "2px",
-                background: "#cbd5e1",
-                border: "1px solid #94a3b8",
+                background: "#94a3b8",
+                border: "1px solid #64748b",
                 flexShrink: 0,
               }}
             />
@@ -1089,7 +1089,7 @@ export default function TerrainMapPrototypePage() {
       <p style={{ fontSize: "12px", color: "#526477", marginTop: "10px" }}>
         Prototype for comparison only. Vector basemap and 3D buildings supplied by OpenFreeMap (openmaptiles schema).
         Use <strong>City Overview</strong> for regional road & river context or <strong>Urban Detail</strong> to inspect 3D building extrusions (~200m scale).
-        Building extrusion uses tile <code>render_height</code> / <code>render_min_height</code> when available, with a conservative 6m (~2 storeys) fallback clearly designated as estimated display height—not measured building height.
+        Building extrusion uses tile <code>render_height</code> / <code>render_min_height</code> when available, with an illustrative estimated display height fallback of 16m (~4-5 storeys) clearly designated as estimated display height—not measured building height.
         River geometry uses local project dataset. Facility and telemetry markers reuse project demo coordinates with explicit simulation labeling.
       </p>
     </div>
