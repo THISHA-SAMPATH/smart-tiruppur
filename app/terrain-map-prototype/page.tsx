@@ -40,6 +40,16 @@ import type {
   GroundwaterRisk,
   CgwbBaseline,
 } from "@/lib/types";
+import {
+  runScenarioWhatIfEngine,
+  DEFAULT_SCENARIO_PARAMS,
+  BASELINE_SCORES,
+} from "@/lib/scenarios/engine";
+import type {
+  ScenarioParameters,
+  ScenarioRunResult,
+  ComponentRiskComparison,
+} from "@/lib/scenarios/types";
 
 interface SelectedEntity {
   category: "industrial" | "station";
@@ -1256,7 +1266,7 @@ export default function TerrainMapPrototypePage() {
     runFloodAnalysisPipeline("HEAVY_RAIN")
   );
   const floodAnalysisRef = useRef(floodAnalysis);
-  const [activePanelTab, setActivePanelTab] = useState<"entity" | "flood" | "groundwater">("entity");
+  const [activePanelTab, setActivePanelTab] = useState<"entity" | "flood" | "groundwater" | "scenarios">("entity");
 
   // Groundwater Assessment mode state
   const [isGroundwaterModeActive, setIsGroundwaterModeActive] = useState(false);
@@ -1291,6 +1301,29 @@ export default function TerrainMapPrototypePage() {
   const [groundwaterLoading, setGroundwaterLoading] = useState(false);
   const [groundwaterAssessmentsCache, setGroundwaterAssessmentsCache] = useState<Record<string, GroundwaterAssessment>>({});
   const groundwaterAssessmentsCacheRef = useRef<Record<string, GroundwaterAssessment>>({});
+
+  // Scenario Comparison mode state
+  const [isScenarioComparisonActive, setIsScenarioComparisonActive] = useState(false);
+  const isScenarioComparisonActiveRef = useRef(isScenarioComparisonActive);
+  const [comparisonDomain, setComparisonDomain] = useState<"flood" | "groundwater" | "steri">("flood");
+
+  // Domain 1: Flood Comparison state
+  const [compFloodBaseline, setCompFloodBaseline] = useState<FloodScenarioPreset>("BASELINE");
+  const [compFloodAlternative, setCompFloodAlternative] = useState<FloodScenarioPreset>("HEAVY_RAIN");
+  const [compFloodMapDisplay, setCompFloodMapDisplay] = useState<"baseline" | "alternative">("alternative");
+
+  // Domain 2: Groundwater Comparison state
+  const [compGroundwaterZoneId, setCompGroundwaterZoneId] = useState<string>("tiruppur_south");
+  const [compGroundwaterBaselineMult, setCompGroundwaterBaselineMult] = useState<number>(1.0);
+  const [compGroundwaterAlternativeMult, setCompGroundwaterAlternativeMult] = useState<number>(1.2);
+  const [compGroundwaterMapDisplay, setCompGroundwaterMapDisplay] = useState<"baseline" | "alternative">("alternative");
+
+  // Domain 3: STERI Sensitivity Comparison state
+  const [compSteriPreset, setCompSteriPreset] = useState<"MONSOON_HIGH_LOAD" | "DROUGHT_OVER_EXTRACTION" | "INDUSTRIAL_SURGE" | "DEFAULT">("MONSOON_HIGH_LOAD");
+
+  useEffect(() => {
+    isScenarioComparisonActiveRef.current = isScenarioComparisonActive;
+  }, [isScenarioComparisonActive]);
 
   useEffect(() => {
     isTracingActiveRef.current = isTracingActive;
@@ -2730,6 +2763,182 @@ export default function TerrainMapPrototypePage() {
     }
   }
 
+  const STERI_SCENARIO_PRESETS: Record<
+    "MONSOON_HIGH_LOAD" | "DROUGHT_OVER_EXTRACTION" | "INDUSTRIAL_SURGE" | "DEFAULT",
+    { title: string; params: ScenarioParameters; description: string }
+  > = {
+    MONSOON_HIGH_LOAD: {
+      title: "Monsoon Downpour + Industrial Load (+20%)",
+      params: {
+        rainfallPctChange: 50,
+        riverFlowPctChange: 30,
+        industrialLoadPctChange: 20,
+        groundwaterExtractionPctChange: -10,
+        pollutionLoadPctChange: 25,
+        wasteGenerationPctChange: 15,
+      },
+      description: "Intense monsoonal downpour combined with elevated textile production and drainage runoff.",
+    },
+    DROUGHT_OVER_EXTRACTION: {
+      title: "Severe Drought & Aquifer Over-Extraction",
+      params: {
+        rainfallPctChange: -70,
+        riverFlowPctChange: -50,
+        industrialLoadPctChange: 0,
+        groundwaterExtractionPctChange: 40,
+        pollutionLoadPctChange: 10,
+        wasteGenerationPctChange: 0,
+      },
+      description: "Deficit monsoonal precipitation and sharp Noyyal river baseflow decline driving increased borewell pumping.",
+    },
+    INDUSTRIAL_SURGE: {
+      title: "Industrial Production Surge (+45%)",
+      params: {
+        rainfallPctChange: 0,
+        riverFlowPctChange: -15,
+        industrialLoadPctChange: 45,
+        groundwaterExtractionPctChange: 25,
+        pollutionLoadPctChange: 50,
+        wasteGenerationPctChange: 30,
+      },
+      description: "Textile dyeing cluster production peak increasing effluent load, COD discharge, and municipal stress.",
+    },
+    DEFAULT: {
+      title: "Moderate Urban Growth Scenario",
+      params: DEFAULT_SCENARIO_PARAMS,
+      description: "Moderate sensitivity shifts across rainfall, river flow, and industrial demand.",
+    },
+  };
+
+  function computeDeltaNumber(baseline: number, alternative: number, unit = "") {
+    const delta = Number((alternative - baseline).toFixed(2));
+    let pct = "0.0%";
+    if (baseline === 0) {
+      pct = alternative === 0 ? "0.0%" : "N/A (base 0)";
+    } else {
+      const rawPct = ((alternative - baseline) / Math.abs(baseline)) * 100;
+      pct = `${rawPct > 0 ? "+" : ""}${rawPct.toFixed(1)}%`;
+    }
+    return {
+      deltaVal: delta,
+      deltaStr: `${delta > 0 ? "+" : ""}${delta}${unit ? ` ${unit}` : ""}`,
+      pct,
+      direction: delta > 0 ? "higher" : delta < 0 ? "lower" : "unchanged",
+    };
+  }
+
+  function toggleScenarioComparisonMode() {
+    const nextActive = !isScenarioComparisonActive;
+    setIsScenarioComparisonActive(nextActive);
+    isScenarioComparisonActiveRef.current = nextActive;
+
+    if (nextActive) {
+      setActivePanelTab("scenarios");
+      setStatus(
+        "Scenario Comparison active · Evaluating Baseline vs Alternative across models · Multi-domain decision support"
+      );
+    } else {
+      if (selectedEntity) {
+        setActivePanelTab("entity");
+      } else if (isGroundwaterModeActiveRef.current) {
+        setActivePanelTab("groundwater");
+      } else if (isFloodModeActiveRef.current) {
+        setActivePanelTab("flood");
+      }
+      setStatus("Scenario Comparison closed · Returned to standard investigation map");
+    }
+  }
+
+  function handleResetComparison() {
+    setCompFloodBaseline("BASELINE");
+    setCompFloodAlternative("HEAVY_RAIN");
+    setCompFloodMapDisplay("alternative");
+    setCompGroundwaterBaselineMult(1.0);
+    setCompGroundwaterAlternativeMult(1.2);
+    setCompGroundwaterMapDisplay("alternative");
+    setCompSteriPreset("MONSOON_HIGH_LOAD");
+
+    const map = mapRef.current;
+    if (map) {
+      if (isFloodModeActiveRef.current) {
+        const defaultFlood = runFloodAnalysisPipeline("HEAVY_RAIN");
+        setFloodAnalysis(defaultFlood);
+        floodAnalysisRef.current = defaultFlood;
+        updateMapFloodSource(map, defaultFlood, selectedFloodZoneIdRef.current);
+      }
+      if (isGroundwaterModeActiveRef.current) {
+        updateMapGroundwaterSource(
+          map,
+          selectedGroundwaterZoneIdRef.current,
+          1.0,
+          groundwaterAssessmentsCacheRef.current
+        );
+      }
+    }
+    setStatus("Scenario Comparison reset · Baseline and Alternative restored to defaults");
+  }
+
+  function applyScenarioToMap(domain: "flood" | "groundwater", which: "baseline" | "alternative") {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (domain === "flood") {
+      const targetPreset = which === "baseline" ? compFloodBaseline : compFloodAlternative;
+      setCompFloodMapDisplay(which);
+      const res = runFloodAnalysisPipeline(targetPreset);
+      setFloodAnalysis(res);
+      floodAnalysisRef.current = res;
+
+      if (!isFloodModeActiveRef.current) {
+        setIsFloodModeActive(true);
+        isFloodModeActiveRef.current = true;
+        for (const layerId of [
+          "prototype-flood-marker-glow",
+          "prototype-flood-marker-core",
+          "prototype-flood-label",
+        ]) {
+          if (map.getLayer(layerId)) {
+            map.setLayoutProperty(layerId, "visibility", "visible");
+          }
+        }
+      }
+
+      updateMapFloodSource(map, res, selectedFloodZoneIdRef.current);
+      setStatus(
+        `Map updated: Displaying ${which.toUpperCase()} Flood Scenario (${targetPreset}: ${res.scenario.rainfallMmDay} mm/day, ${res.scenario.riverFlowM3s} m³/s)`
+      );
+    } else if (domain === "groundwater") {
+      const targetMult = which === "baseline" ? compGroundwaterBaselineMult : compGroundwaterAlternativeMult;
+      setCompGroundwaterMapDisplay(which);
+      setGroundwaterMultiplier(targetMult);
+      groundwaterMultiplierRef.current = targetMult;
+
+      if (!isGroundwaterModeActiveRef.current) {
+        setIsGroundwaterModeActive(true);
+        isGroundwaterModeActiveRef.current = true;
+        for (const layerId of [
+          "prototype-groundwater-marker-glow",
+          "prototype-groundwater-marker-core",
+          "prototype-groundwater-label",
+        ]) {
+          if (map.getLayer(layerId)) {
+            map.setLayoutProperty(layerId, "visibility", "visible");
+          }
+        }
+      }
+
+      updateMapGroundwaterSource(
+        map,
+        compGroundwaterZoneId,
+        targetMult,
+        groundwaterAssessmentsCacheRef.current
+      );
+      setStatus(
+        `Map updated: Displaying ${which.toUpperCase()} Groundwater Scenario (${targetMult}x extraction multiplier)`
+      );
+    }
+  }
+
   return (
     <div
       style={{
@@ -2935,6 +3144,34 @@ export default function TerrainMapPrototypePage() {
             </button>
           )}
 
+          <button
+            onClick={toggleScenarioComparisonMode}
+            style={{
+              ...buttonStyle,
+              background: isScenarioComparisonActive ? "#faf5ff" : "#ffffff",
+              borderColor: isScenarioComparisonActive ? "#a855f7" : "#cbd5e1",
+              color: isScenarioComparisonActive ? "#7e22ce" : "#173548",
+            }}
+            title="Open side-by-side Scenario Comparison workflow for Flood, Groundwater, and STERI models"
+          >
+            {isScenarioComparisonActive ? "⚖️ Scenarios: Active" : "⚖️ Compare Scenarios"}
+          </button>
+
+          {isScenarioComparisonActive && (
+            <button
+              onClick={toggleScenarioComparisonMode}
+              style={{
+                ...buttonStyle,
+                background: "#ffffff",
+                borderColor: "#e9d5ff",
+                color: "#7e22ce",
+              }}
+              title="Close Scenario Comparison and return to standard investigation map"
+            >
+              ✕ Exit Compare
+            </button>
+          )}
+
           <button onClick={resetView} style={buttonStyle} title="Reset camera to central Tiruppur">
             📍 Fit Tiruppur
           </button>
@@ -2991,12 +3228,14 @@ export default function TerrainMapPrototypePage() {
           </div>
         </div>
 
-        {/* Right-Hand Panel: Flood Exposure Analysis, Groundwater Assessment, or Selected Entity Details */}
-        {(selectedEntity || isFloodModeActive || isGroundwaterModeActive) && (
+        {/* Right-Hand Panel: Flood Exposure Analysis, Groundwater Assessment, Scenario Comparison, or Selected Entity Details */}
+        {(selectedEntity || isFloodModeActive || isGroundwaterModeActive || isScenarioComparisonActive) && (
           <div
             role="region"
             aria-label={
-              (activePanelTab === "groundwater" && isGroundwaterModeActive) || (!selectedEntity && !isFloodModeActive && isGroundwaterModeActive)
+              (activePanelTab === "scenarios" && isScenarioComparisonActive) || (!selectedEntity && !isFloodModeActive && !isGroundwaterModeActive && isScenarioComparisonActive)
+                ? "Scenario Comparison Analysis"
+                : (activePanelTab === "groundwater" && isGroundwaterModeActive) || (!selectedEntity && !isFloodModeActive && isGroundwaterModeActive)
                 ? "Groundwater Assessment"
                 : (activePanelTab === "flood" && isFloodModeActive) || (!selectedEntity && isFloodModeActive)
                 ? "Flood Exposure Analysis"
@@ -3006,7 +3245,7 @@ export default function TerrainMapPrototypePage() {
               position: "absolute",
               top: "16px",
               right: "60px",
-              width: "360px",
+              width: activePanelTab === "scenarios" ? "420px" : "360px",
               maxWidth: "calc(100% - 80px)",
               maxHeight: "calc(100vh - 250px)",
               overflowY: "auto",
@@ -3014,7 +3253,9 @@ export default function TerrainMapPrototypePage() {
               borderRadius: "12px",
               boxShadow: "0 10px 30px rgba(15,23,42,0.2)",
               border: `1.5px solid ${
-                (activePanelTab === "groundwater" && isGroundwaterModeActive) || (!selectedEntity && !isFloodModeActive && isGroundwaterModeActive)
+                (activePanelTab === "scenarios" && isScenarioComparisonActive) || (!selectedEntity && !isFloodModeActive && !isGroundwaterModeActive && isScenarioComparisonActive)
+                  ? "#a855f7"
+                  : (activePanelTab === "groundwater" && isGroundwaterModeActive) || (!selectedEntity && !isFloodModeActive && isGroundwaterModeActive)
                   ? "#0d9488"
                   : (activePanelTab === "flood" && isFloodModeActive) || (!selectedEntity && isFloodModeActive)
                   ? "#2563eb"
@@ -3027,7 +3268,7 @@ export default function TerrainMapPrototypePage() {
             }}
           >
             {/* If more than one mode/entity is active, show Tab switcher */}
-            {((selectedEntity ? 1 : 0) + (isFloodModeActive ? 1 : 0) + (isGroundwaterModeActive ? 1 : 0)) > 1 && (
+            {((selectedEntity ? 1 : 0) + (isFloodModeActive ? 1 : 0) + (isGroundwaterModeActive ? 1 : 0) + (isScenarioComparisonActive ? 1 : 0)) > 1 && (
               <div
                 style={{
                   display: "flex",
@@ -3035,8 +3276,28 @@ export default function TerrainMapPrototypePage() {
                   marginBottom: "12px",
                   borderBottom: "1px solid #e2e8f0",
                   paddingBottom: "8px",
+                  flexWrap: "wrap",
                 }}
               >
+                {isScenarioComparisonActive && (
+                  <button
+                    type="button"
+                    onClick={() => setActivePanelTab("scenarios")}
+                    style={{
+                      ...buttonStyle,
+                      flex: 1,
+                      padding: "6px 6px",
+                      fontSize: "11px",
+                      background: activePanelTab === "scenarios" ? "#faf5ff" : "#ffffff",
+                      borderColor: activePanelTab === "scenarios" ? "#a855f7" : "#cbd5e1",
+                      color: activePanelTab === "scenarios" ? "#7e22ce" : "#64748b",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    ⚖️ Scenarios
+                  </button>
+                )}
                 {isGroundwaterModeActive && (
                   <button
                     type="button"
@@ -3098,7 +3359,7 @@ export default function TerrainMapPrototypePage() {
             )}
 
             {/* TAB 1: FLOOD EXPOSURE ANALYSIS */}
-            {isFloodModeActive && (activePanelTab === "flood" || (!selectedEntity && !isGroundwaterModeActive)) && (
+            {isFloodModeActive && (activePanelTab === "flood" || (!selectedEntity && !isGroundwaterModeActive && !isScenarioComparisonActive)) && (
               <div>
                 {/* Header */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
@@ -3420,7 +3681,7 @@ export default function TerrainMapPrototypePage() {
             )}
 
             {/* TAB 2: GROUNDWATER ASSESSMENT WORKFLOW */}
-            {isGroundwaterModeActive && (activePanelTab === "groundwater" || (!selectedEntity && !isFloodModeActive)) && (() => {
+            {isGroundwaterModeActive && (activePanelTab === "groundwater" || (!selectedEntity && !isFloodModeActive && !isScenarioComparisonActive)) && (() => {
               const selectedFirka =
                 CGWB_TIRUPPUR_FIRKAS.find((f) => f.zone_id === selectedGroundwaterZoneId) ||
                 CGWB_TIRUPPUR_FIRKAS[0];
@@ -3883,8 +4144,878 @@ export default function TerrainMapPrototypePage() {
               );
             })()}
 
-            {/* TAB 3: SELECTED ENTITY VIEW */}
-            {selectedEntity && (activePanelTab === "entity" || (!isFloodModeActive && !isGroundwaterModeActive)) && (
+            {/* TAB 3: SCENARIO COMPARISON WORKFLOW */}
+            {isScenarioComparisonActive && (activePanelTab === "scenarios" || (!selectedEntity && !isFloodModeActive && !isGroundwaterModeActive)) && (() => {
+              // --- Domain 1: Flood Calculations ---
+              const floodBaseResult = runFloodAnalysisPipeline(compFloodBaseline);
+              const floodAltResult = runFloodAnalysisPipeline(compFloodAlternative);
+              const floodRainDelta = computeDeltaNumber(floodBaseResult.scenario.rainfallMmDay, floodAltResult.scenario.rainfallMmDay, "mm/d");
+              const floodDurationDelta = computeDeltaNumber(floodBaseResult.scenario.rainfallDurationHours, floodAltResult.scenario.rainfallDurationHours, "h");
+              const floodRiverDelta = computeDeltaNumber(floodBaseResult.scenario.riverFlowM3s, floodAltResult.scenario.riverFlowM3s, "m³/s");
+              const floodAccumDelta = computeDeltaNumber(floodBaseResult.citywideMaxAccumulationMeters, floodAltResult.citywideMaxAccumulationMeters, "m");
+              const floodHighRiskDelta = computeDeltaNumber(floodBaseResult.highRiskZonesCount, floodAltResult.highRiskZonesCount, "pts");
+
+              const floodBaseAvgScore = Number((floodBaseResult.affectedZones.reduce((s, z) => s + z.floodRiskScore, 0) / floodBaseResult.affectedZones.length).toFixed(2));
+              const floodAltAvgScore = Number((floodAltResult.affectedZones.reduce((s, z) => s + z.floodRiskScore, 0) / floodAltResult.affectedZones.length).toFixed(2));
+              const floodScoreDelta = computeDeltaNumber(floodBaseAvgScore, floodAltAvgScore);
+
+              const getCategoryCounts = (res: FloodAnalysisResult) => {
+                const counts: Record<string, number> = { LOW: 0, MODERATE: 0, HIGH: 0, "VERY HIGH": 0, CRITICAL: 0 };
+                res.affectedZones.forEach((z) => {
+                  counts[z.riskCategory] = (counts[z.riskCategory] || 0) + 1;
+                });
+                return counts;
+              };
+              const floodBaseCatCounts = getCategoryCounts(floodBaseResult);
+              const floodAltCatCounts = getCategoryCounts(floodAltResult);
+
+              // --- Domain 2: Groundwater Calculations ---
+              const compFirka = CGWB_TIRUPPUR_FIRKAS.find((f) => f.zone_id === compGroundwaterZoneId) || CGWB_TIRUPPUR_FIRKAS[0];
+              const gwResourceHam = compFirka.baseline.annual_extractable_resource_ham;
+              const gwBaseExtractionHam = Number((compFirka.baseline.total_extraction_ham * compGroundwaterBaselineMult).toFixed(1));
+              const gwAltExtractionHam = Number((compFirka.baseline.total_extraction_ham * compGroundwaterAlternativeMult).toFixed(1));
+              const gwBaseStagePct = Number((gwResourceHam > 0 ? (gwBaseExtractionHam / gwResourceHam) * 100 : 0).toFixed(1));
+              const gwAltStagePct = Number((gwResourceHam > 0 ? (gwAltExtractionHam / gwResourceHam) * 100 : 0).toFixed(1));
+              const gwBaseCat = computeGroundwaterRiskCategory(gwBaseStagePct);
+              const gwAltCat = computeGroundwaterRiskCategory(gwAltStagePct);
+              const gwBaseNetBalance = Number((gwResourceHam - gwBaseExtractionHam).toFixed(1));
+              const gwAltNetBalance = Number((gwResourceHam - gwAltExtractionHam).toFixed(1));
+
+              const gwExtractionDelta = computeDeltaNumber(gwBaseExtractionHam, gwAltExtractionHam, "ham");
+              const gwStageDelta = computeDeltaNumber(gwBaseStagePct, gwAltStagePct, "%");
+              const gwBalanceDelta = computeDeltaNumber(gwBaseNetBalance, gwAltNetBalance, "ham");
+
+              // --- Domain 3: STERI Multi-Factor Calculations ---
+              const steriActivePreset = STERI_SCENARIO_PRESETS[compSteriPreset];
+              const steriResult = runScenarioWhatIfEngine(steriActivePreset.params, steriActivePreset.title);
+
+              return (
+                <div>
+                  {/* Header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "3px 8px",
+                        borderRadius: "5px",
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        letterSpacing: "0.5px",
+                        background: "#faf5ff",
+                        color: "#7e22ce",
+                        border: "1px solid #d8b4fe",
+                      }}
+                    >
+                      SCENARIO DECISION SUPPORT
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={toggleScenarioComparisonMode}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        fontSize: "16px",
+                        fontWeight: 700,
+                        color: "#94a3b8",
+                        cursor: "pointer",
+                        padding: "0 4px",
+                      }}
+                      aria-label="Close Scenario Comparison panel"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div style={{ marginTop: "10px", fontSize: "16px", fontWeight: 800, color: "#0f172a" }}>
+                    Scenario Comparison Engine
+                  </div>
+
+                  <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "2px" }}>
+                    Side-by-side evaluation of baseline versus alternative environmental stress scenarios.
+                  </div>
+
+                  {/* Domain Sub-Navigation Switcher */}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "4px",
+                      marginTop: "12px",
+                      marginBottom: "12px",
+                      background: "#f1f5f9",
+                      padding: "3px",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    {[
+                      { id: "flood", label: "🌊 Flood Model" },
+                      { id: "groundwater", label: "💧 Groundwater" },
+                      { id: "steri", label: "🌐 STERI Sensitivity" },
+                    ].map((dom) => (
+                      <button
+                        key={dom.id}
+                        type="button"
+                        onClick={() => setComparisonDomain(dom.id as any)}
+                        style={{
+                          flex: 1,
+                          padding: "6px 4px",
+                          fontSize: "11px",
+                          fontWeight: comparisonDomain === dom.id ? 700 : 500,
+                          borderRadius: "6px",
+                          border: "none",
+                          background: comparisonDomain === dom.id ? "#ffffff" : "transparent",
+                          color: comparisonDomain === dom.id ? "#0f172a" : "#64748b",
+                          boxShadow: comparisonDomain === dom.id ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {dom.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* ============================================================== */}
+                  {/* DOMAIN 1: FLOOD ANALYSIS SCENARIO COMPARISON                   */}
+                  {/* ============================================================== */}
+                  {comparisonDomain === "flood" && (
+                    <div>
+                      {/* Scenario Selectors */}
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "8px",
+                          padding: "10px",
+                          background: "#f8fafc",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
+                        }}
+                      >
+                        <div>
+                          <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#475569", marginBottom: "4px" }}>
+                            Baseline Scenario:
+                          </label>
+                          <select
+                            value={compFloodBaseline}
+                            onChange={(e) => setCompFloodBaseline(e.target.value as FloodScenarioPreset)}
+                            style={{
+                              width: "100%",
+                              padding: "5px 6px",
+                              borderRadius: "6px",
+                              border: "1px solid #cbd5e1",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              background: "#ffffff",
+                              color: "#0f172a",
+                            }}
+                          >
+                            {(Object.keys(FLOOD_SCENARIOS) as FloodScenarioPreset[]).map((preset) => (
+                              <option key={preset} value={preset}>
+                                {preset} ({FLOOD_SCENARIOS[preset].rainfallMmDay} mm/d)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#1d4ed8", marginBottom: "4px" }}>
+                            Alternative Scenario:
+                          </label>
+                          <select
+                            value={compFloodAlternative}
+                            onChange={(e) => setCompFloodAlternative(e.target.value as FloodScenarioPreset)}
+                            style={{
+                              width: "100%",
+                              padding: "5px 6px",
+                              borderRadius: "6px",
+                              border: "1px solid #93c5fd",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              background: "#eff6ff",
+                              color: "#1e40af",
+                            }}
+                          >
+                            {(Object.keys(FLOOD_SCENARIOS) as FloodScenarioPreset[]).map((preset) => (
+                              <option key={preset} value={preset}>
+                                {preset} ({FLOOD_SCENARIOS[preset].rainfallMmDay} mm/d)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Action Bar */}
+                      <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
+                        <button
+                          type="button"
+                          onClick={() => applyScenarioToMap("flood", "alternative")}
+                          style={{
+                            ...buttonStyle,
+                            flex: 1,
+                            padding: "6px 8px",
+                            fontSize: "11px",
+                            background: "#eff6ff",
+                            borderColor: "#93c5fd",
+                            color: "#1d4ed8",
+                          }}
+                          title="Evaluate and update map with alternative flood scenario"
+                        >
+                          ⚡ Compare & View on Map
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleResetComparison}
+                          style={{
+                            ...buttonStyle,
+                            padding: "6px 10px",
+                            fontSize: "11px",
+                            background: "#ffffff",
+                            borderColor: "#cbd5e1",
+                            color: "#64748b",
+                          }}
+                          title="Reset comparison to baseline defaults"
+                        >
+                          🔄 Reset
+                        </button>
+                      </div>
+
+                      {/* Comparison Results Table */}
+                      <div style={{ marginTop: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", overflow: "hidden" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+                          <thead>
+                            <tr style={{ background: "#f1f5f9", textAlign: "left", color: "#475569", borderBottom: "1px solid #e2e8f0" }}>
+                              <th style={{ padding: "6px 8px" }}>Flood Indicator</th>
+                              <th style={{ padding: "6px 6px" }}>Baseline ({compFloodBaseline.slice(0, 4)})</th>
+                              <th style={{ padding: "6px 6px" }}>Alt ({compFloodAlternative.slice(0, 4)})</th>
+                              <th style={{ padding: "6px 8px" }}>Δ (Change)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[
+                              {
+                                label: "Rainfall Rate",
+                                base: `${floodBaseResult.scenario.rainfallMmDay} mm/d`,
+                                alt: `${floodAltResult.scenario.rainfallMmDay} mm/d`,
+                                delta: floodRainDelta.deltaStr,
+                                pct: floodRainDelta.pct,
+                                higherBad: true,
+                              },
+                              {
+                                label: "Rain Duration",
+                                base: `${floodBaseResult.scenario.rainfallDurationHours} h`,
+                                alt: `${floodAltResult.scenario.rainfallDurationHours} h`,
+                                delta: floodDurationDelta.deltaStr,
+                                pct: floodDurationDelta.pct,
+                                higherBad: true,
+                              },
+                              {
+                                label: "River Baseflow",
+                                base: `${floodBaseResult.scenario.riverFlowM3s} m³/s`,
+                                alt: `${floodAltResult.scenario.riverFlowM3s} m³/s`,
+                                delta: floodRiverDelta.deltaStr,
+                                pct: floodRiverDelta.pct,
+                                higherBad: true,
+                              },
+                              {
+                                label: "Max Accumulation",
+                                base: `${floodBaseResult.citywideMaxAccumulationMeters.toFixed(2)} m`,
+                                alt: `${floodAltResult.citywideMaxAccumulationMeters.toFixed(2)} m`,
+                                delta: floodAccumDelta.deltaStr,
+                                pct: floodAccumDelta.pct,
+                                higherBad: true,
+                              },
+                              {
+                                label: "High-Risk Sectors",
+                                base: `${floodBaseResult.highRiskZonesCount} / 6`,
+                                alt: `${floodAltResult.highRiskZonesCount} / 6`,
+                                delta: floodHighRiskDelta.deltaStr,
+                                pct: floodHighRiskDelta.pct,
+                                higherBad: true,
+                              },
+                              {
+                                label: "Avg Sector Score",
+                                base: floodBaseAvgScore.toFixed(2),
+                                alt: floodAltAvgScore.toFixed(2),
+                                delta: floodScoreDelta.deltaStr,
+                                pct: floodScoreDelta.pct,
+                                higherBad: true,
+                              },
+                            ].map((row, idx) => {
+                              const isPositive = row.delta.startsWith("+");
+                              const isZero = row.delta.startsWith("0") || row.delta === "0";
+                              const color = isZero ? "#64748b" : row.higherBad ? (isPositive ? "#dc2626" : "#16a34a") : (isPositive ? "#16a34a" : "#dc2626");
+                              return (
+                                <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9", background: idx % 2 === 0 ? "#ffffff" : "#fbfcfd" }}>
+                                  <td style={{ padding: "6px 8px", fontWeight: 600, color: "#334155" }}>{row.label}</td>
+                                  <td style={{ padding: "6px 6px", color: "#475569" }}>{row.base}</td>
+                                  <td style={{ padding: "6px 6px", fontWeight: 700, color: "#0f172a" }}>{row.alt}</td>
+                                  <td style={{ padding: "6px 8px", fontWeight: 700, color }}>
+                                    {row.delta} <span style={{ fontSize: "9.5px", fontWeight: 500 }}>({row.pct})</span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Sector Category Count Distribution */}
+                      <div
+                        style={{
+                          marginTop: "10px",
+                          padding: "8px 10px",
+                          background: "#f8fafc",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
+                        }}
+                      >
+                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", marginBottom: "4px" }}>
+                          Sector Risk Classification Distribution (Total 6 Sector Points):
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "10px" }}>
+                          <div style={{ background: "#ffffff", padding: "5px 7px", borderRadius: "5px", border: "1px solid #cbd5e1" }}>
+                            <strong style={{ color: "#334155" }}>Baseline:</strong>
+                            <div style={{ color: "#64748b", marginTop: "2px" }}>
+                              {floodBaseCatCounts.LOW} Low · {floodBaseCatCounts.MODERATE} Mod · {floodBaseCatCounts.HIGH} High · {floodBaseCatCounts["VERY HIGH"]} V.High · {floodBaseCatCounts.CRITICAL} Crit
+                            </div>
+                          </div>
+                          <div style={{ background: "#eff6ff", padding: "5px 7px", borderRadius: "5px", border: "1px solid #bfdbfe" }}>
+                            <strong style={{ color: "#1d4ed8" }}>Alternative:</strong>
+                            <div style={{ color: "#1e40af", marginTop: "2px" }}>
+                              {floodAltCatCounts.LOW} Low · {floodAltCatCounts.MODERATE} Mod · {floodAltCatCounts.HIGH} High · {floodAltCatCounts["VERY HIGH"]} V.High · {floodAltCatCounts.CRITICAL} Crit
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 6 Sector Point Comparison Table */}
+                      <div style={{ marginTop: "10px" }}>
+                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", marginBottom: "4px" }}>
+                          Sector Point Breakdown (Modelled Risk Scores):
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          {floodBaseResult.affectedZones.map((baseZ, i) => {
+                            const altZ = floodAltResult.affectedZones[i];
+                            const sDelta = Number((altZ.floodRiskScore - baseZ.floodRiskScore).toFixed(2));
+                            return (
+                              <div
+                                key={baseZ.zoneId}
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  padding: "4px 8px",
+                                  background: "#ffffff",
+                                  borderRadius: "5px",
+                                  border: "1px solid #e2e8f0",
+                                  fontSize: "10px",
+                                }}
+                              >
+                                <span style={{ fontWeight: 600, color: "#334155" }}>{baseZ.zoneName.replace(" Noyyal Exit Trough", "").replace(" Fabric Sector Slope", "").replace(" Plain", "").replace(" Foothills", "").replace(" CETP Industrial Sector", "").replace(" Upstream Floodplain", "")}</span>
+                                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                  <span style={{ color: "#64748b" }}>{baseZ.floodRiskScore.toFixed(2)} ({baseZ.riskCategory})</span>
+                                  <span style={{ color: "#94a3b8" }}>➔</span>
+                                  <span style={{ fontWeight: 700, color: altZ.floodRiskScore >= 0.6 ? "#dc2626" : altZ.floodRiskScore >= 0.4 ? "#ea580c" : "#16a34a" }}>
+                                    {altZ.floodRiskScore.toFixed(2)} ({altZ.riskCategory})
+                                  </span>
+                                  <span style={{ fontSize: "9px", color: sDelta > 0 ? "#dc2626" : sDelta < 0 ? "#16a34a" : "#64748b" }}>
+                                    {sDelta > 0 ? `+${sDelta}` : `${sDelta}`}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Interpretation Text */}
+                      <div
+                        style={{
+                          marginTop: "10px",
+                          padding: "8px 10px",
+                          background: "#eff6ff",
+                          borderRadius: "7px",
+                          border: "1px solid #bfdbfe",
+                          fontSize: "10px",
+                          color: "#1e40af",
+                          lineHeight: "1.4",
+                        }}
+                      >
+                        <strong>Model Interpretation:</strong> Transitioning from {compFloodBaseline} ({floodBaseResult.scenario.rainfallMmDay} mm/d) to {compFloodAlternative} ({floodAltResult.scenario.rainfallMmDay} mm/d) expands river channel flow by {floodRiverDelta.deltaStr}. Low-elevation accumulation depth increases by {floodAccumDelta.deltaStr}, resulting in {floodAltResult.highRiskZonesCount} high-risk sectors (score ≥ 0.60). Kasipalayam Noyyal trough and Mangalam upstream floodplain exhibit greatest terrain accumulation susceptibility.
+                      </div>
+
+                      {/* Map Display Actions */}
+                      <div style={{ display: "flex", gap: "6px", marginTop: "10px" }}>
+                        <button
+                          type="button"
+                          onClick={() => applyScenarioToMap("flood", "alternative")}
+                          style={{
+                            ...buttonStyle,
+                            flex: 1,
+                            padding: "5px 6px",
+                            fontSize: "10px",
+                            background: compFloodMapDisplay === "alternative" ? "#eff6ff" : "#ffffff",
+                            borderColor: compFloodMapDisplay === "alternative" ? "#2563eb" : "#cbd5e1",
+                            color: compFloodMapDisplay === "alternative" ? "#1d4ed8" : "#475569",
+                          }}
+                        >
+                          🗺️ Display Alt ({compFloodAlternative.slice(0, 6)}) on Map
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyScenarioToMap("flood", "baseline")}
+                          style={{
+                            ...buttonStyle,
+                            flex: 1,
+                            padding: "5px 6px",
+                            fontSize: "10px",
+                            background: compFloodMapDisplay === "baseline" ? "#eff6ff" : "#ffffff",
+                            borderColor: compFloodMapDisplay === "baseline" ? "#2563eb" : "#cbd5e1",
+                            color: compFloodMapDisplay === "baseline" ? "#1d4ed8" : "#475569",
+                          }}
+                        >
+                          🗺️ Display Base ({compFloodBaseline.slice(0, 6)}) on Map
+                        </button>
+                      </div>
+
+                      {/* Provenance & Limitations */}
+                      <div style={{ fontSize: "9px", color: "#64748b", marginTop: "8px", fontStyle: "italic", lineHeight: "1.35" }}>
+                        Provenance: Modelled multi-criteria terrain accumulation based on 30m DEM slope/elevation profiles at 6 discrete sector coordinates. Not a 2D hydrodynamic hydraulic boundary or building-specific inundation forecast.
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ============================================================== */}
+                  {/* DOMAIN 2: GROUNDWATER DRAFT SCENARIO COMPARISON                 */}
+                  {/* ============================================================== */}
+                  {comparisonDomain === "groundwater" && (
+                    <div>
+                      {/* FIRKA Selector */}
+                      <div>
+                        <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#475569", marginBottom: "4px" }}>
+                          Assessment FIRKA ({CGWB_TIRUPPUR_FIRKAS.length} Total):
+                        </label>
+                        <select
+                          value={compGroundwaterZoneId}
+                          onChange={(e) => setCompGroundwaterZoneId(e.target.value)}
+                          style={{
+                            width: "100%",
+                            padding: "6px 8px",
+                            borderRadius: "7px",
+                            border: "1px solid #cbd5e1",
+                            fontSize: "11.5px",
+                            fontWeight: 600,
+                            background: "#f8fafc",
+                            color: "#0f172a",
+                          }}
+                        >
+                          {CGWB_TIRUPPUR_FIRKAS.map((firka) => (
+                            <option key={firka.zone_id} value={firka.zone_id}>
+                              {firka.name} ({firka.taluk}) — {firka.baseline.category} ({firka.baseline.stage_percent}%)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Multiplier Selectors */}
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "8px",
+                          marginTop: "8px",
+                          padding: "10px",
+                          background: "#f8fafc",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
+                        }}
+                      >
+                        <div>
+                          <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#475569", marginBottom: "4px" }}>
+                            Baseline Draft Multiplier:
+                          </label>
+                          <select
+                            value={compGroundwaterBaselineMult}
+                            onChange={(e) => setCompGroundwaterBaselineMult(parseFloat(e.target.value))}
+                            style={{
+                              width: "100%",
+                              padding: "5px 6px",
+                              borderRadius: "6px",
+                              border: "1px solid #cbd5e1",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              background: "#ffffff",
+                              color: "#0f172a",
+                            }}
+                          >
+                            <option value={1.0}>1.0x (CGWB 2024 Baseline)</option>
+                            <option value={0.8}>0.8x (−20% Conservation)</option>
+                            <option value={1.2}>1.2x (+20% Stress Draft)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#0f766e", marginBottom: "4px" }}>
+                            Alternative Draft Multiplier:
+                          </label>
+                          <select
+                            value={compGroundwaterAlternativeMult}
+                            onChange={(e) => setCompGroundwaterAlternativeMult(parseFloat(e.target.value))}
+                            style={{
+                              width: "100%",
+                              padding: "5px 6px",
+                              borderRadius: "6px",
+                              border: "1px solid #99f6e4",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              background: "#f0fdfa",
+                              color: "#0f766e",
+                            }}
+                          >
+                            <option value={0.8}>0.8x (−20% Conservation)</option>
+                            <option value={1.0}>1.0x (CGWB 2024 Baseline)</option>
+                            <option value={1.2}>1.2x (+20% Stress Draft)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Action Bar */}
+                      <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
+                        <button
+                          type="button"
+                          onClick={() => applyScenarioToMap("groundwater", "alternative")}
+                          style={{
+                            ...buttonStyle,
+                            flex: 1,
+                            padding: "6px 8px",
+                            fontSize: "11px",
+                            background: "#f0fdfa",
+                            borderColor: "#99f6e4",
+                            color: "#0f766e",
+                          }}
+                          title="Evaluate and update map with alternative groundwater scenario"
+                        >
+                          ⚡ Compare & View on Map
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleResetComparison}
+                          style={{
+                            ...buttonStyle,
+                            padding: "6px 10px",
+                            fontSize: "11px",
+                            background: "#ffffff",
+                            borderColor: "#cbd5e1",
+                            color: "#64748b",
+                          }}
+                          title="Reset comparison to baseline defaults"
+                        >
+                          🔄 Reset
+                        </button>
+                      </div>
+
+                      {/* Comparison Results Table */}
+                      <div style={{ marginTop: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", overflow: "hidden" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+                          <thead>
+                            <tr style={{ background: "#f1f5f9", textAlign: "left", color: "#475569", borderBottom: "1px solid #e2e8f0" }}>
+                              <th style={{ padding: "6px 8px" }}>GW Indicator</th>
+                              <th style={{ padding: "6px 6px" }}>Base ({compGroundwaterBaselineMult}x)</th>
+                              <th style={{ padding: "6px 6px" }}>Alt ({compGroundwaterAlternativeMult}x)</th>
+                              <th style={{ padding: "6px 8px" }}>Δ (Change)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[
+                              {
+                                label: "Extractable Resource",
+                                base: `${gwResourceHam.toLocaleString()} ham`,
+                                alt: `${gwResourceHam.toLocaleString()} ham`,
+                                delta: "0 ham",
+                                pct: "0.0%",
+                                color: "#64748b",
+                              },
+                              {
+                                label: "Annual Extraction",
+                                base: `${gwBaseExtractionHam.toLocaleString()} ham`,
+                                alt: `${gwAltExtractionHam.toLocaleString()} ham`,
+                                delta: gwExtractionDelta.deltaStr,
+                                pct: gwExtractionDelta.pct,
+                                color: gwExtractionDelta.deltaVal > 0 ? "#dc2626" : "#16a34a",
+                              },
+                              {
+                                label: "Stage of Extraction",
+                                base: `${gwBaseStagePct}%`,
+                                alt: `${gwAltStagePct}%`,
+                                delta: gwStageDelta.deltaStr,
+                                pct: gwStageDelta.pct,
+                                color: gwStageDelta.deltaVal > 0 ? "#dc2626" : "#16a34a",
+                              },
+                              {
+                                label: "Assessment Category",
+                                base: gwBaseCat,
+                                alt: gwAltCat,
+                                delta: gwBaseCat === gwAltCat ? "Stable" : "Shift",
+                                pct: gwAltCat,
+                                color: getGroundwaterRiskColor(gwAltCat),
+                              },
+                              {
+                                label: "Net Annual Balance",
+                                base: `${gwBaseNetBalance > 0 ? "+" : ""}${gwBaseNetBalance.toLocaleString()} ham`,
+                                alt: `${gwAltNetBalance > 0 ? "+" : ""}${gwAltNetBalance.toLocaleString()} ham`,
+                                delta: gwBalanceDelta.deltaStr,
+                                pct: gwBalanceDelta.pct,
+                                color: gwAltNetBalance >= 0 ? "#16a34a" : "#dc2626",
+                              },
+                            ].map((row, idx) => (
+                              <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9", background: idx % 2 === 0 ? "#ffffff" : "#fbfcfd" }}>
+                                <td style={{ padding: "6px 8px", fontWeight: 600, color: "#334155" }}>{row.label}</td>
+                                <td style={{ padding: "6px 6px", color: "#475569" }}>{row.base}</td>
+                                <td style={{ padding: "6px 6px", fontWeight: 700, color: "#0f172a" }}>{row.alt}</td>
+                                <td style={{ padding: "6px 8px", fontWeight: 700, color: row.color }}>
+                                  {row.delta} <span style={{ fontSize: "9.5px", fontWeight: 500 }}>({row.pct})</span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Interpretation Text */}
+                      <div
+                        style={{
+                          marginTop: "10px",
+                          padding: "8px 10px",
+                          background: "#f0fdfa",
+                          borderRadius: "7px",
+                          border: "1px solid #ccfbf1",
+                          fontSize: "10px",
+                          color: "#0f766e",
+                          lineHeight: "1.4",
+                        }}
+                      >
+                        <strong>Model Interpretation:</strong> In {compFirka.name} Firka, simulating a {compGroundwaterAlternativeMult}x draft assumption relative to {compGroundwaterBaselineMult}x baseline shifts annual extraction by {gwExtractionDelta.deltaStr} ({gwExtractionDelta.pct}). The extraction stage moves from {gwBaseStagePct}% ({gwBaseCat}) to {gwAltStagePct}% ({gwAltCat}). Net annual groundwater balance shifts by {gwBalanceDelta.deltaStr}, resulting in {gwAltNetBalance < 0 ? `an annual deficit of ${Math.abs(gwAltNetBalance)} ham` : `a surplus buffer of ${gwAltNetBalance} ham`}.
+                      </div>
+
+                      {/* Map Display Actions */}
+                      <div style={{ display: "flex", gap: "6px", marginTop: "10px" }}>
+                        <button
+                          type="button"
+                          onClick={() => applyScenarioToMap("groundwater", "alternative")}
+                          style={{
+                            ...buttonStyle,
+                            flex: 1,
+                            padding: "5px 6px",
+                            fontSize: "10px",
+                            background: compGroundwaterMapDisplay === "alternative" ? "#f0fdfa" : "#ffffff",
+                            borderColor: compGroundwaterMapDisplay === "alternative" ? "#0d9488" : "#cbd5e1",
+                            color: compGroundwaterMapDisplay === "alternative" ? "#0f766e" : "#475569",
+                          }}
+                        >
+                          🗺️ Display Alt ({compGroundwaterAlternativeMult}x) on Map
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyScenarioToMap("groundwater", "baseline")}
+                          style={{
+                            ...buttonStyle,
+                            flex: 1,
+                            padding: "5px 6px",
+                            fontSize: "10px",
+                            background: compGroundwaterMapDisplay === "baseline" ? "#f0fdfa" : "#ffffff",
+                            borderColor: compGroundwaterMapDisplay === "baseline" ? "#0d9488" : "#cbd5e1",
+                            color: compGroundwaterMapDisplay === "baseline" ? "#0f766e" : "#475569",
+                          }}
+                        >
+                          🗺️ Display Base ({compGroundwaterBaselineMult}x) on Map
+                        </button>
+                      </div>
+
+                      {/* Provenance & Limitations */}
+                      <div style={{ fontSize: "9px", color: "#64748b", marginTop: "8px", fontStyle: "italic", lineHeight: "1.35" }}>
+                        Provenance: CGWB 2024 Dynamic Ground Water Resources Assessment (GEC-2015 methodology). Unit: 1 ham (Hectare-metre) = 10,000 m³. Extraction multiplier is a hypothetical scenario parameter, not a measured change.
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ============================================================== */}
+                  {/* DOMAIN 3: STERI SENSITIVITY SCENARIO COMPARISON                 */}
+                  {/* ============================================================== */}
+                  {comparisonDomain === "steri" && (
+                    <div>
+                      {/* Preset Selector */}
+                      <div>
+                        <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#475569", marginBottom: "4px" }}>
+                          Alternative Policy / Environmental Preset:
+                        </label>
+                        <select
+                          value={compSteriPreset}
+                          onChange={(e) => setCompSteriPreset(e.target.value as any)}
+                          style={{
+                            width: "100%",
+                            padding: "6px 8px",
+                            borderRadius: "7px",
+                            border: "1px solid #cbd5e1",
+                            fontSize: "11.5px",
+                            fontWeight: 600,
+                            background: "#f8fafc",
+                            color: "#0f172a",
+                          }}
+                        >
+                          {(Object.keys(STERI_SCENARIO_PRESETS) as Array<keyof typeof STERI_SCENARIO_PRESETS>).map((key) => (
+                            <option key={key} value={key}>
+                              {STERI_SCENARIO_PRESETS[key].title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Scenario Applied Sensitivity Inputs */}
+                      <div style={{ marginTop: "8px", padding: "8px 10px", background: "#f8fafc", borderRadius: "7px", border: "1px solid #e2e8f0" }}>
+                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", marginBottom: "4px" }}>
+                          Applied Sensitivity Shifts ({steriActivePreset.title}):
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                          {[
+                            { label: "Rainfall", val: steriActivePreset.params.rainfallPctChange },
+                            { label: "Baseflow", val: steriActivePreset.params.riverFlowPctChange },
+                            { label: "Ind. Demand", val: steriActivePreset.params.industrialLoadPctChange },
+                            { label: "GW Draft", val: steriActivePreset.params.groundwaterExtractionPctChange },
+                            { label: "Effluent Load", val: steriActivePreset.params.pollutionLoadPctChange },
+                            { label: "Solid Waste", val: steriActivePreset.params.wasteGenerationPctChange },
+                          ].map((p, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                fontSize: "9.5px",
+                                padding: "2px 5px",
+                                borderRadius: "4px",
+                                background: "#ffffff",
+                                border: "1px solid #cbd5e1",
+                                color: p.val > 0 ? "#dc2626" : p.val < 0 ? "#16a34a" : "#64748b",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {p.label}: {p.val > 0 ? `+${p.val}%` : `${p.val}%`}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Action Bar */}
+                      <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
+                        <button
+                          type="button"
+                          onClick={handleResetComparison}
+                          style={{
+                            ...buttonStyle,
+                            width: "100%",
+                            padding: "6px 10px",
+                            fontSize: "11px",
+                            background: "#ffffff",
+                            borderColor: "#cbd5e1",
+                            color: "#64748b",
+                          }}
+                          title="Reset comparison to baseline defaults"
+                        >
+                          🔄 Reset Comparison Defaults
+                        </button>
+                      </div>
+
+                      {/* Comparison Results Table */}
+                      <div style={{ marginTop: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", overflow: "hidden" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+                          <thead>
+                            <tr style={{ background: "#f1f5f9", textAlign: "left", color: "#475569", borderBottom: "1px solid #e2e8f0" }}>
+                              <th style={{ padding: "6px 8px" }}>STERI Factor</th>
+                              <th style={{ padding: "6px 6px" }}>Base</th>
+                              <th style={{ padding: "6px 6px" }}>Scenario</th>
+                              <th style={{ padding: "6px 8px" }}>Δ (Change)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {steriResult.comparisons.map((comp, idx) => {
+                              const isPositive = comp.delta > 0;
+                              const isZero = comp.delta === 0;
+                              const color = isZero ? "#64748b" : isPositive ? "#dc2626" : "#16a34a";
+                              return (
+                                <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9", background: idx % 2 === 0 ? "#ffffff" : "#fbfcfd" }}>
+                                  <td style={{ padding: "6px 8px", fontWeight: 600, color: "#334155" }}>{comp.name}</td>
+                                  <td style={{ padding: "6px 6px", color: "#475569" }}>
+                                    {comp.baselineScore.toFixed(2)} <span style={{ fontSize: "9px" }}>({comp.riskCategoryBaseline.slice(0, 3)})</span>
+                                  </td>
+                                  <td style={{ padding: "6px 6px", fontWeight: 700, color: "#0f172a" }}>
+                                    {comp.scenarioScore.toFixed(2)} <span style={{ fontSize: "9px" }}>({comp.riskCategoryScenario.slice(0, 3)})</span>
+                                  </td>
+                                  <td style={{ padding: "6px 8px", fontWeight: 700, color }}>
+                                    {comp.delta > 0 ? `+${comp.delta.toFixed(2)}` : comp.delta.toFixed(2)} <span style={{ fontSize: "9.5px", fontWeight: 500 }}>({comp.pctChange > 0 ? `+${comp.pctChange}%` : `${comp.pctChange}%`})</span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Interpretation Text */}
+                      <div
+                        style={{
+                          marginTop: "10px",
+                          padding: "8px 10px",
+                          background: "#faf5ff",
+                          borderRadius: "7px",
+                          border: "1px solid #e9d5ff",
+                          fontSize: "10px",
+                          color: "#7e22ce",
+                          lineHeight: "1.4",
+                        }}
+                      >
+                        <strong>Model Interpretation:</strong> Under {steriActivePreset.title}, composite STERI index shifts from {BASELINE_SCORES.overallSteri.toFixed(2)} to {steriResult.comparisons[4].scenarioScore.toFixed(2)} (Δ = {steriResult.comparisons[4].delta > 0 ? `+${steriResult.comparisons[4].delta.toFixed(2)}` : steriResult.comparisons[4].delta.toFixed(2)}, {steriResult.comparisons[4].pctChange > 0 ? `+${steriResult.comparisons[4].pctChange}%` : `${steriResult.comparisons[4].pctChange}%`}). Risk changes propagate through the STERI multi-criteria weight distribution (20% flood, 25% pollution, 20% groundwater, 20% water quality, 15% complaints).
+                      </div>
+
+                      {/* Methodological Separation Callout */}
+                      <div
+                        style={{
+                          marginTop: "10px",
+                          padding: "7px 9px",
+                          background: "#fffbeb",
+                          borderRadius: "6px",
+                          border: "1px solid #fef3c7",
+                          fontSize: "9.5px",
+                          color: "#92400e",
+                          lineHeight: "1.35",
+                        }}
+                      >
+                        <strong>Methodological Notice:</strong> The STERI framework calculates dimensionless composite risk scores (0.00–1.00) for citywide policy sensitivity testing. It evaluates decision-support risk dimensions, distinct from physical flood depths (m) or volumetric groundwater budgeting (ham).
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Exit Control */}
+                  <div style={{ marginTop: "12px" }}>
+                    <button
+                      type="button"
+                      onClick={toggleScenarioComparisonMode}
+                      style={{
+                        ...buttonStyle,
+                        width: "100%",
+                        background: "#faf5ff",
+                        borderColor: "#e9d5ff",
+                        color: "#7e22ce",
+                        fontSize: "11.5px",
+                        padding: "7px 10px",
+                      }}
+                    >
+                      ✕ Turn Off Scenario Comparison
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* TAB 4: SELECTED ENTITY VIEW */}
+            {selectedEntity && (activePanelTab === "entity" || (!isFloodModeActive && !isGroundwaterModeActive && !isScenarioComparisonActive)) && (
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
                   <span
@@ -4634,6 +5765,41 @@ export default function TerrainMapPrototypePage() {
               </div>
             </div>
           )}
+
+          {/* Scenario Comparison Legend Item */}
+          <div
+            onClick={toggleScenarioComparisonMode}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "7px",
+              cursor: "pointer",
+              opacity: isScenarioComparisonActive ? 1 : 0.6,
+            }}
+            title="Click to toggle Scenario Comparison module"
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: "12px",
+                height: "12px",
+                borderRadius: "3px",
+                background: isScenarioComparisonActive ? "rgba(99, 102, 241, 0.25)" : "rgba(148, 163, 184, 0.2)",
+                border: isScenarioComparisonActive ? "2px solid #6366f1" : "2px solid #94a3b8",
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ flex: 1, fontSize: "11.5px" }}>
+              <strong style={{ color: isScenarioComparisonActive ? "#4338ca" : "#475569" }}>Scenario Comparison</strong>
+              <span style={{ color: "#64748b", marginLeft: "4px" }}>
+                · {isScenarioComparisonActive ? (comparisonDomain === "flood" ? "Flood (6 Sectors)" : comparisonDomain === "groundwater" ? "Groundwater (33 Firkas)" : "STERI Sensitivity") : "Standby"}
+              </span>
+            </div>
+            <span style={{ fontSize: "10px", color: isScenarioComparisonActive ? "#6366f1" : "#94a3b8", fontWeight: 700 }}>
+              {isScenarioComparisonActive ? "ACTIVE" : "OFF"}
+            </span>
+          </div>
 
           {/* Basemap Item */}
           <div
