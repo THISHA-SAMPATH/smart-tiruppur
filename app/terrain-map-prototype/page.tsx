@@ -17,6 +17,19 @@ import {
   DEFAULT_FLOW_VELOCITY_MPS,
   FLOW_VELOCITY_UNCERTAINTY,
 } from "@/lib/attribution/engine";
+import {
+  FLOOD_SCENARIOS,
+  runFloodAnalysisPipeline,
+} from "@/lib/flood/engine";
+import type {
+  FloodScenarioPreset,
+  FloodAnalysisResult,
+  AffectedZoneRisk,
+} from "@/lib/flood/types";
+import {
+  STERI_SECTORS,
+  type SteriSectorDefinition,
+} from "@/lib/steri/dynamic";
 
 interface SelectedEntity {
   category: "industrial" | "station";
@@ -436,6 +449,139 @@ function updateMapPathwaySource(
   });
 }
 
+// ---------------------------------------------------------------------------
+// TERRAIN FLOOD EXPOSURE OVERLAY HELPERS
+// ---------------------------------------------------------------------------
+
+function createGeoJsonCircle(
+  center: [number, number],
+  radiusMeters: number,
+  points: number = 48
+): Array<[number, number]> {
+  const coords: Array<[number, number]> = [];
+  const distanceX = radiusMeters / (111320 * Math.cos((center[1] * Math.PI) / 180));
+  const distanceY = radiusMeters / 110540;
+
+  for (let i = 0; i <= points; i++) {
+    const theta = (i / points) * (2 * Math.PI);
+    const x = center[0] + distanceX * Math.cos(theta);
+    const y = center[1] + distanceY * Math.sin(theta);
+    coords.push([x, y]);
+  }
+  return coords;
+}
+
+// OpenStreetMap building centroid counts within sector circular analysis footprints
+// Derived from public/geo/tiruppur-buildings.geojson as documented in lib/steri/dynamic.ts
+const OSM_BUILDING_COUNTS: Record<string, number> = {
+  angeripalayam: 7,
+  kasipalayam: 6,
+  firka_south: 160,
+  firka_north: 42,
+  arulpuram: 3,
+  mangalam: 0,
+};
+
+function getFloodRiskColor(riskCategory: string): string {
+  switch (riskCategory) {
+    case "CRITICAL":
+      return "#dc2626";
+    case "VERY HIGH":
+      return "#ea580c";
+    case "HIGH":
+      return "#f97316";
+    case "MODERATE":
+      return "#eab308";
+    case "LOW":
+    default:
+      return "#10b981";
+  }
+}
+
+function buildFloodGeoJson(
+  analysis: FloodAnalysisResult,
+  selectedZoneId?: string | null
+): any {
+  const features: any[] = [];
+
+  for (const zone of analysis.affectedZones) {
+    const sector = STERI_SECTORS.find((s) => s.id === zone.zoneId);
+    if (!sector) continue;
+
+    const isSelected = selectedZoneId === zone.zoneId;
+    // Catchment radius derived from sector area (scale 0.55 for distinct core spatial extents)
+    const radiusMeters = Math.sqrt((sector.areaKm2 * 1000000) / Math.PI) * 0.55;
+    const ring = createGeoJsonCircle([sector.lon, sector.lat], radiusMeters);
+    const color = getFloodRiskColor(zone.riskCategory);
+
+    // 1. Sector catchment polygon feature
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: [ring],
+      },
+      properties: {
+        kind: "polygon",
+        id: zone.zoneId,
+        name: zone.zoneName,
+        elevation: zone.elevationMetersASL,
+        slope: zone.slopeDegrees,
+        riverDist: zone.riverProximityMeters,
+        accumulationDepth: zone.accumulationDepthMeters,
+        floodRiskScore: zone.floodRiskScore,
+        riskCategory: zone.riskCategory,
+        color,
+        isSelected: isSelected ? "true" : "false",
+      },
+    });
+
+    // 2. Centroid point feature for marker and label
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [sector.lon, sector.lat],
+      },
+      properties: {
+        kind: "point",
+        id: zone.zoneId,
+        name: zone.zoneName,
+        elevation: zone.elevationMetersASL,
+        accumulationDepth: zone.accumulationDepthMeters,
+        floodRiskScore: zone.floodRiskScore,
+        riskCategory: zone.riskCategory,
+        color,
+        isSelected: isSelected ? "true" : "false",
+      },
+    });
+  }
+
+  return {
+    type: "FeatureCollection",
+    features,
+  };
+}
+
+function updateMapFloodSource(
+  map: MapLibreMap,
+  analysis: FloodAnalysisResult | null,
+  selectedZoneId?: string | null
+) {
+  const source = map.getSource("prototype-flood-zones") as any;
+  if (!source) return;
+
+  if (!analysis) {
+    source.setData({
+      type: "FeatureCollection",
+      features: [],
+    });
+    return;
+  }
+
+  source.setData(buildFloodGeoJson(analysis, selectedZoneId));
+}
+
 export default function TerrainMapPrototypePage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -456,9 +602,38 @@ export default function TerrainMapPrototypePage() {
   const [modelledPathway, setModelledPathway] = useState<ModelledPathway | null>(null);
   const riverDataRef = useRef<any>(null);
 
+  // Flood Exposure mode state
+  const [isFloodModeActive, setIsFloodModeActive] = useState(false);
+  const isFloodModeActiveRef = useRef(isFloodModeActive);
+  const [floodScenarioPreset, setFloodScenarioPreset] = useState<FloodScenarioPreset>("HEAVY_RAIN");
+  const floodScenarioPresetRef = useRef(floodScenarioPreset);
+  const [selectedFloodZoneId, setSelectedFloodZoneId] = useState<string | null>("kasipalayam");
+  const selectedFloodZoneIdRef = useRef(selectedFloodZoneId);
+  const [floodAnalysis, setFloodAnalysis] = useState<FloodAnalysisResult>(() =>
+    runFloodAnalysisPipeline("HEAVY_RAIN")
+  );
+  const floodAnalysisRef = useRef(floodAnalysis);
+  const [activePanelTab, setActivePanelTab] = useState<"entity" | "flood">("entity");
+
   useEffect(() => {
     isTracingActiveRef.current = isTracingActive;
   }, [isTracingActive]);
+
+  useEffect(() => {
+    isFloodModeActiveRef.current = isFloodModeActive;
+  }, [isFloodModeActive]);
+
+  useEffect(() => {
+    floodScenarioPresetRef.current = floodScenarioPreset;
+  }, [floodScenarioPreset]);
+
+  useEffect(() => {
+    selectedFloodZoneIdRef.current = selectedFloodZoneId;
+  }, [selectedFloodZoneId]);
+
+  useEffect(() => {
+    floodAnalysisRef.current = floodAnalysis;
+  }, [floodAnalysis]);
 
   useEffect(() => {
     let active = true;
@@ -1024,6 +1199,149 @@ export default function TerrainMapPrototypePage() {
               );
             }
 
+            // 5. Modelled Flood Exposure & Risk Zones Layers
+            const initialFloodAnalysis = runFloodAnalysisPipeline(floodScenarioPresetRef.current);
+            if (!activeMap.getSource("prototype-flood-zones")) {
+              activeMap.addSource("prototype-flood-zones", {
+                type: "geojson",
+                data: buildFloodGeoJson(
+                  initialFloodAnalysis,
+                  selectedFloodZoneIdRef.current
+                ),
+              });
+            }
+
+            // Insert flood polygon fill and outline UNDER the river line so river & labels remain fully visible
+            const underRiverLayer = activeMap.getLayer("prototype-noyyal-river-glow")
+              ? "prototype-noyyal-river-glow"
+              : firstLabel;
+
+            if (!activeMap.getLayer("prototype-flood-fill")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-flood-fill",
+                  type: "fill",
+                  source: "prototype-flood-zones",
+                  filter: ["==", ["get", "kind"], "polygon"],
+                  layout: {
+                    visibility: isFloodModeActiveRef.current ? "visible" : "none",
+                  },
+                  paint: {
+                    "fill-color": ["get", "color"],
+                    "fill-opacity": [
+                      "case",
+                      ["==", ["get", "isSelected"], "true"],
+                      0.35,
+                      0.20,
+                    ],
+                  },
+                },
+                underRiverLayer
+              );
+            }
+
+            if (!activeMap.getLayer("prototype-flood-stroke")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-flood-stroke",
+                  type: "line",
+                  source: "prototype-flood-zones",
+                  filter: ["==", ["get", "kind"], "polygon"],
+                  layout: {
+                    visibility: isFloodModeActiveRef.current ? "visible" : "none",
+                  },
+                  paint: {
+                    "line-color": ["get", "color"],
+                    "line-width": [
+                      "case",
+                      ["==", ["get", "isSelected"], "true"],
+                      3,
+                      1.5,
+                    ],
+                    "line-opacity": [
+                      "case",
+                      ["==", ["get", "isSelected"], "true"],
+                      0.9,
+                      0.65,
+                    ],
+                  },
+                },
+                underRiverLayer
+              );
+            }
+
+            if (!activeMap.getLayer("prototype-flood-centroid")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-flood-centroid",
+                  type: "circle",
+                  source: "prototype-flood-zones",
+                  filter: ["==", ["get", "kind"], "point"],
+                  layout: {
+                    visibility: isFloodModeActiveRef.current ? "visible" : "none",
+                  },
+                  paint: {
+                    "circle-color": ["get", "color"],
+                    "circle-radius": [
+                      "case",
+                      ["==", ["get", "isSelected"], "true"],
+                      8,
+                      5.5,
+                    ],
+                    "circle-stroke-color": "#ffffff",
+                    "circle-stroke-width": 2,
+                    "circle-opacity": 0.9,
+                  },
+                },
+                firstLabel
+              );
+            }
+
+            if (!activeMap.getLayer("prototype-flood-label")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-flood-label",
+                  type: "symbol",
+                  source: "prototype-flood-zones",
+                  filter: ["==", ["get", "kind"], "point"],
+                  layout: {
+                    "text-field": [
+                      "concat",
+                      ["get", "name"],
+                      "\n",
+                      ["get", "riskCategory"],
+                      " (",
+                      ["to-string", ["round", ["*", ["to-number", ["get", "floodRiskScore"], 0], 100]]],
+                      "%)",
+                    ],
+                    "text-size": 11,
+                    "text-offset": [0, 1.4],
+                    "text-anchor": "top",
+                    visibility: isFloodModeActiveRef.current ? "visible" : "none",
+                  },
+                  paint: {
+                    "text-color": "#0f172a",
+                    "text-halo-color": "#ffffff",
+                    "text-halo-width": 2,
+                  },
+                },
+                firstLabel
+              );
+            }
+
+            // Click handling for flood risk zones
+            activeMap.on("click", "prototype-flood-fill", (e) => {
+              if (!e.features || !e.features[0]) return;
+              const p = e.features[0].properties as any;
+              selectFloodZone(p.id, false);
+            });
+
+            activeMap.on("click", "prototype-flood-centroid", (e) => {
+              if (!e.features || !e.features[0]) return;
+              const p = e.features[0].properties as any;
+              selectFloodZone(p.id, false);
+            });
+
             // Click handling for industrial facilities
             activeMap.on("click", "prototype-industrial-core", (e) => {
               if (!e.features || !e.features[0]) return;
@@ -1105,6 +1423,8 @@ export default function TerrainMapPrototypePage() {
               "prototype-trace-station-highlight",
               "prototype-trace-outfall-marker",
               "prototype-trace-confluence-marker",
+              "prototype-flood-fill",
+              "prototype-flood-centroid",
             ].forEach((layerId) => {
               activeMap.on("mouseenter", layerId, () => {
                 activeMap.getCanvas().style.cursor = "pointer";
@@ -1124,7 +1444,9 @@ export default function TerrainMapPrototypePage() {
                   "prototype-trace-station-highlight",
                   "prototype-trace-outfall-marker",
                   "prototype-trace-confluence-marker",
-                ],
+                  "prototype-flood-fill",
+                  "prototype-flood-centroid",
+                ].filter((id) => activeMap.getLayer(id) !== undefined),
               });
               if (features.length === 0) {
                 setSelectedEntity(null);
@@ -1378,6 +1700,89 @@ export default function TerrainMapPrototypePage() {
     });
   }
 
+  function toggleFloodMode() {
+    const nextActive = !isFloodModeActive;
+    setIsFloodModeActive(nextActive);
+    isFloodModeActiveRef.current = nextActive;
+
+    const map = mapRef.current;
+    if (map) {
+      const visibility = nextActive ? "visible" : "none";
+      for (const layerId of [
+        "prototype-flood-fill",
+        "prototype-flood-stroke",
+        "prototype-flood-centroid",
+        "prototype-flood-label",
+      ]) {
+        if (map.getLayer(layerId)) {
+          map.setLayoutProperty(layerId, "visibility", visibility);
+        }
+      }
+
+      if (nextActive) {
+        updateMapFloodSource(
+          map,
+          floodAnalysisRef.current,
+          selectedFloodZoneIdRef.current
+        );
+        setActivePanelTab("flood");
+        const analysis = floodAnalysisRef.current;
+        setStatus(
+          `Flood Exposure mode active · Scenario: ${floodScenarioPresetRef.current.replace("_", " ")} (${analysis.scenario.rainfallMmDay} mm/day) · ${analysis.highRiskZonesCount} high-risk zone(s)`
+        );
+      } else {
+        if (selectedEntity) {
+          setActivePanelTab("entity");
+        }
+        setStatus("Flood Exposure mode deactivated · Returned to standard investigation map");
+      }
+    }
+  }
+
+  function changeFloodScenario(preset: FloodScenarioPreset) {
+    setFloodScenarioPreset(preset);
+    floodScenarioPresetRef.current = preset;
+    const analysis = runFloodAnalysisPipeline(preset);
+    setFloodAnalysis(analysis);
+    floodAnalysisRef.current = analysis;
+
+    const map = mapRef.current;
+    if (map) {
+      updateMapFloodSource(map, analysis, selectedFloodZoneIdRef.current);
+    }
+    setStatus(
+      `Flood Exposure: ${preset.replace("_", " ")} scenario (${analysis.scenario.rainfallMmDay} mm/day) · ${analysis.highRiskZonesCount} high-risk zone(s)`
+    );
+  }
+
+  function selectFloodZone(zoneId: string, flyToCenter = true) {
+    setSelectedFloodZoneId(zoneId);
+    selectedFloodZoneIdRef.current = zoneId;
+    setActivePanelTab("flood");
+
+    const map = mapRef.current;
+    if (map) {
+      updateMapFloodSource(map, floodAnalysisRef.current, zoneId);
+
+      if (flyToCenter) {
+        const sector = STERI_SECTORS.find((s) => s.id === zoneId);
+        if (sector) {
+          map.easeTo({
+            center: [sector.lon, sector.lat],
+            duration: 600,
+          });
+        }
+      }
+    }
+
+    const zone = floodAnalysisRef.current.affectedZones.find((z) => z.zoneId === zoneId);
+    if (zone) {
+      setStatus(
+        `Selected Flood Zone: ${zone.zoneName} · Risk: ${zone.riskCategory} (${Math.round(zone.floodRiskScore * 100)}%) · Est. Accumulation: ${zone.accumulationDepthMeters}m`
+      );
+    }
+  }
+
   return (
     <div
       style={{
@@ -1527,6 +1932,34 @@ export default function TerrainMapPrototypePage() {
             </button>
           )}
 
+          <button
+            onClick={toggleFloodMode}
+            style={{
+              ...buttonStyle,
+              background: isFloodModeActive ? "#eff6ff" : "#ffffff",
+              borderColor: isFloodModeActive ? "#2563eb" : "#cbd5e1",
+              color: isFloodModeActive ? "#1d4ed8" : "#173548",
+            }}
+            title="Toggle terrain-based modelled Flood Exposure & Risk overlay across Tiruppur sectors"
+          >
+            {isFloodModeActive ? "🌊 Flood Exposure: Active" : "🌊 Flood Exposure"}
+          </button>
+
+          {isFloodModeActive && (
+            <button
+              onClick={toggleFloodMode}
+              style={{
+                ...buttonStyle,
+                background: "#ffffff",
+                borderColor: "#bfdbfe",
+                color: "#1d4ed8",
+              }}
+              title="Deactivate flood exposure mode and return to standard investigation map"
+            >
+              ✕ Exit Flood
+            </button>
+          )}
+
           <button onClick={resetView} style={buttonStyle} title="Reset camera to central Tiruppur">
             📍 Fit Tiruppur
           </button>
@@ -1583,318 +2016,701 @@ export default function TerrainMapPrototypePage() {
           </div>
         </div>
 
-        {/* Selected Entity Information Card */}
-        {selectedEntity && (
+        {/* Right-Hand Panel: Flood Exposure Analysis or Selected Entity Details */}
+        {(selectedEntity || isFloodModeActive) && (
           <div
             role="region"
-            aria-label="Selected Feature Details"
+            aria-label={
+              activePanelTab === "flood" || (!selectedEntity && isFloodModeActive)
+                ? "Flood Exposure Analysis"
+                : "Selected Feature Details"
+            }
             style={{
               position: "absolute",
               top: "16px",
               right: "60px",
-              width: "350px",
+              width: "360px",
               maxWidth: "calc(100% - 80px)",
               maxHeight: "calc(100vh - 250px)",
               overflowY: "auto",
               background: "#ffffff",
               borderRadius: "12px",
               boxShadow: "0 10px 30px rgba(15,23,42,0.2)",
-              border: `1.5px solid ${selectedEntity.category === "industrial" ? "#f97316" : "#06b6d4"}`,
+              border: `1.5px solid ${
+                (activePanelTab === "flood" && isFloodModeActive) || (!selectedEntity && isFloodModeActive)
+                  ? "#2563eb"
+                  : selectedEntity?.category === "industrial"
+                  ? "#f97316"
+                  : "#06b6d4"
+              }`,
               padding: "16px",
               zIndex: 20,
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-              <span
+            {/* If BOTH an entity is selected AND flood mode is active, show Tab switcher */}
+            {selectedEntity && isFloodModeActive && (
+              <div
                 style={{
-                  display: "inline-block",
-                  padding: "3px 8px",
-                  borderRadius: "5px",
-                  fontSize: "10px",
-                  fontWeight: 800,
-                  letterSpacing: "0.5px",
-                  background: selectedEntity.category === "industrial" ? "#ffedd5" : "#cffafe",
-                  color: selectedEntity.category === "industrial" ? "#9a3412" : "#155e75",
+                  display: "flex",
+                  gap: "6px",
+                  marginBottom: "12px",
+                  borderBottom: "1px solid #e2e8f0",
+                  paddingBottom: "8px",
                 }}
               >
-                {selectedEntity.category === "industrial"
-                  ? "SIMULATED INDUSTRIAL FACILITY"
-                  : "SIMULATED RIVER TELEMETRY"}
-              </span>
-
-              <button
-                type="button"
-                onClick={() => setSelectedEntity(null)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: "#94a3b8",
-                  cursor: "pointer",
-                  padding: "0 4px",
-                }}
-                aria-label="Close details"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ marginTop: "10px", fontSize: "15px", fontWeight: 800, color: "#0f172a" }}>
-              {selectedEntity.name}
-            </div>
-
-            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>
-              {selectedEntity.category === "industrial"
-                ? selectedEntity.type
-                : `${selectedEntity.designation} (${selectedEntity.streamId})`}
-            </div>
-
-            <div style={{ fontSize: "11.5px", color: "#334155", marginTop: "8px", fontFamily: "monospace" }}>
-              📍 {selectedEntity.lat.toFixed(5)}°N, {selectedEntity.lon.toFixed(5)}°E
-            </div>
-
-            {/* Industrial facility: Trace pathway button */}
-            {selectedEntity.category === "industrial" && (
-              <div style={{ marginTop: "10px" }}>
-                {isTracingActive && tracedFacilityId === selectedEntity.id ? (
-                  <button
-                    onClick={clearTracing}
-                    style={{
-                      ...buttonStyle,
-                      width: "100%",
-                      background: "#fef2f2",
-                      borderColor: "#fca5a5",
-                      color: "#b91c1c",
-                      fontSize: "12px",
-                      padding: "8px 10px",
-                    }}
-                  >
-                    ✕ Clear Modelled Pathway Trace
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => traceFacility(selectedEntity.id)}
-                    style={{
-                      ...buttonStyle,
-                      width: "100%",
-                      background: "#fff7ed",
-                      borderColor: "#fdba74",
-                      color: "#c2410c",
-                      fontSize: "12px",
-                      padding: "8px 10px",
-                    }}
-                  >
-                    ⚡ Trace Modelled Pathway toward River
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setActivePanelTab("flood")}
+                  style={{
+                    ...buttonStyle,
+                    flex: 1,
+                    padding: "6px 8px",
+                    fontSize: "11px",
+                    background: activePanelTab === "flood" ? "#eff6ff" : "#ffffff",
+                    borderColor: activePanelTab === "flood" ? "#2563eb" : "#cbd5e1",
+                    color: activePanelTab === "flood" ? "#1d4ed8" : "#64748b",
+                    textAlign: "center",
+                  }}
+                >
+                  🌊 Flood Exposure
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePanelTab("entity")}
+                  style={{
+                    ...buttonStyle,
+                    flex: 1,
+                    padding: "6px 8px",
+                    fontSize: "11px",
+                    background: activePanelTab === "entity" ? "#fff7ed" : "#ffffff",
+                    borderColor: activePanelTab === "entity" ? "#f97316" : "#cbd5e1",
+                    color: activePanelTab === "entity" ? "#c2410c" : "#64748b",
+                    textAlign: "center",
+                  }}
+                >
+                  {selectedEntity.category === "industrial" ? "🏭 Facility" : "📡 Station"}
+                </button>
               </div>
             )}
 
-            {/* Active Modelled Pathway Section */}
-            {isTracingActive && tracedFacilityId === selectedEntity.id && modelledPathway && (
-              <div
-                style={{
-                  marginTop: "12px",
-                  padding: "11px 12px",
-                  borderRadius: "8px",
-                  background: modelledPathway.hasValidPath ? "#fef7ee" : "#fff1f2",
-                  border: `1.5px solid ${modelledPathway.hasValidPath ? "#f97316" : "#f43f5e"}`,
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
-                  <div
+            {/* TAB 1: FLOOD EXPOSURE ANALYSIS */}
+            {(activePanelTab === "flood" || (!selectedEntity && isFloodModeActive)) && (
+              <div>
+                {/* Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                  <span
                     style={{
+                      display: "inline-block",
+                      padding: "3px 8px",
+                      borderRadius: "5px",
                       fontSize: "10px",
                       fontWeight: 800,
                       letterSpacing: "0.5px",
-                      color:
-                        modelledPathway.pathwayStatus === "available"
-                          ? "#c2410c"
-                          : modelledPathway.pathwayStatus === "unavailable"
-                          ? "#e11d48"
-                          : "#475569",
-                      textTransform: "uppercase",
+                      background: "#dbeafe",
+                      color: "#1e40af",
                     }}
                   >
-                    PATHWAY STATUS: {modelledPathway.pathwayStatus.toUpperCase()}
-                  </div>
-
-                  <span
-                    style={{
-                      fontSize: "9.5px",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                      fontWeight: 700,
-                      background:
-                        modelledPathway.pathwayStatus === "available"
-                          ? "#ffedd5"
-                          : modelledPathway.pathwayStatus === "unavailable"
-                          ? "#ffe4e6"
-                          : "#e2e8f0",
-                      color:
-                        modelledPathway.pathwayStatus === "available"
-                          ? "#9a3412"
-                          : modelledPathway.pathwayStatus === "unavailable"
-                          ? "#9f1239"
-                          : "#334155",
-                    }}
-                  >
-                    {modelledPathway.pathwayStatus === "available"
-                      ? "Modelled Channel Snapped"
-                      : modelledPathway.pathwayStatus === "unavailable"
-                      ? "Exceeds Overland Buffer"
-                      : "No Registry Link"}
+                    MODELLED FLOOD RISK INDICATOR
                   </span>
+
+                  <button
+                    type="button"
+                    onClick={toggleFloodMode}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      fontSize: "16px",
+                      fontWeight: 700,
+                      color: "#94a3b8",
+                      cursor: "pointer",
+                      padding: "0 4px",
+                    }}
+                    title="Exit Flood Exposure mode"
+                    aria-label="Exit Flood Mode"
+                  >
+                    ✕
+                  </button>
                 </div>
 
-                {modelledPathway.hasValidPath ? (
-                  <div style={{ marginTop: "8px", fontSize: "11.5px", lineHeight: "1.55", color: "#1e293b" }}>
-                    <div>
-                      <strong>Modelled Outfall:</strong> <code>{modelledPathway.outfallId}</code>
-                    </div>
-                    <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#64748b" }}>
-                      📍 {modelledPathway.outfallCoords[1].toFixed(5)}°N, {modelledPathway.outfallCoords[0].toFixed(5)}°E
-                    </div>
-                    <div style={{ marginTop: "4px" }}>
-                      <strong>Synthetic Discharge:</strong> {modelledPathway.syntheticFlowRate} L/s ({modelledPathway.syntheticPollutant}, {modelledPathway.syntheticConcentration} mg/L index)
-                    </div>
-                    <div style={{ marginTop: "4px" }}>
-                      <strong>Linked River Segment:</strong> {modelledPathway.waterwayName}
-                    </div>
-                    <div>
-                      <strong>Overland Snapping Distance:</strong>{" "}
-                      <span style={{ color: "#c2410c", fontWeight: 700 }}>
-                        {modelledPathway.distanceToWaterwayMeters} meters
-                      </span>
-                    </div>
+                <div style={{ marginTop: "8px", fontSize: "15px", fontWeight: 800, color: "#0f172a" }}>
+                  Terrain Flood Exposure Analysis
+                </div>
+                <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
+                  DEM Topography · Noyyal River Drainage · Rainfall Accumulation
+                </div>
 
-                    {/* Linked Downstream Stations */}
-                    <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px dashed #fdba74" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#9a3412", textTransform: "uppercase" }}>
-                          Linked Downstream Monitoring ({modelledPathway.linkedStations.length})
-                        </span>
-                        <span style={{ fontSize: "10px", color: "#0e7490", fontWeight: 600 }}>Highlighted on map</span>
-                      </div>
-                      {modelledPathway.linkedStations.length > 0 ? (
-                        <div style={{ marginTop: "4px" }}>
-                          {modelledPathway.linkedStations.map((station) => (
-                            <div
-                              key={station.sensor_id}
-                              style={{
-                                marginTop: "4px",
-                                padding: "6px 8px",
-                                background: "#ffffff",
-                                borderRadius: "5px",
-                                border: "1px solid #cffafe",
-                                boxShadow: "0 1px 3px rgba(6,182,212,0.1)",
-                                fontSize: "11px",
-                              }}
-                            >
-                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                <span style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: "#06b6d4", border: "1.5px solid #22d3ee" }} />
-                                <strong style={{ color: "#0e7490" }}>{station.name}</strong>
-                              </div>
-                              <div style={{ color: "#64748b", fontSize: "10px", marginTop: "2px" }}>
-                                {station.designation} · ~{(station.distanceMeters / 1000).toFixed(1)} km downstream · Modelled travel: ~{station.travelHours} hrs
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: "11px", color: "#64748b", marginTop: "3px" }}>
-                          No downstream telemetry stations in the current model scope.
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Unlinked upstream stations note */}
-                    {modelledPathway.unlinkedStations.length > 0 && (
-                      <div style={{ marginTop: "6px", fontSize: "10.5px", color: "#64748b" }}>
-                        <em>Upstream stations ({modelledPathway.unlinkedStations.map((s) => s.name).join(", ")}) are unlinked as flow is directed downstream.</em>
-                      </div>
-                    )}
+                {/* Scenario Selector */}
+                <div style={{ marginTop: "12px" }}>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase", marginBottom: "5px" }}>
+                    Rainfall & Hydrologic Scenario
                   </div>
-                ) : (
-                  <div style={{ marginTop: "8px", fontSize: "11.5px", lineHeight: "1.5", color: "#881337" }}>
-                    <p style={{ margin: "0 0 6px 0" }}>
-                      {modelledPathway.invalidationReason}
-                    </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px" }}>
+                    {(["BASELINE", "MODERATE_RAIN", "HEAVY_RAIN", "EXTREME_RAIN"] as FloodScenarioPreset[]).map((preset) => {
+                      const isSel = floodScenarioPreset === preset;
+                      const label =
+                        preset === "BASELINE"
+                          ? "Dry (0 mm)"
+                          : preset === "MODERATE_RAIN"
+                          ? "Moderate (50 mm)"
+                          : preset === "HEAVY_RAIN"
+                          ? "Heavy (150 mm)"
+                          : "Extreme (250 mm)";
+                      return (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => changeFloodScenario(preset)}
+                          style={{
+                            ...buttonStyle,
+                            padding: "6px 7px",
+                            fontSize: "10.5px",
+                            textAlign: "center",
+                            background: isSel ? "#eff6ff" : "#ffffff",
+                            borderColor: isSel ? "#2563eb" : "#cbd5e1",
+                            color: isSel ? "#1d4ed8" : "#334155",
+                            fontWeight: isSel ? 800 : 600,
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: "10.5px", color: "#64748b", marginTop: "5px", fontStyle: "italic", lineHeight: "1.35" }}>
+                    {floodAnalysis.scenario.description}
+                  </div>
+                </div>
+
+                {/* Citywide Summary Tiles */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: "6px",
+                    marginTop: "12px",
+                    padding: "8px",
+                    background: "#f8fafc",
+                    borderRadius: "8px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase" }}>Max Accum.</div>
+                    <div style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
+                      {floodAnalysis.citywideMaxAccumulationMeters} m
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase" }}>High Risk</div>
+                    <div style={{ fontSize: "13px", fontWeight: 800, color: "#ea580c" }}>
+                      {floodAnalysis.highRiskZonesCount} / {floodAnalysis.affectedZones.length}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase" }}>River Flow</div>
+                    <div style={{ fontSize: "13px", fontWeight: 800, color: "#0284c7" }}>
+                      {floodAnalysis.scenario.riverFlowM3s} m³/s
+                    </div>
+                  </div>
+                </div>
+
+                {/* Catchment Sectors Selector */}
+                <div style={{ marginTop: "12px" }}>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase", marginBottom: "5px" }}>
+                    Select Catchment Sector ({floodAnalysis.affectedZones.length})
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                    {floodAnalysis.affectedZones.map((zone) => {
+                      const isSel = zone.zoneId === selectedFloodZoneId;
+                      const riskColor = getFloodRiskColor(zone.riskCategory);
+                      return (
+                        <button
+                          key={zone.zoneId}
+                          type="button"
+                          onClick={() => selectFloodZone(zone.zoneId, true)}
+                          style={{
+                            ...buttonStyle,
+                            padding: "4px 7px",
+                            fontSize: "10px",
+                            background: isSel ? "#f1f5f9" : "#ffffff",
+                            borderColor: isSel ? riskColor : "#e2e8f0",
+                            borderWidth: isSel ? "1.5px" : "1px",
+                            color: "#1e293b",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-block",
+                              width: "7px",
+                              height: "7px",
+                              borderRadius: "50%",
+                              background: riskColor,
+                            }}
+                          />
+                          {zone.zoneName.replace(" Sector", "").replace(" Plain", "").replace(" Foothills", "").replace(" Trough", "")}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Selected Sector Details */}
+                {(() => {
+                  const currentZone =
+                    floodAnalysis.affectedZones.find((z) => z.zoneId === selectedFloodZoneId) ||
+                    floodAnalysis.affectedZones[0];
+                  if (!currentZone) return null;
+                  const riskColor = getFloodRiskColor(currentZone.riskCategory);
+                  const osmCount = OSM_BUILDING_COUNTS[currentZone.zoneId] ?? 0;
+
+                  return (
                     <div
                       style={{
-                        padding: "6px 8px",
+                        marginTop: "12px",
+                        padding: "11px",
+                        borderRadius: "8px",
                         background: "#ffffff",
-                        borderRadius: "5px",
-                        border: "1px solid #fecdd3",
-                        fontSize: "10.5px",
-                        color: "#9f1239",
+                        border: `1.5px solid ${riskColor}`,
                       }}
                     >
-                      <strong>Scientific Integrity Note:</strong> The prototype will not draw a fabricated route across town when the hydrology model does not support an overland channel connection.
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "12.5px", fontWeight: 800, color: "#0f172a" }}>
+                          {currentZone.zoneName}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: 800,
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            background: `${riskColor}18`,
+                            color: riskColor,
+                            border: `1px solid ${riskColor}40`,
+                          }}
+                        >
+                          {currentZone.riskCategory} ({Math.round(currentZone.floodRiskScore * 100)}%)
+                        </span>
+                      </div>
+
+                      {/* Topographic parameters */}
+                      <div style={{ marginTop: "8px", fontSize: "11.5px", lineHeight: "1.5", color: "#334155" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <span>Elevation (30m DEM):</span>
+                          <strong>{currentZone.elevationMetersASL} m ASL</strong>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <span>Terrain Slope:</span>
+                          <strong>{currentZone.slopeDegrees}°</strong>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <span>Distance to River:</span>
+                          <strong>{currentZone.riverProximityMeters} m</strong>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px", paddingTop: "3px", borderTop: "1px dashed #e2e8f0" }}>
+                          <span>Modelled Accumulation:</span>
+                          <strong style={{ color: riskColor, fontSize: "12px" }}>
+                            {currentZone.accumulationDepthMeters} m
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* Supporting Datasets: Buildings & Infrastructure */}
+                      <div style={{ marginTop: "9px", paddingTop: "8px", borderTop: "1px solid #f1f5f9" }}>
+                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>
+                          Supporting Spatial Datasets
+                        </div>
+
+                        {/* OSM Building count */}
+                        <div style={{ marginTop: "4px", fontSize: "11px", color: "#1e293b" }}>
+                          <strong>OSM Building Footprints:</strong>{" "}
+                          <span style={{ color: "#0369a1", fontWeight: 700 }}>
+                            {osmCount} buildings mapped
+                          </span>
+                          <div style={{ fontSize: "9.5px", color: "#64748b", marginTop: "1px" }}>
+                            Vector building footprint centroid count within sector catchment radius. (Indicator only · Not structural damage or population exposure).
+                          </div>
+                        </div>
+
+                        {/* Affected Infrastructure Tags */}
+                        {currentZone.estimatedAffectedInfrastructure.length > 0 && (
+                          <div style={{ marginTop: "6px" }}>
+                            <div style={{ fontSize: "10px", color: "#475569", fontWeight: 600 }}>
+                              Infrastructure in Proximity:
+                            </div>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "3px", marginTop: "3px" }}>
+                              {currentZone.estimatedAffectedInfrastructure.map((item, idx) => (
+                                <span
+                                  key={idx}
+                                  style={{
+                                    fontSize: "9.5px",
+                                    padding: "2px 5px",
+                                    borderRadius: "3px",
+                                    background: "#f1f5f9",
+                                    color: "#334155",
+                                    border: "1px solid #e2e8f0",
+                                  }}
+                                >
+                                  {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Inspection segments & citizen complaints */}
+                        <div style={{ marginTop: "6px", display: "flex", justifyContent: "space-between", fontSize: "10.5px", color: "#475569" }}>
+                          <span>Municipal Inspections:</span>
+                          <strong>{currentZone.inspectionSegmentsRequired.join(", ")}</strong>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10.5px", color: "#475569" }}>
+                          <span>Citizen Drainage Complaints:</span>
+                          <strong>{currentZone.nearbyCitizenComplaintsCount} registered</strong>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
+
+                {/* Scientific Integrity Disclaimer */}
+                <div
+                  style={{
+                    marginTop: "12px",
+                    padding: "9px 11px",
+                    borderRadius: "6px",
+                    background: "#fffbeb",
+                    border: "1px solid #fef3c7",
+                    fontSize: "10.5px",
+                    color: "#92400e",
+                    lineHeight: "1.4",
+                  }}
+                >
+                  <strong style={{ display: "block", marginBottom: "3px" }}>
+                    ⚠️ Scientific Integrity & Model Limitations:
+                  </strong>
+                  This overlay displays a <strong>modelled flood-risk and terrain accumulation indicator</strong>, not a certified hydraulic forecast.
+                  It uses multi-criteria weighting based on 30m DEM elevation, slope, and Noyyal river channel proximity under steady-state rainfall.
+                  It does not solve dynamic 2D shallow water (Saint-Venant) equations and does not provide calibrated building damage or evacuation boundaries.
+                </div>
+
+                {/* Action button */}
+                <div style={{ marginTop: "12px" }}>
+                  <button
+                    onClick={toggleFloodMode}
+                    style={{
+                      ...buttonStyle,
+                      width: "100%",
+                      background: "#f8fafc",
+                      borderColor: "#cbd5e1",
+                      color: "#475569",
+                      fontSize: "11.5px",
+                      padding: "7px 10px",
+                    }}
+                  >
+                    ✕ Turn Off Flood Exposure
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Simulated demonstration metrics */}
-            <div
-              style={{
-                marginTop: "12px",
-                padding: "10px 12px",
-                background: "#f8fafc",
-                borderRadius: "8px",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>
-                Simulation Parameters (Demo)
-              </div>
+            {/* TAB 2: SELECTED ENTITY VIEW */}
+            {activePanelTab === "entity" && selectedEntity && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      padding: "3px 8px",
+                      borderRadius: "5px",
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      letterSpacing: "0.5px",
+                      background: selectedEntity.category === "industrial" ? "#ffedd5" : "#cffafe",
+                      color: selectedEntity.category === "industrial" ? "#9a3412" : "#155e75",
+                    }}
+                  >
+                    {selectedEntity.category === "industrial"
+                      ? "SIMULATED INDUSTRIAL FACILITY"
+                      : "SIMULATED RIVER TELEMETRY"}
+                  </span>
 
-              {selectedEntity.category === "industrial" ? (
-                <div style={{ marginTop: "6px", fontSize: "12px", lineHeight: "1.5", color: "#1e293b" }}>
-                  <div>
-                    Status: <strong style={{ color: selectedEntity.status === "COMPLIANT" ? "#16a34a" : selectedEntity.status === "WARNING" ? "#d97706" : "#dc2626" }}>{selectedEntity.status}</strong>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEntity(null)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      fontSize: "16px",
+                      fontWeight: 700,
+                      color: "#94a3b8",
+                      cursor: "pointer",
+                      padding: "0 4px",
+                    }}
+                    aria-label="Close details"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div style={{ marginTop: "10px", fontSize: "15px", fontWeight: 800, color: "#0f172a" }}>
+                  {selectedEntity.name}
+                </div>
+
+                <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>
+                  {selectedEntity.category === "industrial"
+                    ? selectedEntity.type
+                    : `${selectedEntity.designation} (${selectedEntity.streamId})`}
+                </div>
+
+                <div style={{ fontSize: "11.5px", color: "#334155", marginTop: "8px", fontFamily: "monospace" }}>
+                  📍 {selectedEntity.lat.toFixed(5)}°N, {selectedEntity.lon.toFixed(5)}°E
+                </div>
+
+                {/* Industrial facility: Trace pathway button */}
+                {selectedEntity.category === "industrial" && (
+                  <div style={{ marginTop: "10px" }}>
+                    {isTracingActive && tracedFacilityId === selectedEntity.id ? (
+                      <button
+                        onClick={clearTracing}
+                        style={{
+                          ...buttonStyle,
+                          width: "100%",
+                          background: "#fef2f2",
+                          borderColor: "#fca5a5",
+                          color: "#b91c1c",
+                          fontSize: "12px",
+                          padding: "8px 10px",
+                        }}
+                      >
+                        ✕ Clear Modelled Pathway Trace
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => traceFacility(selectedEntity.id)}
+                        style={{
+                          ...buttonStyle,
+                          width: "100%",
+                          background: "#fff7ed",
+                          borderColor: "#fdba74",
+                          color: "#c2410c",
+                          fontSize: "12px",
+                          padding: "8px 10px",
+                        }}
+                      >
+                        ⚡ Trace Modelled Pathway toward River
+                      </button>
+                    )}
                   </div>
-                  <div>Water Reuse Rate: <strong>{selectedEntity.reuse}%</strong></div>
-                  <div>Modelled Flow: <strong>{selectedEntity.flow} L/s</strong></div>
-                </div>
-              ) : (
-                <div style={{ marginTop: "6px", fontSize: "12px", lineHeight: "1.5", color: "#1e293b" }}>
-                  <div>Simulated pH: <strong>{selectedEntity.ph}</strong></div>
-                  <div>Simulated EC: <strong>{selectedEntity.ec} µS/cm</strong></div>
-                  <div>Turbidity: <strong>{selectedEntity.turbidity} NTU</strong></div>
-                  <div>Modelled River Flow: <strong>{selectedEntity.flow} L/s</strong></div>
-                </div>
-              )}
-            </div>
+                )}
 
-            {/* Explicit provenance notice */}
-            <div
-              style={{
-                marginTop: "10px",
-                padding: "8px 10px",
-                borderRadius: "6px",
-                background: "#fffbeb",
-                border: "1px solid #fef3c7",
-                fontSize: "10.5px",
-                color: "#92400e",
-                lineHeight: "1.4",
-              }}
-            >
-              <strong>Data Provenance:</strong> {modelledPathway && tracedFacilityId === selectedEntity.id ? modelledPathway.provenance : selectedEntity.source}. Simulation data generated for workflow demonstration. Not field-measured observations.
-              {modelledPathway && tracedFacilityId === selectedEntity.id && (
-                <div style={{ marginTop: "4px", fontSize: "10px", color: "#78350f" }}>
-                  {modelledPathway.caveat}
+                {/* Active Modelled Pathway Section */}
+                {isTracingActive && tracedFacilityId === selectedEntity.id && modelledPathway && (
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      padding: "11px 12px",
+                      borderRadius: "8px",
+                      background: modelledPathway.hasValidPath ? "#fef7ee" : "#fff1f2",
+                      border: `1.5px solid ${modelledPathway.hasValidPath ? "#f97316" : "#f43f5e"}`,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          fontWeight: 800,
+                          letterSpacing: "0.5px",
+                          color:
+                            modelledPathway.pathwayStatus === "available"
+                              ? "#c2410c"
+                              : modelledPathway.pathwayStatus === "unavailable"
+                              ? "#e11d48"
+                              : "#475569",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        PATHWAY STATUS: {modelledPathway.pathwayStatus.toUpperCase()}
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: "9.5px",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          fontWeight: 700,
+                          background:
+                            modelledPathway.pathwayStatus === "available"
+                              ? "#ffedd5"
+                              : modelledPathway.pathwayStatus === "unavailable"
+                              ? "#ffe4e6"
+                              : "#e2e8f0",
+                          color:
+                            modelledPathway.pathwayStatus === "available"
+                              ? "#9a3412"
+                              : modelledPathway.pathwayStatus === "unavailable"
+                              ? "#9f1239"
+                              : "#334155",
+                        }}
+                      >
+                        {modelledPathway.pathwayStatus === "available"
+                          ? "Modelled Channel Snapped"
+                          : modelledPathway.pathwayStatus === "unavailable"
+                          ? "Exceeds Overland Buffer"
+                          : "No Registry Link"}
+                      </span>
+                    </div>
+
+                    {modelledPathway.hasValidPath ? (
+                      <div style={{ marginTop: "8px", fontSize: "11.5px", lineHeight: "1.55", color: "#1e293b" }}>
+                        <div>
+                          <strong>Modelled Outfall:</strong> <code>{modelledPathway.outfallId}</code>
+                        </div>
+                        <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#64748b" }}>
+                          📍 {modelledPathway.outfallCoords[1].toFixed(5)}°N, {modelledPathway.outfallCoords[0].toFixed(5)}°E
+                        </div>
+                        <div style={{ marginTop: "4px" }}>
+                          <strong>Synthetic Discharge:</strong> {modelledPathway.syntheticFlowRate} L/s ({modelledPathway.syntheticPollutant}, {modelledPathway.syntheticConcentration} mg/L index)
+                        </div>
+                        <div style={{ marginTop: "4px" }}>
+                          <strong>Linked River Segment:</strong> {modelledPathway.waterwayName}
+                        </div>
+                        <div>
+                          <strong>Overland Snapping Distance:</strong>{" "}
+                          <span style={{ color: "#c2410c", fontWeight: 700 }}>
+                            {modelledPathway.distanceToWaterwayMeters} meters
+                          </span>
+                        </div>
+
+                        {/* Linked Downstream Stations */}
+                        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px dashed #fdba74" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#9a3412", textTransform: "uppercase" }}>
+                              Linked Downstream Monitoring ({modelledPathway.linkedStations.length})
+                            </span>
+                            <span style={{ fontSize: "10px", color: "#0e7490", fontWeight: 600 }}>Highlighted on map</span>
+                          </div>
+                          {modelledPathway.linkedStations.length > 0 ? (
+                            <div style={{ marginTop: "4px" }}>
+                              {modelledPathway.linkedStations.map((station) => (
+                                <div
+                                  key={station.sensor_id}
+                                  style={{
+                                    marginTop: "4px",
+                                    padding: "6px 8px",
+                                    background: "#ffffff",
+                                    borderRadius: "5px",
+                                    border: "1px solid #cffafe",
+                                    boxShadow: "0 1px 3px rgba(6,182,212,0.1)",
+                                    fontSize: "11px",
+                                  }}
+                                >
+                                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <span style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: "#06b6d4", border: "1.5px solid #22d3ee" }} />
+                                    <strong style={{ color: "#0e7490" }}>{station.name}</strong>
+                                  </div>
+                                  <div style={{ color: "#64748b", fontSize: "10px", marginTop: "2px" }}>
+                                    {station.designation} · ~{(station.distanceMeters / 1000).toFixed(1)} km downstream · Modelled travel: ~{station.travelHours} hrs
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: "11px", color: "#64748b", marginTop: "3px" }}>
+                              No downstream telemetry stations in the current model scope.
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Unlinked upstream stations note */}
+                        {modelledPathway.unlinkedStations.length > 0 && (
+                          <div style={{ marginTop: "6px", fontSize: "10.5px", color: "#64748b" }}>
+                            <em>Upstream stations ({modelledPathway.unlinkedStations.map((s) => s.name).join(", ")}) are unlinked as flow is directed downstream.</em>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: "8px", fontSize: "11.5px", lineHeight: "1.5", color: "#881337" }}>
+                        <p style={{ margin: "0 0 6px 0" }}>
+                          {modelledPathway.invalidationReason}
+                        </p>
+                        <div
+                          style={{
+                            padding: "6px 8px",
+                            background: "#ffffff",
+                            borderRadius: "5px",
+                            border: "1px solid #fecdd3",
+                            fontSize: "10.5px",
+                            color: "#9f1239",
+                          }}
+                        >
+                          <strong>Scientific Integrity Note:</strong> The prototype will not draw a fabricated route across town when the hydrology model does not support an overland channel connection.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Simulated demonstration metrics */}
+                <div
+                  style={{
+                    marginTop: "12px",
+                    padding: "10px 12px",
+                    background: "#f8fafc",
+                    borderRadius: "8px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>
+                    Simulation Parameters (Demo)
+                  </div>
+
+                  {selectedEntity.category === "industrial" ? (
+                    <div style={{ marginTop: "6px", fontSize: "12px", lineHeight: "1.5", color: "#1e293b" }}>
+                      <div>
+                        Status: <strong style={{ color: selectedEntity.status === "COMPLIANT" ? "#16a34a" : selectedEntity.status === "WARNING" ? "#d97706" : "#dc2626" }}>{selectedEntity.status}</strong>
+                      </div>
+                      <div>Water Reuse Rate: <strong>{selectedEntity.reuse}%</strong></div>
+                      <div>Modelled Flow: <strong>{selectedEntity.flow} L/s</strong></div>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: "6px", fontSize: "12px", lineHeight: "1.5", color: "#1e293b" }}>
+                      <div>Simulated pH: <strong>{selectedEntity.ph}</strong></div>
+                      <div>Simulated EC: <strong>{selectedEntity.ec} µS/cm</strong></div>
+                      <div>Turbidity: <strong>{selectedEntity.turbidity} NTU</strong></div>
+                      <div>Modelled River Flow: <strong>{selectedEntity.flow} L/s</strong></div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Explicit provenance notice */}
+                <div
+                  style={{
+                    marginTop: "10px",
+                    padding: "8px 10px",
+                    borderRadius: "6px",
+                    background: "#fffbeb",
+                    border: "1px solid #fef3c7",
+                    fontSize: "10.5px",
+                    color: "#92400e",
+                    lineHeight: "1.4",
+                  }}
+                >
+                  <strong>Data Provenance:</strong> {modelledPathway && tracedFacilityId === selectedEntity.id ? modelledPathway.provenance : selectedEntity.source}. Simulation data generated for workflow demonstration. Not field-measured observations.
+                  {modelledPathway && tracedFacilityId === selectedEntity.id && (
+                    <div style={{ marginTop: "4px", fontSize: "10px", color: "#78350f" }}>
+                      {modelledPathway.caveat}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Floating guidance card when tracing is active with no facility selected */}
-        {isTracingActive && !selectedEntity && (
+        {isTracingActive && !selectedEntity && !isFloodModeActive && (
           <div
             role="region"
             aria-label="Active Tracing Guide"
@@ -2218,6 +3034,70 @@ export default function TerrainMapPrototypePage() {
               {is3D ? "EXTRUDED" : "FLAT"}
             </span>
           </div>
+
+          {/* Modelled Flood Exposure Layer & Risk Scale */}
+          <div
+            onClick={toggleFloodMode}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: isFloodModeActive ? "4px" : "7px",
+              cursor: "pointer",
+              opacity: isFloodModeActive ? 1 : 0.45,
+            }}
+            title="Click to toggle Modelled Flood Exposure & Risk overlay"
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: "12px",
+                height: "12px",
+                borderRadius: "3px",
+                background: "rgba(37,99,235,0.3)",
+                border: "1.5px solid #2563eb",
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ flex: 1, fontSize: "11.5px" }}>
+              <strong style={{ color: "#1d4ed8" }}>Flood Exposure</strong>
+              <span style={{ color: "#64748b", marginLeft: "4px" }}>· 6 DEM catchments</span>
+            </div>
+            <span style={{ fontSize: "10px", color: isFloodModeActive ? "#2563eb" : "#94a3b8" }}>
+              {isFloodModeActive ? "ACTIVE" : "OFF"}
+            </span>
+          </div>
+
+          {isFloodModeActive && (
+            <div
+              style={{
+                marginBottom: "8px",
+                padding: "6px 8px",
+                background: "#f8fafc",
+                borderRadius: "6px",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10px" }}>
+                <span style={{ fontWeight: 700, color: "#1e40af" }}>Modelled Flood Risk Scale</span>
+                <span style={{ color: "#64748b" }}>Accum. depth</span>
+              </div>
+              <div style={{ display: "flex", gap: "2px", height: "7px", borderRadius: "2px", overflow: "hidden", marginTop: "3px" }}>
+                <div style={{ flex: 1, background: "#10b981" }} title="Low: < 20%" />
+                <div style={{ flex: 1, background: "#eab308" }} title="Moderate: 20-39%" />
+                <div style={{ flex: 1, background: "#f97316" }} title="High: 40-59%" />
+                <div style={{ flex: 1, background: "#ea580c" }} title="Very High: 60-79%" />
+                <div style={{ flex: 1, background: "#dc2626" }} title="Critical: ≥ 80%" />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5px", color: "#475569", marginTop: "2px" }}>
+                <span>&lt;20% Low</span>
+                <span>Mod</span>
+                <span>High</span>
+                <span>V.High</span>
+                <span style={{ color: "#dc2626", fontWeight: 700 }}>≥80%</span>
+              </div>
+            </div>
+          )}
 
           {/* Basemap Item */}
           <div
