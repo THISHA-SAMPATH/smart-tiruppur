@@ -1,15 +1,19 @@
 """Comprehensive Unit Test Suite for NoyyalSense Simulation Foundation.
 
+Phase 1.1 Scientific Consistency & Independent Mass Audit.
+
 Verifies:
-1. Reproducibility under identical random seeds.
-2. Different seeds producing different stochastic realizations.
-3. Source-event labels remaining correct after fault injection.
-4. Correct observation shapes, source IDs, timestamps, and station IDs.
-5. Missingness, drift, stuck values, and delayed readings behaving according to their definitions.
-6. Transport simulator's exact discrete mass accounting and boundary behavior.
-7. Non-negative tracer concentrations under the chosen FVM numerical scheme.
-8. Clear rejection of invalid configuration parameters.
-9. Strict episode disjointness in train/validation/test partitioning.
+1. Dimensional consistency: tracer concentration in g/m³, background tracer at 0.0 g/m³,
+   and decoupled baseline electrical conductivity (µS/cm).
+2. Independent mass conservation reconstruction (integrating scheduled injections,
+   boundary outflow flux, and decay loss from raw time-series rather than internal accumulators).
+3. Mass balance behavior across multiple spatial and temporal grid resolutions.
+4. Reconciled decay parameters: nominal sensitivity range (0 - 0.05 h⁻¹) and documented stress test.
+5. Reconciled sensor drift parameters: absolute g/(m³·h) and relative std/h modes.
+6. Telemetry delay semantics: physical measurement timestamps vs arrival timestamps.
+7. Non-negative physical tracer state under valid CFL/diffusion stability.
+8. Clear rejection of invalid physics, grid, and fault configurations.
+9. Reproducibility under fixed random seeds and strict train/val/test episode separation.
 """
 
 from __future__ import annotations
@@ -49,50 +53,86 @@ class TestRiverADESimulator(unittest.TestCase):
     """Tests for the 1D Finite-Volume ADE Transport Simulator."""
 
     def setUp(self) -> None:
-        # Load baseline config from research/configs/simulation_params.json
         cfg_path = Path(__file__).resolve().parents[1] / "configs" / "simulation_params.json"
         self.config = SimulationConfig.from_json(cfg_path)
         # Use a short 2-hour duration for fast unit testing
         self.config.grid.simulation_duration_sec = 7200.0
         self.simulator = RiverADESimulator(self.config)
 
-    def test_mass_conservation_within_domain(self) -> None:
-        """Verifies mass balance deficit is within discrete machine precision (< 1e-10)."""
-        # Inject 100 kg total tracer over 30 minutes at chainage 5 km
-        injection = SpillInjection(
+    def test_concentration_units_and_background_consistency(self) -> None:
+        """Verifies tracer concentration is modeled in g/m³ and background tracer is 0.0 g/m³."""
+        # Baseline background tracer must be 0.0 g/m³
+        self.assertEqual(self.config.physics.background_tracer_concentration_gpm3, 0.0)
+        # Decoupled electrical conductivity must be present as a separate indicator
+        self.assertIsNotNone(self.config.physics.illustrative_baseline_ec_uS_cm)
+        self.assertEqual(self.config.physics.illustrative_baseline_ec_uS_cm, 50.0)
+
+        # In a zero-source run, all station observations must be exactly 0.0 g/m³
+        res = self.simulator.run_simulation("test_zero_tracer", [], "s0_background")
+        for s_id, trace in res.station_observations.items():
+            np.testing.assert_allclose(
+                trace,
+                0.0,
+                atol=1e-12,
+                err_msg=f"Station {s_id} showed non-zero tracer in zero-source run",
+            )
+        # Illustrative EC baseline is exported as decoupled metadata
+        self.assertEqual(res.illustrative_baseline_ec_uS_cm, 50.0)
+
+    def test_independent_mass_conservation_within_domain(self) -> None:
+        """Independently reconstructs mass balance from raw injection schedule and spatial concentration grid."""
+        # Inject known schedule: 50.0 g/s for 1800 s = 90,000 g
+        inj = SpillInjection(
             source_id="unit_test_01",
             chainage_m=5000.0,
             start_time_sec=600.0,
             duration_sec=1800.0,
-            mass_rate_gps=55.555555,  # ~100 kg total
+            mass_rate_gps=50.0,
         )
         res = self.simulator.run_simulation(
-            event_id="test_mass_cons",
-            injections=[injection],
+            event_id="test_indep_mass",
+            injections=[inj],
             true_source_id="unit_test_01",
         )
 
-        acc = res.mass_accounting
-        self.assertGreater(acc.total_injected_mass_grams, 99000.0)
-        # Relative deficit must be strictly smaller than discrete machine threshold
-        self.assertLess(
-            acc.relative_deficit,
-            1e-10,
-            f"Mass conservation relative deficit {acc.relative_deficit} exceeds 1e-10",
-        )
-        self.assertTrue(acc.is_conserved)
+        # 1. Independent scheduled mass calculation (directly from injection object)
+        scheduled_mass_grams = inj.mass_rate_gps * inj.duration_sec
+        self.assertEqual(scheduled_mass_grams, 90000.0)
 
-    def test_mass_conservation_with_boundary_outflow(self) -> None:
-        """Verifies mass conservation when tracer pulse crosses downstream boundary."""
-        # Fast advection with injection near boundary (30 km on 32 km domain)
+        # 2. Independent in-domain mass integration (directly from final concentration profile)
+        cell_volume = self.config.physics.cross_section_area_m2 * self.config.grid.dx_m
+        domain_mass_indep = float(np.sum(res.final_concentration_profile) * cell_volume)
+
+        # 3. Independent boundary flux integration (integrating exported step flux series)
+        dt = res.dt_sec
+        outflow_mass_indep = float(np.sum(res.boundary_outflow_flux_series) * dt)
+
+        # 4. Independent decay loss integration
+        decay_mass_indep = float(np.sum(res.decay_loss_rate_series) * dt)
+
+        # 5. Independent mass-balance closure check
+        accounted_total = domain_mass_indep + outflow_mass_indep + decay_mass_indep
+        residual = abs(accounted_total - scheduled_mass_grams)
+        rel_residual = residual / scheduled_mass_grams
+
+        self.assertLess(
+            rel_residual,
+            1e-10,
+            f"Independent mass conservation residual {rel_residual} exceeds 1e-10 tolerance",
+        )
+
+    def test_independent_mass_conservation_with_nominal_decay_and_outflow(self) -> None:
+        """Verifies independent mass reconstruction with boundary outflow and nominal decay (0.03 h⁻¹)."""
+        # Nominal decay within declared sensitivity range [0, 0.05 h⁻¹]: k = 0.03 h⁻¹ = 8.333e-6 s⁻¹
+        decay_rate_per_sec = 0.03 / 3600.0
         cfg = SimulationConfig(
             physics=ChannelPhysicsConfig(
                 domain_length_m=1000.0,
                 cross_section_area_m2=10.0,
-                flow_velocity_mps=1.0,  # Fast 1 m/s
+                flow_velocity_mps=1.0,
                 dispersion_m2ps=2.0,
-                decay_rate_per_sec=0.0001,  # Non-zero decay
-                background_concentration=0.0,
+                decay_rate_per_sec=decay_rate_per_sec,
+                background_tracer_concentration_gpm3=0.0,
             ),
             grid=NumericalGridConfig(
                 dx_m=20.0,
@@ -104,28 +144,117 @@ class TestRiverADESimulator(unittest.TestCase):
             sources=[CandidateSource("src_close", "Close", 500.0)],
         )
         sim = RiverADESimulator(cfg)
-        inj = SpillInjection("src_close", 500.0, 100.0, 200.0, 50.0)
-        res = sim.run_simulation("test_outflow", [inj], "src_close")
+        inj = SpillInjection("src_close", 500.0, 100.0, 200.0, 50.0)  # 10,000 g
+        res = sim.run_simulation("test_nominal_decay", [inj], "src_close")
 
-        acc = res.mass_accounting
-        self.assertGreater(acc.boundary_outflow_mass_grams, 0.0)
-        self.assertGreater(acc.decayed_mass_grams, 0.0)
+        # Independent reconstruction
+        scheduled_mass = inj.mass_rate_gps * inj.duration_sec
+        cell_vol = cfg.physics.cross_section_area_m2 * cfg.grid.dx_m
+        domain_mass = float(np.sum(res.final_concentration_profile) * cell_vol)
+        outflow_mass = float(np.sum(res.boundary_outflow_flux_series) * res.dt_sec)
+        decay_mass = float(np.sum(res.decay_loss_rate_series) * res.dt_sec)
+
+        self.assertGreater(outflow_mass, 0.0, "Tracer should have crossed downstream boundary")
+        self.assertGreater(decay_mass, 0.0, "Decay loss should be positive for non-zero k_decay")
+
+        rel_residual = abs((domain_mass + outflow_mass + decay_mass) - scheduled_mass) / scheduled_mass
         self.assertLess(
-            acc.relative_deficit,
+            rel_residual,
             1e-10,
-            f"Mass conservation deficit {acc.relative_deficit} with outflow exceeds 1e-10",
+            f"Nominal decay mass balance residual {rel_residual} exceeds 1e-10",
         )
 
+    def test_mass_conservation_numerical_stress_high_decay(self) -> None:
+        """Separate numerical stress test: verifies mass balance under high decay rate (0.36 h⁻¹ = 1e-4 s⁻¹)."""
+        stress_decay_per_sec = 1e-4  # 0.36 h⁻¹, exceeding nominal range for stress testing
+        cfg = SimulationConfig(
+            physics=ChannelPhysicsConfig(
+                domain_length_m=2000.0,
+                cross_section_area_m2=15.0,
+                flow_velocity_mps=0.5,
+                dispersion_m2ps=3.0,
+                decay_rate_per_sec=stress_decay_per_sec,
+                background_tracer_concentration_gpm3=0.0,
+            ),
+            grid=NumericalGridConfig(
+                dx_m=25.0,
+                dt_sec=2.0,
+                simulation_duration_sec=3000.0,
+                sample_interval_sec=100.0,
+            ),
+            stations=[MonitoringStation("s_mid", "Mid", 1000.0)],
+            sources=[CandidateSource("src_1", "Source 1", 300.0)],
+        )
+        sim = RiverADESimulator(cfg)
+        inj = SpillInjection("src_1", 300.0, 200.0, 400.0, 25.0)  # 10,000 g
+        res = sim.run_simulation("test_stress_decay", [inj], "src_1")
+
+        scheduled_mass = inj.mass_rate_gps * inj.duration_sec
+        cell_vol = cfg.physics.cross_section_area_m2 * cfg.grid.dx_m
+        domain_mass = float(np.sum(res.final_concentration_profile) * cell_vol)
+        outflow_mass = float(np.sum(res.boundary_outflow_flux_series) * res.dt_sec)
+        decay_mass = float(np.sum(res.decay_loss_rate_series) * res.dt_sec)
+
+        rel_residual = abs((domain_mass + outflow_mass + decay_mass) - scheduled_mass) / scheduled_mass
+        self.assertLess(
+            rel_residual,
+            1e-10,
+            f"Stress decay mass balance residual {rel_residual} exceeds 1e-10",
+        )
+
+    def test_mass_balance_across_multiple_grid_resolutions(self) -> None:
+        """Verifies mass conservation across fine, baseline, and coarse spatial/temporal grids."""
+        test_resolutions = [
+            (50.0, 5.0),   # Fine grid: dx=50m, dt=5s
+            (100.0, 10.0), # Baseline grid: dx=100m, dt=10s
+            (200.0, 20.0), # Coarse grid: dx=200m, dt=20s
+        ]
+        for dx, dt in test_resolutions:
+            cfg = SimulationConfig(
+                physics=ChannelPhysicsConfig(
+                    domain_length_m=10000.0,
+                    cross_section_area_m2=20.0,
+                    flow_velocity_mps=0.25,
+                    dispersion_m2ps=4.5,
+                    decay_rate_per_sec=0.0,
+                    background_tracer_concentration_gpm3=0.0,
+                ),
+                grid=NumericalGridConfig(
+                    dx_m=dx,
+                    dt_sec=dt,
+                    simulation_duration_sec=3600.0,
+                    sample_interval_sec=300.0,
+                ),
+                stations=[MonitoringStation("s1", "S1", 5000.0)],
+                sources=[CandidateSource("src1", "Src1", 2000.0)],
+            )
+            sim = RiverADESimulator(cfg)
+            inj = SpillInjection("src1", 2000.0, 300.0, 600.0, 30.0)
+            res = sim.run_simulation("test_res", [inj], "src1")
+
+            scheduled_mass = inj.mass_rate_gps * inj.duration_sec
+            cell_vol = cfg.physics.cross_section_area_m2 * dx
+            domain_mass = float(np.sum(res.final_concentration_profile) * cell_vol)
+            outflow_mass = float(np.sum(res.boundary_outflow_flux_series) * dt)
+            decay_mass = float(np.sum(res.decay_loss_rate_series) * dt)
+
+            rel_residual = abs((domain_mass + outflow_mass + decay_mass) - scheduled_mass) / scheduled_mass
+            self.assertLess(
+                rel_residual,
+                1e-10,
+                f"Resolution dx={dx}, dt={dt} had mass balance residual {rel_residual} > 1e-10",
+            )
+
     def test_non_negative_concentrations(self) -> None:
-        """Verifies that concentrations remain strictly non-negative everywhere."""
+        """Verifies that physical tracer concentrations remain strictly non-negative everywhere."""
         inj = SpillInjection("unit_001", 3200.0, 300.0, 600.0, 100.0)
         res = self.simulator.run_simulation("test_nonneg", [inj], "unit_001")
 
         self.assertTrue(np.all(res.final_concentration_profile >= 0.0))
         for s_id, trace in res.station_observations.items():
             self.assertTrue(
-                np.all(trace >= self.config.physics.background_concentration - 1e-9),
-                f"Station {s_id} reported concentrations below background",
+                np.all(trace >= 0.0),
+                f"Station {s_id} reported negative tracer concentration",
             )
 
     def test_observation_shapes_and_timestamps(self) -> None:
@@ -152,13 +281,16 @@ class TestRiverADESimulator(unittest.TestCase):
         with self.assertRaises(ValueError):
             ChannelPhysicsConfig(flow_velocity_mps=-1.0).validate()
 
+        # Negative background tracer
+        with self.assertRaises(ValueError):
+            ChannelPhysicsConfig(background_tracer_concentration_gpm3=-1.0).validate()
+
         # Station outside domain
         with self.assertRaises(ValueError):
             MonitoringStation("s_bad", "Bad", 45000.0).validate(domain_length_m=32000.0)
 
         # Unstable CFL time step
         with self.assertRaises(ValueError):
-            # dt = 500 s with dx = 100 m and u = 0.5 m/s causes dt * (u/dx) = 2.5 > 1
             phys = ChannelPhysicsConfig(flow_velocity_mps=0.5, dispersion_m2ps=10.0)
             grid = NumericalGridConfig(dx_m=100.0, dt_sec=500.0)
             grid.validate(phys)
@@ -194,15 +326,15 @@ class TestSyntheticEventGenerator(unittest.TestCase):
 
         self.assertNotEqual(meta1.start_time_sec, meta2.start_time_sec)
 
-    def test_background_event_has_zero_injection(self) -> None:
-        """Background episodes must have zero injected mass and stay at background level."""
+    def test_background_event_has_zero_tracer(self) -> None:
+        """Background episodes must have zero injected mass and 0.0 g/m³ tracer concentration."""
         res, meta = self.generator.generate_single_event("ev_bg", "s0_background", seed=42)
 
         self.assertTrue(meta.is_background)
         self.assertEqual(meta.total_mass_grams, 0.0)
         self.assertEqual(res.mass_accounting.total_injected_mass_grams, 0.0)
         for trace in res.station_observations.values():
-            np.testing.assert_allclose(trace, self.config.physics.background_concentration, atol=1e-6)
+            np.testing.assert_allclose(trace, 0.0, atol=1e-12)
 
     def test_partition_dataset_disjointness(self) -> None:
         """Verifies strict episode ID separation across train, validation, and test splits."""
@@ -227,11 +359,17 @@ class TestSensorFaultInjector(unittest.TestCase):
     def setUp(self) -> None:
         cfg_path = Path(__file__).resolve().parents[1] / "configs" / "simulation_params.json"
         config = SimulationConfig.from_json(cfg_path)
-        config.grid.simulation_duration_sec = 3600.0
+        # 6-hour simulation allowing tracer pulse to reach sensor_002 (3.6 km downstream of unit_004 at 0.25 m/s takes 4h)
+        config.grid.simulation_duration_sec = 21600.0
         config.grid.sample_interval_sec = 100.0
         generator = SyntheticEventGenerator(config)
         self.sim_result, self.meta = generator.generate_single_event(
-            "ev_fault_test", "unit_004", seed=777
+            "ev_fault_test",
+            "unit_004",
+            seed=777,
+            start_time_sec=1800.0,
+            duration_sec=3600.0,
+            mass_rate_gps=50.0,
         )
 
     def test_ground_truth_label_preserved_after_faults(self) -> None:
@@ -239,7 +377,12 @@ class TestSensorFaultInjector(unittest.TestCase):
         fault_cfg = FaultSuiteConfig(
             additive_noise=AdditiveNoiseConfig(enabled=True, noise_std_ratio=0.2),
             random_missingness=RandomMissingnessConfig(enabled=True, dropout_probability=0.3),
-            sensor_drift=SensorDriftConfig(enabled=True, drift_rate_per_hour=20.0, start_time_sec=500.0),
+            sensor_drift=SensorDriftConfig(
+                enabled=True,
+                drift_mode="absolute",
+                drift_rate_per_hour=2.0,
+                start_time_sec=500.0,
+            ),
         )
         injector = SensorFaultInjector(fault_cfg)
         faulted = injector.apply_faults(self.sim_result, seed=42)
@@ -282,15 +425,16 @@ class TestSensorFaultInjector(unittest.TestCase):
 
         self.assertTrue(np.all(np.isnan(trace[window_mask])))
         self.assertFalse(np.any(np.isnan(trace[outside_mask])))
-        # Unaffected station must have zero NaNs
         self.assertFalse(np.any(np.isnan(faulted.corrupted_observations["sensor_001"])))
 
-    def test_sensor_drift_ramp(self) -> None:
-        """Verifies gradual linear drift increases readings monotonically after start time."""
+    def test_sensor_drift_absolute_mode(self) -> None:
+        """Verifies absolute drift in g/(m³·h) adds a linear ramp after start time."""
+        # Drift rate = 3.6 g/(m³·h) = 0.001 g/(m³·s)
         fault_cfg = FaultSuiteConfig(
             sensor_drift=SensorDriftConfig(
                 enabled=True,
-                drift_rate_per_hour=36.0,  # 0.01 units/sec
+                drift_mode="absolute",
+                drift_rate_per_hour=3.6,
                 start_time_sec=1000.0,
                 affected_stations=["sensor_002"],
             )
@@ -302,14 +446,40 @@ class TestSensorFaultInjector(unittest.TestCase):
         clean = faulted.clean_observations["sensor_002"]
         corrupted = faulted.corrupted_observations["sensor_002"]
 
-        # Before drift start time: clean equals corrupted
+        # Before drift onset: identical
         pre_drift = times < 1000.0
         np.testing.assert_array_equal(clean[pre_drift], corrupted[pre_drift])
 
-        # At t = 2000s (1000s elapsed = 1000/3600 hr), drift = 36 * (1000/3600) = 10 units
+        # At t = 2000s (1000s elapsed = 1000/3600 hr), drift = 3.6 * (1000/3600) = 1.0 g/m³
         idx_2000 = int(np.where(times >= 2000.0)[0][0])
         drift_delta = corrupted[idx_2000] - clean[idx_2000]
-        self.assertAlmostEqual(drift_delta, 10.0, places=1)
+        self.assertAlmostEqual(drift_delta, 1.0, places=2)
+
+    def test_sensor_drift_relative_std_mode(self) -> None:
+        """Verifies relative_std drift adds drift proportional to signal standard deviation."""
+        fault_cfg = FaultSuiteConfig(
+            sensor_drift=SensorDriftConfig(
+                enabled=True,
+                drift_mode="relative_std",
+                drift_std_ratio_per_hour=0.10,  # 10% of std per hour
+                start_time_sec=1000.0,
+                affected_stations=["sensor_002"],
+            )
+        )
+        injector = SensorFaultInjector(fault_cfg)
+        faulted = injector.apply_faults(self.sim_result, seed=42)
+
+        times = faulted.timestamps_sec
+        clean = faulted.clean_observations["sensor_002"]
+        corrupted = faulted.corrupted_observations["sensor_002"]
+
+        signal_std = float(np.nanstd(clean))
+        self.assertGreater(signal_std, 0.1, "Signal std at sensor_002 should be non-zero for plume")
+
+        idx_2000 = int(np.where(times >= 2000.0)[0][0])
+        expected_offset = 0.10 * signal_std * (1000.0 / 3600.0)
+        actual_offset = corrupted[idx_2000] - clean[idx_2000]
+        self.assertAlmostEqual(actual_offset, expected_offset, places=2)
 
     def test_stuck_value_freezes_reading(self) -> None:
         """Verifies that stuck sensor outputs a constant identical value during window."""
@@ -331,11 +501,10 @@ class TestSensorFaultInjector(unittest.TestCase):
         stuck_values = corrupted[stuck_mask]
 
         self.assertGreater(len(stuck_values), 2)
-        # Variance of values during stuck window must be zero
         self.assertAlmostEqual(float(np.var(stuck_values)), 0.0, places=10)
 
-    def test_telemetry_delay_lags_signal(self) -> None:
-        """Verifies telemetry delay shifts observations forward in time."""
+    def test_telemetry_delay_lags_signal_and_sets_arrival_timestamps(self) -> None:
+        """Verifies telemetry delay shifts observations forward in time and tracks arrival timestamps."""
         fault_cfg = FaultSuiteConfig(
             telemetry_delay=TelemetryDelayConfig(
                 enabled=True,
@@ -351,6 +520,17 @@ class TestSensorFaultInjector(unittest.TestCase):
 
         # 300 s delay with dt_sample = 100 s is a 3-step shift
         np.testing.assert_array_equal(corrupted[3:], clean[:-3])
+
+        # Arrival timestamps at receiver must be offset by delay_sec
+        np.testing.assert_array_equal(
+            faulted.arrival_timestamps_sec["sensor_002"],
+            faulted.timestamps_sec + 300.0,
+        )
+        # Unaffected station arrival timestamps equal measurement timestamps
+        np.testing.assert_array_equal(
+            faulted.arrival_timestamps_sec["sensor_001"],
+            faulted.timestamps_sec,
+        )
 
 
 if __name__ == "__main__":

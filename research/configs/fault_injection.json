@@ -1,7 +1,7 @@
 {
   "fault_metadata": {
-    "version": "1.0.0",
-    "description": "Independently configurable sensor fault transformations for uncertainty and abstention benchmarking. All thresholds and noise fractions are explicit configuration parameters."
+    "version": "1.1.0",
+    "description": "Independently configurable sensor fault transformations for uncertainty and abstention benchmarking. Units: noise is relative to signal std or absolute g/m³; drift is in g/(m³·h) or relative std/h; delays are in seconds."
   },
   "additive_noise": {
     "enabled": false,
@@ -21,7 +21,9 @@
   },
   "sensor_drift": {
     "enabled": false,
-    "drift_rate_per_hour": 15.0,
+    "drift_mode": "absolute",
+    "drift_rate_per_hour_gpm3": 1.5,
+    "drift_std_ratio_per_hour": 0.05,
     "start_time_sec": 28800.0,
     "affected_stations": ["sensor_002"]
   },
@@ -34,6 +36,7 @@
   "telemetry_delay": {
     "enabled": false,
     "delay_sec": 7200.0,
-    "affected_stations": ["sensor_002", "sensor_003"]
+    "affected_stations": ["sensor_002", "sensor_003"],
+    "description": "Telemetry arrival lag in seconds. Packets measured at time t arrive at central receiver at t + delay_sec. Monitoring series reflects latest available observation at query time."
   }
 }

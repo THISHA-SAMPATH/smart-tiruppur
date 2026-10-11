@@ -4,12 +4,17 @@ Implements realistic hardware and communication fault transformations:
 1. Additive measurement noise (Gaussian, Laplace).
 2. Random missing observations (Bernoulli dropouts).
 3. Burst / station-wide communication dropouts.
-4. Gradual sensor calibration drift (ramp bias).
+4. Gradual sensor calibration drift (absolute g/(m³·h) or relative std/h).
 5. Stuck-value / register freeze (constant output).
-6. Telemetry transmission delay (latency lag).
+6. Telemetry transmission delay (latency lag with arrival timestamps).
 
-All transformations preserve explicit ground-truth event labels, uncorrupted
-observation baselines, and comprehensive diagnostic provenance metadata.
+Physical State vs. Sensor Observation Semantics:
+- The underlying river tracer state is strictly non-negative (C_tracer >= 0.0 g/m³).
+- Sensor observations report tracer concentration in g/m³.
+- Raw instrumentation noise may produce zero-mean fluctuations around baseline.
+  The 'zero_floor' flag determines whether sensor electronics clip negative readings.
+- Telemetry delay distinguishes physical measurement timestamps (when water was sampled)
+  from telemetry arrival timestamps (when data reached the central receiver).
 """
 
 from __future__ import annotations
@@ -29,7 +34,7 @@ class AdditiveNoiseConfig:
     enabled: bool = False
     noise_std_ratio: float = 0.10
     distribution: str = "gaussian"  # "gaussian" or "laplace"
-    zero_floor: bool = True
+    zero_floor: bool = True  # Whether sensor hardware clips below 0.0 g/m³
 
     def validate(self) -> None:
         if self.noise_std_ratio < 0:
@@ -67,11 +72,19 @@ class BurstDropoutConfig:
 @dataclass
 class SensorDriftConfig:
     enabled: bool = False
-    drift_rate_per_hour: float = 15.0  # units added per hour
+    drift_mode: str = "absolute"  # "absolute" (g/(m³·h)) or "relative_std" (fraction of std per hour)
+    drift_rate_per_hour: float = 1.5  # Absolute drift in g/(m³·h) when drift_mode == "absolute"
+    drift_std_ratio_per_hour: float = 0.05  # Relative drift when drift_mode == "relative_std"
     start_time_sec: float = 28800.0
     affected_stations: List[str] = field(default_factory=lambda: ["sensor_002"])
 
     def validate(self) -> None:
+        if self.drift_mode not in ("absolute", "relative_std"):
+            raise ValueError(f"drift_mode must be 'absolute' or 'relative_std', got '{self.drift_mode}'")
+        if self.drift_rate_per_hour < 0:
+            raise ValueError(f"drift_rate_per_hour must be non-negative, got {self.drift_rate_per_hour}")
+        if self.drift_std_ratio_per_hour < 0:
+            raise ValueError(f"drift_std_ratio_per_hour must be non-negative, got {self.drift_std_ratio_per_hour}")
         if self.start_time_sec < 0:
             raise ValueError(f"start_time_sec must be non-negative, got {self.start_time_sec}")
 
@@ -93,7 +106,7 @@ class StuckValueConfig:
 @dataclass
 class TelemetryDelayConfig:
     enabled: bool = False
-    delay_sec: float = 7200.0  # 2 hours
+    delay_sec: float = 7200.0  # seconds (2 hours)
     affected_stations: List[str] = field(default_factory=lambda: ["sensor_002", "sensor_003"])
 
     def validate(self) -> None:
@@ -152,7 +165,11 @@ class FaultSuiteConfig:
             ),
             sensor_drift=SensorDriftConfig(
                 enabled=bool(drift_d.get("enabled", False)),
-                drift_rate_per_hour=float(drift_d.get("drift_rate_per_hour", 15.0)),
+                drift_mode=str(drift_d.get("drift_mode", "absolute")),
+                drift_rate_per_hour=float(
+                    drift_d.get("drift_rate_per_hour_gpm3", drift_d.get("drift_rate_per_hour", 1.5))
+                ),
+                drift_std_ratio_per_hour=float(drift_d.get("drift_std_ratio_per_hour", 0.05)),
                 start_time_sec=float(drift_d.get("start_time_sec", 28800.0)),
                 affected_stations=list(drift_d.get("affected_stations", ["sensor_002"])),
             ),
@@ -176,9 +193,10 @@ class FaultSuiteConfig:
 class FaultedObservationResult:
     event_id: str
     true_source_id: str
-    timestamps_sec: np.ndarray
-    clean_observations: Dict[str, np.ndarray]
-    corrupted_observations: Dict[str, np.ndarray]
+    timestamps_sec: np.ndarray  # Physical measurement timestamps
+    arrival_timestamps_sec: Dict[str, np.ndarray]  # Telemetry arrival timestamps per station
+    clean_observations: Dict[str, np.ndarray]  # Uncorrupted tracer concentrations (g/m³)
+    corrupted_observations: Dict[str, np.ndarray]  # Corrupted observation series (g/m³)
     applied_faults: Dict[str, List[str]]
     seed: int
 
@@ -203,12 +221,15 @@ class SensorFaultInjector:
         corrupted_obs: Dict[str, np.ndarray] = {k: v.copy() for k, v in clean_obs.items()}
         applied_faults: Dict[str, List[str]] = {k: [] for k in clean_obs.keys()}
 
+        # By default, arrival timestamps equal measurement timestamps
+        arrival_times: Dict[str, np.ndarray] = {k: times.copy() for k in clean_obs.keys()}
+
         # 1. Additive Measurement Noise
         if self.config.additive_noise.enabled:
             for s_id, vals in corrupted_obs.items():
-                scale = np.nanstd(vals) * self.config.additive_noise.noise_std_ratio
+                scale = float(np.nanstd(vals) * self.config.additive_noise.noise_std_ratio)
                 if scale <= 0:
-                    scale = self.config.additive_noise.noise_std_ratio * 10.0  # nominal scale
+                    scale = self.config.additive_noise.noise_std_ratio * 1.0  # nominal scale in g/m³
 
                 if self.config.additive_noise.distribution == "gaussian":
                     noise = rng.normal(0.0, scale, size=vals.shape)
@@ -222,33 +243,44 @@ class SensorFaultInjector:
                     corrupted_obs[s_id] = np.maximum(corrupted_obs[s_id], 0.0)
                 applied_faults[s_id].append("ADDITIVE_NOISE")
 
-        # 2. Telemetry Delay (Lag shift)
+        # 2. Telemetry Delay (Lag shift in receiver series & arrival timestamp offset)
         if self.config.telemetry_delay.enabled:
             dt_sample = float(times[1] - times[0]) if len(times) > 1 else 300.0
             shift_steps = int(np.round(self.config.telemetry_delay.delay_sec / dt_sample))
-            if shift_steps > 0:
-                for s_id in self.config.telemetry_delay.affected_stations:
-                    if s_id in corrupted_obs:
-                        vals = corrupted_obs[s_id]
-                        # Delayed telemetry: shift forward in time, backfilling earliest values
+            delay_sec = self.config.telemetry_delay.delay_sec
+            for s_id in self.config.telemetry_delay.affected_stations:
+                if s_id in corrupted_obs:
+                    vals = corrupted_obs[s_id]
+                    # Update arrival timestamps
+                    arrival_times[s_id] = times + delay_sec
+                    # At receiver query time t, the latest packet received was measured at t - delay_sec:
+                    if shift_steps > 0:
                         delayed = np.empty_like(vals)
                         delayed[:shift_steps] = vals[0]
                         delayed[shift_steps:] = vals[:-shift_steps]
                         corrupted_obs[s_id] = delayed
-                        applied_faults[s_id].append("TELEMETRY_DELAY")
+                    applied_faults[s_id].append("TELEMETRY_DELAY")
 
         # 3. Gradual Sensor Drift (Ramp)
         if self.config.sensor_drift.enabled:
             t_start = self.config.sensor_drift.start_time_sec
-            drift_rate = self.config.sensor_drift.drift_rate_per_hour
             for s_id in self.config.sensor_drift.affected_stations:
                 if s_id in corrupted_obs:
                     vals = corrupted_obs[s_id]
+                    # Determine drift slope (units of g/(m³·h))
+                    if self.config.sensor_drift.drift_mode == "relative_std":
+                        signal_std = float(np.nanstd(vals))
+                        if signal_std <= 0:
+                            signal_std = 1.0
+                        hourly_slope = self.config.sensor_drift.drift_std_ratio_per_hour * signal_std
+                    else:
+                        hourly_slope = self.config.sensor_drift.drift_rate_per_hour
+
                     drift_added = False
                     for i, t in enumerate(times):
                         if t >= t_start:
                             hours_elapsed = (t - t_start) / 3600.0
-                            vals[i] += drift_rate * hours_elapsed
+                            vals[i] += hourly_slope * hours_elapsed
                             drift_added = True
                     if drift_added:
                         applied_faults[s_id].append("SENSOR_DRIFT")
@@ -260,7 +292,6 @@ class SensorFaultInjector:
             for s_id in self.config.stuck_value.affected_stations:
                 if s_id in corrupted_obs:
                     vals = corrupted_obs[s_id]
-                    # Find freeze value at start time
                     freeze_val = None
                     stuck_added = False
                     for i, t in enumerate(times):
@@ -297,6 +328,7 @@ class SensorFaultInjector:
             event_id=sim_result.event_id,
             true_source_id=sim_result.true_source_id,  # Ground truth strictly preserved!
             timestamps_sec=times,
+            arrival_timestamps_sec=arrival_times,
             clean_observations=clean_obs,
             corrupted_observations=corrupted_obs,
             applied_faults=applied_faults,

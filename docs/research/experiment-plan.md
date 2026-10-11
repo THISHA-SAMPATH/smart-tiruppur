@@ -99,11 +99,12 @@ Tracer concentration $C(x, t)$ along river chainage $x \in [0, L]$ is governed b
 $$\frac{\partial C}{\partial t} + u \frac{\partial C}{\partial x} = D_L \frac{\partial^2 C}{\partial x^2} - k_{\text{decay}} C + \sum_{k=1}^K \frac{\dot{M}_k(t)}{A} \delta(x - x_k)$$
 
 Where:
+* $C(x, t)$: Transported tracer mass concentration in $\text{g/m}^3$ (equivalent to $\text{mg/L}$). Non-negative physical state: $C(x, t) \ge 0.0\text{ g/m}^3$.
 * $u$: Cross-sectionally averaged longitudinal velocity ($0.25\text{ m/s}$ baseline, matching `DEFAULT_FLOW_VELOCITY_MPS` in [`lib/attribution/engine.ts`](file:///c:/Users/S.Thisha/Downloads/smart-tiruppur/lib/attribution/engine.ts)).
 * $D_L$: Effective longitudinal dispersion coefficient ($4.5\text{ m}^2/\text{s}$ baseline).
   * **Theoretical Note on Taylor–Elder Dispersion:** Elder (1959) derived $D_L = 5.93 \cdot d \cdot u_*$ under the strict assumptions of an infinitely wide, uniform open channel with a purely vertical logarithmic velocity profile and no lateral velocity shear. In natural rivers, lateral velocity shear across the channel width and transient storage zones typically dominate longitudinal spreading, often yielding dispersion coefficients an order of magnitude higher ($D_L \sim 10 - 50\text{ m}^2/\text{s}$). Consequently, $D_L$ is treated here as an **effective screening parameter** and subjected to broad sensitivity sweeps rather than claimed as an exact physical representation.
-* $k_{\text{decay}}$: First-order decay rate ($0.0\text{ s}^{-1}$ for conservative tracer EC/TDS; optionally swept for non-conservative pollutants).
-* $A$: Nominal cross-sectional flow area ($25\text{ m}^2$).
+* $k_{\text{decay}}$: First-order decay rate in $\text{s}^{-1}$. Conversions: $k_{\text{decay, s}} = k_{\text{decay, h}} / 3600$. Baseline is $0.0\text{ s}^{-1}$ for conservative tracer; nominal sensitivity range is $[0, 0.05]\text{ h}^{-1}$ ($[0, 1.39 \times 10^{-5}]\text{ s}^{-1}$). Extreme sink stress testing is evaluated separately.
+* $A$: Nominal cross-sectional flow area ($25.0\text{ m}^2$).
 * $\dot{M}_k(t)$: Tracer mass injection rate ($\text{g/s}$) from candidate source $k$ at chainage $x_k$.
 
 ### 5.3 Synthetic Parameters and Sensitivity Analysis Grid
@@ -116,8 +117,9 @@ All physical parameters in the simulator are explicitly documented as **syntheti
 | **Cross-Section Area ($A$)** | $25.0\text{ m}^2$ | $[15.0, 40.0]\text{ m}^2$ | Nominal urban channel geometry ($w \approx 25\text{ m}, d \approx 1\text{ m}$). |
 | **Effective Velocity ($u$)** | $0.25\text{ m/s}$ | $[0.125, 0.375]\text{ m/s}$ | $\pm 50\%$ uncalibrated velocity uncertainty documented in `lib/attribution/engine.ts`. |
 | **Longitudinal Dispersion ($D_L$)** | $4.5\text{ m}^2/\text{s}$ | $[1.5, 15.0]\text{ m}^2/\text{s}$ | Spans Elder's baseline to shear-augmented open-channel dispersion. |
-| **First-Order Decay ($k_{\text{decay}}$)** | $0.0\text{ h}^{-1}$ | $[0.0, 0.05]\text{ h}^{-1}$ | Evaluates conservative tracer vs. moderately decaying contaminant. |
-| **Background Concentration ($C_{\text{base}}$)** | $50.0\ \mu\text{S/cm}$ | $[20.0, 100.0]\ \mu\text{S/cm}$ | Baseline clean water screening signal before industrial additions. |
+| **First-Order Decay ($k_{\text{decay}}$)** | $0.0\text{ h}^{-1}$ ($0.0\text{ s}^{-1}$) | $[0.0, 0.05]\text{ h}^{-1}$ ($[0.0, 1.39 \times 10^{-5}]\text{ s}^{-1}$) | Nominal sensitivity range for conservative vs. decaying contaminant. Stress tests evaluate higher rates separately. |
+| **Background Tracer ($C_{\text{tracer,base}}$)** | $0.0\text{ g/m}^3$ | $[0.0, 5.0]\text{ g/m}^3$ | Ambient background of specific industrial dye tracer. |
+| **Decoupled Baseline EC ($EC_{\text{base}}$)** | $50.0\ \mu\text{S/cm}$ | $[20.0, 100.0]\ \mu\text{S/cm}$ | Illustrative ambient conductivity indicator. Not converted to tracer concentration without site empirical calibration. |
 | **Spill Duration ($\Delta t_{\text{spill}}$)** | $1.0 - 3.0\text{ h}$ | $[0.5, 6.0]\text{ h}$ | Typical batch wash/dye discharge cycle duration. |
 | **Tracer Mass Injected ($M_{\text{inj}}$)** | $50 - 500\text{ kg}$ | $[10, 1000]\text{ kg}$ | Scale calibrated to produce detectable concentration peaks downstream. |
 
@@ -313,7 +315,7 @@ graph TD
 
 #### Step 1: Minimum Acceptance Tests (Run Prior to Full Experiment)
 Before initiating large-scale evaluations, the implementation must pass four automated unit verification tests:
-1. **ADE Mass Conservation Test:** Verify that in a zero-decay simulation ($k_{\text{decay}} = 0$), total integrated tracer mass passing all three stations equals injected mass to within $\pm 1.5\%$.
+1. **ADE Mass Conservation Test:** Independently reconstruct mass balance from raw injection schedules, spatial grid concentration profiles, and exported boundary flux histories, verifying that numerical residual is bounded by discrete finite-volume precision ($< 10^{-10}$ relative residual).
 2. **Spatial Topology Consistency Test:** Ensure that snapped facility coordinates match the river chainage order defined in `lib/digital-twin/industrial.ts` and `lib/digital-twin/sensors.ts`.
 3. **Fault Injector Determinism Test:** Ensure that fault injection with a fixed seed produces bitwise-identical corrupted matrices.
 4. **Abstention Gate Sanity Test:** Confirm that when an input matrix has zero variance across all sensors (frozen state), M4 emits `ABSTAIN` with cause code `SENSOR_FAULT_STUCK` 100% of the time.

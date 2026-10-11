@@ -233,3 +233,73 @@ def partition_dataset(
     assert len(val_ids.intersection(test_ids)) == 0, "Val and Test splits share episode IDs!"
 
     return train_set, val_set, test_set
+
+
+def partition_dataset_four_way(
+    dataset: EpisodeDataset,
+    train_ratio: float = 0.50,
+    cal_ratio: float = 0.20,
+    val_ratio: float = 0.15,
+    test_ratio: float = 0.15,
+    seed: int = 42,
+) -> Tuple[EpisodeDataset, EpisodeDataset, EpisodeDataset, EpisodeDataset]:
+    """Partitions an episode dataset into strictly disjoint Train, Calibration, Validation, and Test splits.
+
+    Guarantees zero episode ID overlap across all splits to prevent data leakage in selective attribution
+    and probability calibration pipelines.
+    """
+    total_ratio = train_ratio + cal_ratio + val_ratio + test_ratio
+    if not np.isclose(total_ratio, 1.0, atol=1e-5):
+        raise ValueError(f"Split ratios must sum to 1.0, got {total_ratio}")
+
+    n = len(dataset.metadata)
+    if n < 4:
+        raise ValueError("Dataset must contain at least 4 episodes to partition four ways")
+
+    rng = np.random.default_rng(seed)
+    indices = np.arange(n)
+    rng.shuffle(indices)
+
+    n_train = int(np.round(n * train_ratio))
+    n_cal = int(np.round(n * cal_ratio))
+    n_val = int(np.round(n * val_ratio))
+
+    train_idx = indices[:n_train]
+    cal_idx = indices[n_train : n_train + n_cal]
+    val_idx = indices[n_train + n_cal : n_train + n_cal + n_val]
+    test_idx = indices[n_train + n_cal + n_val :]
+
+    if len(train_idx) == 0 or len(cal_idx) == 0 or len(val_idx) == 0 or len(test_idx) == 0:
+        raise ValueError(f"Partition produced empty split with n={n}. Increase n_events.")
+
+    def _subset(sub_indices: np.ndarray) -> EpisodeDataset:
+        return EpisodeDataset(
+            episodes=[dataset.episodes[i] for i in sub_indices],
+            metadata=[dataset.metadata[i] for i in sub_indices],
+        )
+
+    train_set = _subset(train_idx)
+    cal_set = _subset(cal_idx)
+    val_set = _subset(val_idx)
+    test_set = _subset(test_idx)
+
+    # Disjointness checks across all split pairs
+    train_ids = set(train_set.get_event_ids())
+    cal_ids = set(cal_set.get_event_ids())
+    val_ids = set(val_set.get_event_ids())
+    test_ids = set(test_set.get_event_ids())
+
+    all_pairs = [
+        ("Train", "Calibration", train_ids, cal_ids),
+        ("Train", "Validation", train_ids, val_ids),
+        ("Train", "Test", train_ids, test_ids),
+        ("Calibration", "Validation", cal_ids, val_ids),
+        ("Calibration", "Test", cal_ids, test_ids),
+        ("Validation", "Test", val_ids, test_ids),
+    ]
+
+    for name_a, name_b, set_a, set_b in all_pairs:
+        overlap = set_a.intersection(set_b)
+        assert len(overlap) == 0, f"{name_a} and {name_b} splits share episode IDs: {overlap}"
+
+    return train_set, cal_set, val_set, test_set

@@ -1,8 +1,8 @@
 {
   "simulation_metadata": {
     "model_name": "NoyyalSense-1D-ADE-Screening",
-    "version": "1.0.0",
-    "description": "Simplified 1D advection-dispersion screening simulator for controlled pollution-source attribution benchmarking. Channel coordinates and hydraulic scales are synthetic screening assumptions.",
+    "version": "1.1.0",
+    "description": "Simplified 1D advection-dispersion screening simulator for controlled pollution-source attribution benchmarking. Transported tracer is modeled in mass-concentration units (g/m³). Ambient electrical conductivity baseline (µS/cm) is kept as a decoupled screening indicator.",
     "idealized_domain": true
   },
   "channel_physics": {
@@ -10,8 +10,10 @@
     "cross_section_area_m2": 25.0,
     "flow_velocity_mps": 0.25,
     "dispersion_m2ps": 4.5,
+    "decay_rate_per_hour": 0.0,
     "decay_rate_per_sec": 0.0,
-    "background_concentration": 50.0
+    "background_tracer_concentration_gpm3": 0.0,
+    "illustrative_baseline_ec_uS_cm": 50.0
   },
   "numerical_scheme": {
     "scheme": "finite_volume_upwind_central",

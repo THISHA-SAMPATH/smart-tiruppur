@@ -5,17 +5,26 @@ simulator for synthetic tracer pulses in an idealized open channel. It serves as
 the physical transport screening foundation for testing source attribution and
 sensor fault abstention under controlled, reproducible conditions.
 
-Physical & Modeling Notes:
-1. Idealized Domain: The longitudinal coordinate and cross-sectional scales are
-   synthetic screening assumptions inspired by the Tiruppur urban corridor, not
-   a calibrated hydrodynamic model of the natural Noyyal River.
-2. Taylor-Elder Assumptions: Longitudinal dispersion D_L is parameterized as an
-   effective screening constant. True natural channels exhibit cross-sectional
-   velocity shear and transient storage zones that typically yield higher
-   dispersion than Elder's (1959) idealized logarithmic-profile formula.
-3. Numerical Scheme: First-order upwind advection with central dispersion on a
-   cell-centered finite volume mesh. Discrete mass conservation is preserved
-   to machine precision by flux-form formulation.
+Dimensional Consistency & Physical Units:
+1. Transported Quantity:
+   - State variable: Tracer mass concentration C(x, t) in g/m³ (equivalent to mg/L).
+   - Inflow / background tracer concentration: background_tracer_concentration_gpm3 in g/m³.
+     For a dedicated industrial tracer or dye, the ambient baseline is 0.0 g/m³.
+   - Decoupled environmental indicator: Ambient electrical conductivity is retained as an
+     illustrative baseline (illustrative_baseline_ec_uS_cm in µS/cm) and is NOT conflated
+     with or converted into physical tracer concentration.
+2. Source Injections:
+   - Lateral mass injection rate M_dot(t) in g/s.
+   - Channel cross-sectional area A in m².
+   - Volumetric injection source term: S(x, t) = M_dot(t) / (A * dx) in g/(m³·s).
+3. Transport Parameters:
+   - Longitudinal velocity u in m/s.
+   - Longitudinal dispersion coefficient D_L in m²/s.
+   - First-order decay rate k_decay in s⁻¹ (nominal sensitivity: 0 to 0.05 h⁻¹ = 0 to 1.39e-5 s⁻¹).
+4. Discrete Mass Conservation:
+   - Upwind advection + central dispersion on a cell-centered staggered grid.
+   - Exact flux-form discrete mass balance tracking.
+   - Full history of boundary fluxes and decay loss rates exported for independent test auditing.
 """
 
 from __future__ import annotations
@@ -35,7 +44,20 @@ class ChannelPhysicsConfig:
     flow_velocity_mps: float = 0.25
     dispersion_m2ps: float = 4.5
     decay_rate_per_sec: float = 0.0
-    background_concentration: float = 50.0
+    decay_rate_per_hour: Optional[float] = None
+    background_tracer_concentration_gpm3: float = 0.0
+    illustrative_baseline_ec_uS_cm: Optional[float] = 50.0
+
+    def __post_init__(self) -> None:
+        if self.decay_rate_per_hour is not None and self.decay_rate_per_sec == 0.0:
+            self.decay_rate_per_sec = self.decay_rate_per_hour / 3600.0
+        elif self.decay_rate_per_hour is None and self.decay_rate_per_sec > 0.0:
+            self.decay_rate_per_hour = self.decay_rate_per_sec * 3600.0
+
+    @property
+    def background_concentration(self) -> float:
+        """Backward-compatibility alias for background_tracer_concentration_gpm3."""
+        return self.background_tracer_concentration_gpm3
 
     def validate(self) -> None:
         if self.domain_length_m <= 0:
@@ -48,8 +70,10 @@ class ChannelPhysicsConfig:
             raise ValueError(f"dispersion_m2ps must be non-negative, got {self.dispersion_m2ps}")
         if self.decay_rate_per_sec < 0:
             raise ValueError(f"decay_rate_per_sec must be non-negative, got {self.decay_rate_per_sec}")
-        if self.background_concentration < 0:
-            raise ValueError(f"background_concentration must be non-negative, got {self.background_concentration}")
+        if self.background_tracer_concentration_gpm3 < 0:
+            raise ValueError(
+                f"background_tracer_concentration_gpm3 must be non-negative, got {self.background_tracer_concentration_gpm3}"
+            )
 
 
 @dataclass
@@ -101,7 +125,7 @@ class CandidateSource:
     source_id: str
     name: str
     chainage_m: float
-    nominal_mass_rate_gps: float = 25.0
+    nominal_mass_rate_gps: float = 25.0  # grams per second
 
     def validate(self, domain_length_m: float) -> None:
         if not self.source_id:
@@ -167,13 +191,30 @@ class SimulationConfig:
             for src in data.get("candidate_sources", [])
         ]
 
+        # Support both legacy background_concentration and explicit background_tracer_concentration_gpm3
+        bg_tracer = float(
+            phys_dict.get(
+                "background_tracer_concentration_gpm3",
+                phys_dict.get("background_concentration", 0.0),
+            )
+        )
+        base_ec = (
+            float(phys_dict["illustrative_baseline_ec_uS_cm"])
+            if "illustrative_baseline_ec_uS_cm" in phys_dict
+            else None
+        )
+
         physics = ChannelPhysicsConfig(
             domain_length_m=float(phys_dict.get("domain_length_m", 32000.0)),
             cross_section_area_m2=float(phys_dict.get("cross_section_area_m2", 25.0)),
             flow_velocity_mps=float(phys_dict.get("flow_velocity_mps", 0.25)),
             dispersion_m2ps=float(phys_dict.get("dispersion_m2ps", 4.5)),
             decay_rate_per_sec=float(phys_dict.get("decay_rate_per_sec", 0.0)),
-            background_concentration=float(phys_dict.get("background_concentration", 50.0)),
+            decay_rate_per_hour=(
+                float(phys_dict["decay_rate_per_hour"]) if "decay_rate_per_hour" in phys_dict else None
+            ),
+            background_tracer_concentration_gpm3=bg_tracer,
+            illustrative_baseline_ec_uS_cm=base_ec,
         )
 
         grid = NumericalGridConfig(
@@ -216,10 +257,19 @@ class SimulationResult:
     event_id: str
     true_source_id: str
     timestamps_sec: np.ndarray
-    station_observations: Dict[str, np.ndarray]  # station_id -> concentration array
+    station_observations: Dict[str, np.ndarray]  # station_id -> concentration array in g/m³
     mass_accounting: MassAccountingResult
     raw_spatial_grid_x: np.ndarray
-    final_concentration_profile: np.ndarray
+    final_concentration_profile: np.ndarray  # g/m³ in each cell
+    # Exported flux histories for independent external audit
+    boundary_outflow_flux_series: np.ndarray  # g/s at each simulation step
+    decay_loss_rate_series: np.ndarray  # g/s at each simulation step
+    injected_mass_rate_series: np.ndarray  # g/s at each simulation step
+    injections: List[SpillInjection]
+    dt_sec: float
+    dx_m: float
+    cell_volume_m3: float
+    illustrative_baseline_ec_uS_cm: Optional[float] = None
 
 
 class RiverADESimulator:
@@ -234,7 +284,7 @@ class RiverADESimulator:
         self.u = config.physics.flow_velocity_mps
         self.D = config.physics.dispersion_m2ps
         self.k = config.physics.decay_rate_per_sec
-        self.C_base = config.physics.background_concentration
+        self.C_base = config.physics.background_tracer_concentration_gpm3
 
         self.dx = config.grid.dx_m
         self.dt = config.grid.dt_sec
@@ -242,7 +292,7 @@ class RiverADESimulator:
         self.sample_interval = config.grid.sample_interval_sec
 
         self.Nx = int(np.round(self.L / self.dx))
-        self.cell_volume = self.A * self.dx  # m^3
+        self.cell_volume = self.A * self.dx  # m³
         self.cell_centers = (np.arange(self.Nx) + 0.5) * self.dx
 
         # Map stations to fractional cell indices for linear interpolation
@@ -252,11 +302,10 @@ class RiverADESimulator:
         }
 
     def _sample_stations(self, C: np.ndarray) -> Dict[str, float]:
-        """Interpolate concentration at configured monitoring stations."""
+        """Interpolate concentration (g/m³) at configured monitoring stations."""
         readings: Dict[str, float] = {}
         for s in self.config.stations:
             pos = s.chainage_m
-            # Linear interpolation on cell centers
             idx_float = (pos / self.dx) - 0.5
             i0 = int(np.floor(idx_float))
             i1 = i0 + 1
@@ -285,8 +334,8 @@ class RiverADESimulator:
             if inj.chainage_m < 0 or inj.chainage_m > self.L:
                 raise ValueError(f"Injection chainage {inj.chainage_m} m is outside domain [0, {self.L} m]")
 
-        # Initial concentration profile: strictly tracer addition (0.0), background added at output
-        C_tracer = np.zeros(self.Nx, dtype=np.float64)
+        # Initial concentration profile: uniform ambient background tracer (g/m³)
+        C_tracer = np.full(self.Nx, self.C_base, dtype=np.float64)
 
         # Pre-locate source cells
         injection_cells = []
@@ -300,24 +349,28 @@ class RiverADESimulator:
         sample_times: List[float] = []
         station_traces: Dict[str, List[float]] = {s.station_id: [] for s in self.config.stations}
 
+        # Step histories for external independent test audit
+        outflow_flux_history = np.empty(n_steps, dtype=np.float64)
+        decay_loss_history = np.empty(n_steps, dtype=np.float64)
+        injected_rate_history = np.empty(n_steps, dtype=np.float64)
+
         total_injected_mass = 0.0
         cumulative_outflow_mass = 0.0
         cumulative_decayed_mass = 0.0
+        # If ambient background tracer is non-zero, initial mass in domain
+        initial_domain_mass = float(np.sum(C_tracer) * self.cell_volume)
 
         current_time = 0.0
 
         for step in range(n_steps):
-            # Record sampled output at regular intervals
+            # Record sampled output at regular intervals (g/m³)
             if step % sample_stride == 0:
                 sample_times.append(current_time)
-                # Station output includes background concentration
-                sample_C = C_tracer + self.C_base
-                station_vals = self._sample_stations(sample_C)
+                station_vals = self._sample_stations(C_tracer)
                 for s_id, val in station_vals.items():
                     station_traces[s_id].append(val)
 
-            # Compute internal cell face fluxes (F_{i+1/2})
-            # Flux unit: grams/second
+            # Compute internal cell face fluxes (F_{i+1/2}) in g/s
             # Advection: first-order upwind F_adv = A * u * C_i
             # Dispersion: central F_disp = -A * D * (C_{i+1} - C_i) / dx
             f_adv = self.A * self.u * C_tracer[:-1]
@@ -325,17 +378,19 @@ class RiverADESimulator:
             internal_fluxes = f_adv + f_disp
 
             # Boundary face fluxes:
-            # Upstream (x=0): zero added tracer inflow F_{-1/2} = 0
-            f_in = 0.0
+            # Upstream (x=0): clean inflow with ambient background tracer F_{-1/2} = A * u * C_base
+            f_in = self.A * self.u * self.C_base
             # Downstream (x=L): zero diffusive gradient, advective outflow F_{Nx-1/2} = A * u * C[-1]
             f_out = self.A * self.u * C_tracer[-1]
 
             # Injections for current time step
             inj_rates = np.zeros(self.Nx, dtype=np.float64)
+            step_injected_rate = 0.0
             for inj, c_idx in injection_cells:
                 rate = inj.rate_at_time(current_time)
                 if rate > 0.0:
                     inj_rates[c_idx] += rate
+                    step_injected_rate += rate
                     total_injected_mass += rate * self.dt
 
             # Divergence of fluxes: dM/dt = F_{in} - F_{out}
@@ -344,13 +399,21 @@ class RiverADESimulator:
             net_flux[1:-1] = internal_fluxes[:-1] - internal_fluxes[1:]
             net_flux[-1] = internal_fluxes[-1] - f_out
 
-            # First-order decay
-            decay_rate = self.k * self.cell_volume * C_tracer
-            cumulative_decayed_mass += float(np.sum(decay_rate)) * self.dt
+            # First-order decay loss: rate = k * V_cell * (C - C_base)
+            # (only decays the added tracer above background)
+            tracer_excess = np.maximum(C_tracer - self.C_base, 0.0)
+            decay_rate_vector = self.k * self.cell_volume * tracer_excess
+            step_decay_loss = float(np.sum(decay_rate_vector))
+
+            outflow_flux_history[step] = f_out
+            decay_loss_history[step] = step_decay_loss
+            injected_rate_history[step] = step_injected_rate
+
+            cumulative_decayed_mass += step_decay_loss * self.dt
             cumulative_outflow_mass += f_out * self.dt
 
             # Update concentration: C_new = C + dt/V * (net_flux + inj - decay)
-            C_tracer = C_tracer + (self.dt / self.cell_volume) * (net_flux + inj_rates - decay_rate)
+            C_tracer = C_tracer + (self.dt / self.cell_volume) * (net_flux + inj_rates - decay_rate_vector)
 
             # Numerical non-negativity guard (CFL guarantees >= 0 up to machine precision)
             C_tracer = np.maximum(C_tracer, 0.0)
@@ -360,20 +423,25 @@ class RiverADESimulator:
         # Final sample point if needed
         if len(sample_times) == 0 or sample_times[-1] < current_time - (self.sample_interval / 2):
             sample_times.append(current_time)
-            sample_C = C_tracer + self.C_base
-            station_vals = self._sample_stations(sample_C)
+            station_vals = self._sample_stations(C_tracer)
             for s_id, val in station_vals.items():
                 station_traces[s_id].append(val)
 
-        # Mass accounting
-        domain_retained_mass = float(np.sum(C_tracer) * self.cell_volume)
-        accounted_mass = domain_retained_mass + cumulative_outflow_mass + cumulative_decayed_mass
-        mass_deficit = abs(accounted_mass - total_injected_mass)
-        rel_deficit = mass_deficit / max(total_injected_mass, 1e-9)
+        # Mass accounting:
+        # Final domain mass
+        final_domain_mass = float(np.sum(C_tracer) * self.cell_volume)
+        # Total added mass entering domain = total_injected_mass + inflow_background_mass
+        cumulative_inflow_mass = self.A * self.u * self.C_base * current_time
+        total_input_mass = initial_domain_mass + total_injected_mass + cumulative_inflow_mass
+        total_output_mass = final_domain_mass + cumulative_outflow_mass + cumulative_decayed_mass
+
+        mass_deficit = abs(total_output_mass - total_input_mass)
+        denominator = max(total_input_mass, total_injected_mass, 1e-9)
+        rel_deficit = mass_deficit / denominator
 
         mass_result = MassAccountingResult(
             total_injected_mass_grams=float(total_injected_mass),
-            domain_retained_mass_grams=float(domain_retained_mass),
+            domain_retained_mass_grams=float(final_domain_mass),
             boundary_outflow_mass_grams=float(cumulative_outflow_mass),
             decayed_mass_grams=float(cumulative_decayed_mass),
             mass_conservation_deficit_grams=float(mass_deficit),
@@ -388,4 +456,12 @@ class RiverADESimulator:
             mass_accounting=mass_result,
             raw_spatial_grid_x=self.cell_centers.copy(),
             final_concentration_profile=C_tracer.copy(),
+            boundary_outflow_flux_series=outflow_flux_history,
+            decay_loss_rate_series=decay_loss_history,
+            injected_mass_rate_series=injected_rate_history,
+            injections=list(injections),
+            dt_sec=self.dt,
+            dx_m=self.dx,
+            cell_volume_m3=self.cell_volume,
+            illustrative_baseline_ec_uS_cm=self.config.physics.illustrative_baseline_ec_uS_cm,
         )
