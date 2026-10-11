@@ -27,14 +27,28 @@ Static analysis, compilation, and production build checks were executed directly
 ```mermaid
 graph TD
     subgraph Test Suite Hierarchy
-        T1[VAL-MAP: Base Mapping & Controls]
-        T2[VAL-TRC: Trace Pollution Workflow]
-        T3[VAL-FLD: Flood Exposure Workflow]
-        T4[VAL-GW: Groundwater Assessment Workflow]
-        T5[VAL-SCN: Scenario Comparison Workflow]
-        T6[VAL-RST: State Isolation & Module Switching]
+        T1[VAL-MAP: Base Mapping & Controls (7 tests)]
+        T2[VAL-TRC: Trace Pollution Workflow (3 tests)]
+        T3[VAL-FLD: Flood Exposure Workflow (4 tests)]
+        T4[VAL-GW: Groundwater Assessment Workflow (4 tests)]
+        T5[VAL-SCN: Scenario Comparison Workflow (6 tests)]
+        T6[VAL-RST: State Isolation & Module Switching (3 tests)]
     end
 ```
+
+### Test Suite Inventory & Verification Status Summary
+
+The interactive test protocol defines exactly **27 unique test cases** across 6 functional test groups. In accordance with empirical verification standards, all 27 cases remain in `NOT RUN` status until actual manual smoke tests are conducted and recorded:
+
+| Test Group | Test Category Focus | Test IDs | Total Cases | Verified Status |
+| :--- | :--- | :--- | :---: | :---: |
+| **Group 1** | Base Mapping, Camera Presets & Entity Layers | `VAL-MAP-01` to `VAL-MAP-07` | 7 | `NOT RUN` (0/7) |
+| **Group 2** | Trace Pollution Workflow | `VAL-TRC-01` to `VAL-TRC-03` | 3 | `NOT RUN` (0/3) |
+| **Group 3** | Flood Exposure Workflow | `VAL-FLD-01` to `VAL-FLD-04` | 4 | `NOT RUN` (0/4) |
+| **Group 4** | Groundwater Assessment Workflow | `VAL-GW-01` to `VAL-GW-04` | 4 | `NOT RUN` (0/4) |
+| **Group 5** | Scenario Comparison Workflow | `VAL-SCN-01` to `VAL-SCN-06` | 6 | `NOT RUN` (0/6) |
+| **Group 6** | Cross-Module Interaction & State Isolation | `VAL-RST-01` to `VAL-RST-03` | 3 | `NOT RUN` (0/3) |
+| **Total** | **Comprehensive Interactive Test Suite** | **27 Unique Test IDs** | **27** | **`NOT RUN` (0/27)** |
 
 ---
 
