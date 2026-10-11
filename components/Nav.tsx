@@ -135,6 +135,14 @@ export default function Nav() {
             Digital Twin
           </Link>
 
+          {/* Environmental Analysis (Direct) */}
+          <Link
+            href="/terrain-map-prototype"
+            className={`nav-link-item ${isActive("/terrain-map-prototype") ? "active" : ""}`}
+          >
+            Environmental Analysis
+          </Link>
+
           {/* INTELLIGENCE Dropdown */}
           <div
             className="nav-dropdown"
@@ -392,6 +400,9 @@ export default function Nav() {
                 </Link>
                 <Link href="/terrain" className="nav-link-item">
                   Digital Twin
+                </Link>
+                <Link href="/terrain-map-prototype" className="nav-link-item">
+                  Environmental Analysis
                 </Link>
                 <Link href="/map" className="nav-link-item">
                   GIS Map

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
@@ -3175,6 +3176,23 @@ export default function TerrainMapPrototypePage() {
           <button onClick={resetView} style={buttonStyle} title="Reset camera to central Tiruppur">
             📍 Fit Tiruppur
           </button>
+
+          <Link
+            href="/terrain"
+            style={{
+              ...buttonStyle,
+              background: "#f0fdfa",
+              borderColor: "#99f6e4",
+              color: "#0f766e",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+            title="Switch to Three.js 3D Terrain Explorer with digital twin layers and lighting controls"
+          >
+            🏔️ Open 3D Terrain Explorer →
+          </Link>
         </div>
       </div>
 

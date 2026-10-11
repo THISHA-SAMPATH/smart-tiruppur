@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import type {
   LightingPreset,
@@ -584,6 +585,26 @@ export default function Terrain3DPage() {
             >
               <Camera size={13} /> Figure
             </button>
+            <Link
+              href="/terrain-map-prototype"
+              className="dt-btn"
+              style={{
+                padding: "4px 10px",
+                fontSize: "10.5px",
+                borderRadius: "6px",
+                color: "#0f766e",
+                background: "#f0fdfa",
+                borderColor: "#99f6e4",
+                fontWeight: 600,
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+              title="Open MapLibre Environmental Analysis Dashboard (Trace Pollution, Flood, Groundwater, Scenarios)"
+            >
+              Open Environmental Analysis →
+            </Link>
           </div>
         </div>
 

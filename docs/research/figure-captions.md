@@ -1,10 +1,10 @@
 # Research Figure Captions and Publication Plans: Smart Tiruppur / NoyyalSense
 
-**Project:** Smart Tiruppur Environmental Digital Twin / NoyyalSense  
-**Document Type:** Scientific Figure Specifications & Publication Captions  
-**Target Audience:** Academic Journal Authors, Reviewers, Geospatial Editors  
-**Last Updated:** October 2026  
-**Standards:** Publication guidelines for environmental informatics and GIScience manuscripts  
+**Project:** Smart Tiruppur Environmental Digital Twin / NoyyalSense
+**Document Type:** Scientific Figure Specifications & Publication Captions
+**Target Audience:** Academic Journal Authors, Reviewers, Geospatial Editors
+**Last Updated:** October 2026
+**Framework:** Publication Guidelines for Environmental Informatics and Geospatial Manuscripts (Verification & Reproducibility)
 
 ---
 
@@ -78,15 +78,16 @@ To ensure scientific integrity and visual consistency, all figures should be cap
   * Select `unit_004` (*Kasipalayam Dyeing Unit 004*).
   * Click **Trace Pollution** button.
   * Active display: Cyan snapped discharge connector from facility to river, followed by orange/red downstream advective transport line terminating at `Kasipalayam Bridge Telemetry` (`sensor_002`).
-  * Right panel: **Trace Pollution** tab showing distance ($0.65\text{ km}$), estimated transit time ($0.40\text{ hours}$), and nominal flow.
+  * Right panel: **Trace Pollution** tab showing distance ($0.65\text{ km}$), estimated transit time ($0.7\text{ hours}$), and nominal flow.
 * **Essential Legend Entries & Credits:**
   * Legend: `Modelled Discharge Path` (Cyan), `Instream Transport Segment` (Orange/Red), `Downstream Receptor`.
-  * Credits: *Modelled advective pathway; Snapped to OpenStreetMap river geometry.*
+  * Credits: *Modelled advective pathway; Snapped to OpenStreetMap river geometry; Nominal velocity 0.25 m/s (±50% uncalibrated).*
 * **Publication Caption:**
-  > **Figure 3. Advective pollution pathway tracing from a textile dyeing facility to downstream monitoring station.** Modelled downstream transport pathway initiated from Kasipalayam Dyeing Unit 004 ($11.1190^\circ\text{ N}, 77.3950^\circ\text{ E}$). The algorithm calculates geodesic snapping to the Noyyal River centerline polyline ($0.12\text{ km}$ overland connector) and propagates instream advective transit along the river stem ($0.65\text{ km}$) to the Kasipalayam Bridge telemetry receptor, estimating a transit time of $0.40\text{ hours}$ under baseline flow.
+  > **Figure 3. Advective pollution pathway tracing from a textile dyeing facility to downstream monitoring station.** Modelled downstream transport pathway initiated from Kasipalayam Dyeing Unit 004 ($11.1190^\circ\text{ N}, 77.3950^\circ\text{ E}$). The algorithm calculates geodesic snapping to the Noyyal River centerline polyline ($0.12\text{ km}$ overland connector) and propagates instream advective transit along the river stem ($0.65\text{ km}$) to the Kasipalayam Bridge telemetry receptor, estimating a transit time of $0.7\text{ hours}$ under nominal baseflow ($v = 0.25\text{ m/s}$).
 * **Disclosed Limitations:**
   * The pathway represents a deterministic mathematical snap to the river centerline, not physical proof of an unpermitted pipe or open channel.
-  * Transit time uses an uncalibrated constant velocity assumption ($0.45\text{ m/s}$) and does not model 2D hydrodynamic dispersion or transient river storage.
+  * Transit time uses an uncalibrated constant velocity assumption ($0.25\text{ m/s}$; $\pm 50\%$ uncertainty) and does not model 2D hydrodynamic dispersion or transient river storage.
+  * Snapping does not establish physical pipe connectivity, calibrated pollutant transport, or downstream water-quality impact.
 
 ---
 
@@ -95,16 +96,17 @@ To ensure scientific integrity and visual consistency, all figures should be cap
 * **Page & Mode:** `/terrain-map-prototype` — Trace Pollution Fallback Inspection.
 * **Camera Framing:** Center: `[77.4100, 11.1250]`, Zoom: `13.5`, Pitch: `10.0°`, Bearing: `0.0°`.
 * **Active Layers & Controls:**
-  * Select an industrial facility situated $> 2.5\text{ km}$ from the digitized river centerline (or simulate beyond snapping distance).
+  * Select an industrial facility situated $> 2.5\text{ km}$ from the digitized river centerline.
   * Click **Trace Pollution** button.
-  * Display: Informational banner in right-hand panel confirming pathway unavailability; map maintains clean state without fabricating an overland connector.
+  * Display: Informational banner in right-hand panel confirming that the distance exceeds the $2,500\text{ m}$ threshold; map maintains clean state without fabricating an overland connector.
 * **Essential Legend Entries & Credits:**
-  * Panel Banner: *No direct surface pathway mapped within 2.5 km river corridor.*
-  * Credits: *Enforces scientific constraint: Prevents arbitrary pathway fabrication.*
+  * Panel Banner: *Nearest mapped waterway is ... m away, which exceeds the model's overland discharge channel threshold (2,500 m).*
+  * Credits: *Enforces scientific constraint: Prevents arbitrary pathway fabrication; Physical conveyance route classified as unknown.*
 * **Publication Caption:**
-  > **Figure 4. Scientific integrity constraint: Fallback handling for facilities outside the river snapping corridor.** When evaluating facilities located beyond the valid $2.5\text{ km}$ geodesic snapping threshold, the system suppresses synthetic pathway rendering and notifies the user that the facility operates under closed-loop Zero Liquid Discharge (ZLD) or indirect CETP conveyance. This design prevents the algorithmic fabrication of unsupported pollutant pathways across unmodeled topography.
+  > **Figure 4. Scientific integrity constraint: Fallback handling for facilities outside the river snapping corridor.** When evaluating facilities located beyond the valid $2,500\text{ m}$ geodesic snapping threshold, the system suppresses synthetic pathway rendering and informs the user that the distance exceeds the hydrologic connection threshold. The physical conveyance route for unmodeled facilities is designated as unknown, preventing the algorithmic fabrication of unsupported pollutant pathways across unmodeled topography.
 * **Disclosed Limitations:**
-  * Mapped exclusion relies on geodesic Euclidean distance to the primary river centerline; local municipal underground storm sewer connectivity is not modeled.
+  * Mapped exclusion relies on geodesic Euclidean distance to the primary river centerline; municipal underground storm sewer connectivity is not modeled.
+  * No inference of Zero Liquid Discharge (ZLD) or CETP operation is made without facility-specific evidence.
 
 ---
 
@@ -115,13 +117,13 @@ To ensure scientific integrity and visual consistency, all figures should be cap
 * **Active Layers & Controls:**
   * Click **Flood Exposure** button.
   * Select Scenario: `HEAVY_RAIN` (150 mm/day rainfall, 12 h duration, 85 $m^3/\text{s}$ river baseflow).
-  * Map: Six sector indicators visible with classified risk badges (e.g., Kasipalayam marked as `HIGH` / `CRITICAL`, Tiruppur North marked as `LOW`).
-  * Right panel: **Flood Analysis** tab displaying citywide maximum accumulation indicator ($1.08\text{ m}$) and affected infrastructure list.
+  * Map: Six sector indicators visible with classified risk badges (e.g., Kasipalayam marked as `CRITICAL`, Angeripalayam as `VERY HIGH`, Mangalam as `HIGH`, Tiruppur North as `LOW`).
+  * Right panel: **Flood Analysis** tab displaying citywide maximum accumulation indicator ($1.45\text{ m}$ at Kasipalayam) and affected infrastructure list.
 * **Essential Legend Entries & Credits:**
-  * Legend: `Sector Risk Categories` (Low: $<0.20$, Moderate: $0.20\text{--}0.39$, High: $0.40\text{--}0.59$, Critical: $\ge 0.60$).
+  * Legend: `Sector Risk Categories` (Low: $<0.20$, Moderate: $0.20\text{--}0.39$, High: $0.40\text{--}0.59$, Very High: $0.60\text{--}0.79$, Critical: $\ge 0.80$).
   * Credits: *Modelled multi-criteria screening based on nominal sector topography and rainfall scenarios.*
 * **Publication Caption:**
-  > **Figure 5. Terrain-based flood hazard screening across six vulnerable urban sectors under heavy monsoonal rainfall.** Flood exposure assessment under the `HEAVY_RAIN` scenario ($150\text{ mm/day}$ precipitation, $85\text{ m}^3/\text{s}$ river discharge). Circular sector markers reflect multi-criteria risk scores combining elevation depression, river proximity, and nominal slope. Low-lying topographic depressions such as the Kasipalayam Noyyal Exit Trough (290 m ASL) exhibit high hazard indicators, whereas elevated sectors (Tiruppur North Foothills, 318 m ASL) remain in the low hazard tier.
+  > **Figure 5. Terrain-based flood hazard screening across six vulnerable urban sectors under heavy monsoonal rainfall.** Flood exposure assessment under the `HEAVY_RAIN` scenario ($150\text{ mm/day}$ precipitation, $85\text{ m}^3/\text{s}$ river discharge). Circular sector markers reflect multi-criteria risk scores combining elevation depression, river proximity, and nominal slope. Low-lying topographic depressions such as the Kasipalayam Noyyal Exit Trough (290 m ASL) exhibit high hazard indicators (score 0.97, $1.45\text{ m}$ accumulation depth), whereas elevated sectors (Tiruppur North Foothills, 318 m ASL) remain in the low hazard tier.
 * **Disclosed Limitations:**
   * Output values represent scalar screening indicators at six discrete sector locations, **not** continuous 2D inundation polygon surfaces.
   * Elevations and slopes are fixed nominal profile constants; the model is not a calibrated 2D hydraulic simulation (e.g., HEC-RAS).
@@ -136,14 +138,14 @@ To ensure scientific integrity and visual consistency, all figures should be cap
   * Click **Groundwater** button.
   * Map: 33 Firka centroid badges rendered across Tiruppur District, color-coded by official CGWB extraction stage (Green = Safe, Yellow = Semi-Critical, Orange = Critical, Red = Over-Exploited).
   * Selection: Select `Tiruppur South` Firka.
-  * Right panel: **Groundwater** tab showing Assessment Year `2024`, Extractable Resource ($1,842\text{ ham}$), Total Annual Extraction ($2,070\text{ ham}$), Stage of Extraction ($112.4\%$), and Net Deficit ($-228\text{ ham}$).
+  * Right panel: **Groundwater** tab showing Assessment Year `2024`, Extractable Resource ($2,985.45\text{ ham}$), Total Annual Extraction ($3,355.65\text{ ham}$), Stage of Extraction ($112.4\%$), and Net Deficit ($-370.20\text{ ham}$).
 * **Essential Legend Entries & Credits:**
   * Legend: `CGWB Extraction Stage Scale` ($<70\%$ Safe, $70\text{--}89\%$ Semi-Critical, $90\text{--}99\%$ Critical, $\ge 100\%$ Over-Exploited).
   * Credits: *Source: Central Ground Water Board (CGWB) Dynamic Assessment 2024; Volumetric unit: 1 ham = 10,000 m³.*
 * **Publication Caption:**
-  > **Figure 6. Administrative Firka groundwater resource assessment across Tiruppur District (CGWB 2024).** Spatial representation of groundwater stress across 33 revenue assessment units (Firkas) based on official Central Ground Water Board (CGWB) 2024 dynamic resource compilations. Tiruppur South exhibits severe overdraft ($112.4\%$ stage of extraction, Over-Exploited classification) with a net annual volumetric deficit of $228\text{ ham}$ ($2.28\text{ million m}^3$). Markers represent Firka geographic centroids.
+  > **Figure 6. Administrative Firka groundwater resource assessment across Tiruppur District (CGWB 2024).** Spatial representation of groundwater stress across 33 revenue assessment units (Firkas) based on official Central Ground Water Board (CGWB) 2024 dynamic resource compilations. Tiruppur South exhibits severe overdraft ($112.4\%$ stage of extraction, Over-Exploited classification) with a net annual volumetric deficit of $370.20\text{ ham}$ ($3.702\text{ million m}^3$). Markers represent Firka geographic centroids.
 * **Disclosed Limitations:**
-  * Data represent administrative annual aggregates published for 2024; spatial markers represent Firka geographic centroids, not physical boreholes, piezometer wells, or aquifer boundary surfaces.
+  * Data represent administrative annual aggregates published for 2024; spatial markers represent Firka geographic centroids, not physical boreholes, piezometer wells, or continuous aquifer boundary surfaces.
 
 ---
 
@@ -163,7 +165,7 @@ To ensure scientific integrity and visual consistency, all figures should be cap
   * Table Headers: `Metric`, `Baseline (0 mm/d)`, `Alternative (150 mm/d)`, `Delta (Δ)`, `Status`.
   * Credits: *Deterministic evaluation using lib/flood/engine.ts; Division-by-zero protected.*
 * **Publication Caption:**
-  > **Figure 7. Side-by-side scenario comparison interface evaluating monsoonal flood hazard shifts.** Side-by-side comparison evaluating dry-weather baseline conditions against a heavy rainfall scenario ($150\text{ mm/day}$). The interface displays absolute and relative changes across mean flood risk scores ($0.00 \to 0.44$, $\Delta = +0.44$), modelled runoff accumulation ($0.00\text{ m} \to 0.65\text{ m}$), and sector risk category distributions (3 sectors transitioning to High/Critical risk), accompanied by model-supported interpretation and provenance metadata.
+  > **Figure 7. Side-by-side scenario comparison interface evaluating monsoonal flood hazard shifts.** Side-by-side comparison evaluating dry-weather baseline conditions against a heavy rainfall scenario ($150\text{ mm/day}$). The interface displays absolute and relative changes across mean flood risk scores ($0.00 \to 0.43$, $\Delta = +0.43$), modelled runoff accumulation ($0.00\text{ m} \to 0.65\text{ m}$), and sector risk category distributions (3 sectors transitioning to High/Very High/Critical risk), accompanied by model-supported interpretation and provenance metadata.
 * **Disclosed Limitations:**
   * Percentage deltas for zero baselines are safely handled as "N/A (base 0)" to prevent false mathematical conclusions.
   * Evaluates supported model outputs only; does not combine disparate physical units into an unsubstantiated aggregate index.
