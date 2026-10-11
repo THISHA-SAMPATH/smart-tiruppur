@@ -453,26 +453,9 @@ function updateMapPathwaySource(
 // TERRAIN FLOOD EXPOSURE OVERLAY HELPERS
 // ---------------------------------------------------------------------------
 
-function createGeoJsonCircle(
-  center: [number, number],
-  radiusMeters: number,
-  points: number = 48
-): Array<[number, number]> {
-  const coords: Array<[number, number]> = [];
-  const distanceX = radiusMeters / (111320 * Math.cos((center[1] * Math.PI) / 180));
-  const distanceY = radiusMeters / 110540;
-
-  for (let i = 0; i <= points; i++) {
-    const theta = (i / points) * (2 * Math.PI);
-    const x = center[0] + distanceX * Math.cos(theta);
-    const y = center[1] + distanceY * Math.sin(theta);
-    coords.push([x, y]);
-  }
-  return coords;
-}
-
-// OpenStreetMap building centroid counts within sector circular analysis footprints
-// Derived from public/geo/tiruppur-buildings.geojson as documented in lib/steri/dynamic.ts
+// Contextual OpenStreetMap building footprint counts within sector reference footprint
+// Derived from public/geo/tiruppur-buildings.geojson as documented in lib/steri/dynamic.ts.
+// NOTE: Footprint centroid counts provide spatial context only; not building damage, population, or flood exposure.
 const OSM_BUILDING_COUNTS: Record<string, number> = {
   angeripalayam: 7,
   kasipalayam: 6,
@@ -498,6 +481,15 @@ function getFloodRiskColor(riskCategory: string): string {
   }
 }
 
+/**
+ * Builds GeoJSON features for modelled sector flood-risk indicators.
+ *
+ * SCIENTIFIC INTEGRITY FALLBACK:
+ * The underlying model provides aggregate multi-criteria risk indicators for discrete sectors.
+ * It does NOT output valid geographically referenced flood polygons, raster cells, or inundation grids.
+ * In accordance with scientific integrity guidelines, no synthetic flood boundary polygons are generated.
+ * Sectors are represented strictly as geographic point markers at their documented coordinates.
+ */
 function buildFloodGeoJson(
   analysis: FloodAnalysisResult,
   selectedZoneId?: string | null
@@ -509,34 +501,9 @@ function buildFloodGeoJson(
     if (!sector) continue;
 
     const isSelected = selectedZoneId === zone.zoneId;
-    // Catchment radius derived from sector area (scale 0.55 for distinct core spatial extents)
-    const radiusMeters = Math.sqrt((sector.areaKm2 * 1000000) / Math.PI) * 0.55;
-    const ring = createGeoJsonCircle([sector.lon, sector.lat], radiusMeters);
     const color = getFloodRiskColor(zone.riskCategory);
 
-    // 1. Sector catchment polygon feature
-    features.push({
-      type: "Feature",
-      geometry: {
-        type: "Polygon",
-        coordinates: [ring],
-      },
-      properties: {
-        kind: "polygon",
-        id: zone.zoneId,
-        name: zone.zoneName,
-        elevation: zone.elevationMetersASL,
-        slope: zone.slopeDegrees,
-        riverDist: zone.riverProximityMeters,
-        accumulationDepth: zone.accumulationDepthMeters,
-        floodRiskScore: zone.floodRiskScore,
-        riskCategory: zone.riskCategory,
-        color,
-        isSelected: isSelected ? "true" : "false",
-      },
-    });
-
-    // 2. Centroid point feature for marker and label
+    // Sector-level point indicator at documented geographic coordinates
     features.push({
       type: "Feature",
       geometry: {
@@ -544,10 +511,12 @@ function buildFloodGeoJson(
         coordinates: [sector.lon, sector.lat],
       },
       properties: {
-        kind: "point",
+        kind: "sector_indicator",
         id: zone.zoneId,
         name: zone.zoneName,
         elevation: zone.elevationMetersASL,
+        slope: zone.slopeDegrees,
+        riverDist: zone.riverProximityMeters,
         accumulationDepth: zone.accumulationDepthMeters,
         floodRiskScore: zone.floodRiskScore,
         riskCategory: zone.riskCategory,
@@ -1211,72 +1180,13 @@ export default function TerrainMapPrototypePage() {
               });
             }
 
-            // Insert flood polygon fill and outline UNDER the river line so river & labels remain fully visible
-            const underRiverLayer = activeMap.getLayer("prototype-noyyal-river-glow")
-              ? "prototype-noyyal-river-glow"
-              : firstLabel;
-
-            if (!activeMap.getLayer("prototype-flood-fill")) {
+            // Sector-level point indicators (ambient glow ring and distinct core marker)
+            if (!activeMap.getLayer("prototype-flood-marker-glow")) {
               activeMap.addLayer(
                 {
-                  id: "prototype-flood-fill",
-                  type: "fill",
-                  source: "prototype-flood-zones",
-                  filter: ["==", ["get", "kind"], "polygon"],
-                  layout: {
-                    visibility: isFloodModeActiveRef.current ? "visible" : "none",
-                  },
-                  paint: {
-                    "fill-color": ["get", "color"],
-                    "fill-opacity": [
-                      "case",
-                      ["==", ["get", "isSelected"], "true"],
-                      0.35,
-                      0.20,
-                    ],
-                  },
-                },
-                underRiverLayer
-              );
-            }
-
-            if (!activeMap.getLayer("prototype-flood-stroke")) {
-              activeMap.addLayer(
-                {
-                  id: "prototype-flood-stroke",
-                  type: "line",
-                  source: "prototype-flood-zones",
-                  filter: ["==", ["get", "kind"], "polygon"],
-                  layout: {
-                    visibility: isFloodModeActiveRef.current ? "visible" : "none",
-                  },
-                  paint: {
-                    "line-color": ["get", "color"],
-                    "line-width": [
-                      "case",
-                      ["==", ["get", "isSelected"], "true"],
-                      3,
-                      1.5,
-                    ],
-                    "line-opacity": [
-                      "case",
-                      ["==", ["get", "isSelected"], "true"],
-                      0.9,
-                      0.65,
-                    ],
-                  },
-                },
-                underRiverLayer
-              );
-            }
-
-            if (!activeMap.getLayer("prototype-flood-centroid")) {
-              activeMap.addLayer(
-                {
-                  id: "prototype-flood-centroid",
+                  id: "prototype-flood-marker-glow",
                   type: "circle",
                   source: "prototype-flood-zones",
-                  filter: ["==", ["get", "kind"], "point"],
                   layout: {
                     visibility: isFloodModeActiveRef.current ? "visible" : "none",
                   },
@@ -1285,12 +1195,36 @@ export default function TerrainMapPrototypePage() {
                     "circle-radius": [
                       "case",
                       ["==", ["get", "isSelected"], "true"],
-                      8,
-                      5.5,
+                      18,
+                      12,
+                    ],
+                    "circle-opacity": 0.28,
+                  },
+                },
+                firstLabel
+              );
+            }
+
+            if (!activeMap.getLayer("prototype-flood-marker-core")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-flood-marker-core",
+                  type: "circle",
+                  source: "prototype-flood-zones",
+                  layout: {
+                    visibility: isFloodModeActiveRef.current ? "visible" : "none",
+                  },
+                  paint: {
+                    "circle-color": ["get", "color"],
+                    "circle-radius": [
+                      "case",
+                      ["==", ["get", "isSelected"], "true"],
+                      8.5,
+                      6,
                     ],
                     "circle-stroke-color": "#ffffff",
                     "circle-stroke-width": 2,
-                    "circle-opacity": 0.9,
+                    "circle-opacity": 0.95,
                   },
                 },
                 firstLabel
@@ -1303,7 +1237,6 @@ export default function TerrainMapPrototypePage() {
                   id: "prototype-flood-label",
                   type: "symbol",
                   source: "prototype-flood-zones",
-                  filter: ["==", ["get", "kind"], "point"],
                   layout: {
                     "text-field": [
                       "concat",
@@ -1329,14 +1262,14 @@ export default function TerrainMapPrototypePage() {
               );
             }
 
-            // Click handling for flood risk zones
-            activeMap.on("click", "prototype-flood-fill", (e) => {
+            // Click handling for sector-level modelled flood risk indicators
+            activeMap.on("click", "prototype-flood-marker-core", (e) => {
               if (!e.features || !e.features[0]) return;
               const p = e.features[0].properties as any;
               selectFloodZone(p.id, false);
             });
 
-            activeMap.on("click", "prototype-flood-centroid", (e) => {
+            activeMap.on("click", "prototype-flood-marker-glow", (e) => {
               if (!e.features || !e.features[0]) return;
               const p = e.features[0].properties as any;
               selectFloodZone(p.id, false);
@@ -1423,8 +1356,8 @@ export default function TerrainMapPrototypePage() {
               "prototype-trace-station-highlight",
               "prototype-trace-outfall-marker",
               "prototype-trace-confluence-marker",
-              "prototype-flood-fill",
-              "prototype-flood-centroid",
+              "prototype-flood-marker-core",
+              "prototype-flood-marker-glow",
             ].forEach((layerId) => {
               activeMap.on("mouseenter", layerId, () => {
                 activeMap.getCanvas().style.cursor = "pointer";
@@ -1444,8 +1377,8 @@ export default function TerrainMapPrototypePage() {
                   "prototype-trace-station-highlight",
                   "prototype-trace-outfall-marker",
                   "prototype-trace-confluence-marker",
-                  "prototype-flood-fill",
-                  "prototype-flood-centroid",
+                  "prototype-flood-marker-core",
+                  "prototype-flood-marker-glow",
                 ].filter((id) => activeMap.getLayer(id) !== undefined),
               });
               if (features.length === 0) {
@@ -1709,9 +1642,8 @@ export default function TerrainMapPrototypePage() {
     if (map) {
       const visibility = nextActive ? "visible" : "none";
       for (const layerId of [
-        "prototype-flood-fill",
-        "prototype-flood-stroke",
-        "prototype-flood-centroid",
+        "prototype-flood-marker-glow",
+        "prototype-flood-marker-core",
         "prototype-flood-label",
       ]) {
         if (map.getLayer(layerId)) {
@@ -1728,7 +1660,7 @@ export default function TerrainMapPrototypePage() {
         setActivePanelTab("flood");
         const analysis = floodAnalysisRef.current;
         setStatus(
-          `Flood Exposure mode active · Scenario: ${floodScenarioPresetRef.current.replace("_", " ")} (${analysis.scenario.rainfallMmDay} mm/day) · ${analysis.highRiskZonesCount} high-risk zone(s)`
+          `Flood Exposure mode active · Sector-level modelled risk indicators (${analysis.affectedZones.length} points) · Scenario: ${floodScenarioPresetRef.current.replace("_", " ")} (${analysis.scenario.rainfallMmDay} mm/day) · Not an inundation map`
         );
       } else {
         if (selectedEntity) {
@@ -1751,7 +1683,7 @@ export default function TerrainMapPrototypePage() {
       updateMapFloodSource(map, analysis, selectedFloodZoneIdRef.current);
     }
     setStatus(
-      `Flood Exposure: ${preset.replace("_", " ")} scenario (${analysis.scenario.rainfallMmDay} mm/day) · ${analysis.highRiskZonesCount} high-risk zone(s)`
+      `Flood Exposure: ${preset.replace("_", " ")} scenario (${analysis.scenario.rainfallMmDay} mm/day) · Sector-level risk indicators updated · Not an inundation map`
     );
   }
 
@@ -1778,7 +1710,7 @@ export default function TerrainMapPrototypePage() {
     const zone = floodAnalysisRef.current.affectedZones.find((z) => z.zoneId === zoneId);
     if (zone) {
       setStatus(
-        `Selected Flood Zone: ${zone.zoneName} · Risk: ${zone.riskCategory} (${Math.round(zone.floodRiskScore * 100)}%) · Est. Accumulation: ${zone.accumulationDepthMeters}m`
+        `Selected Sector Indicator: ${zone.zoneName} · Modelled Risk: ${zone.riskCategory} (${Math.round(zone.floodRiskScore * 100)}%) · Modelled Accumulation Index: ${zone.accumulationDepthMeters}m (uncalibrated)`
       );
     }
   }
@@ -2133,10 +2065,10 @@ export default function TerrainMapPrototypePage() {
                 </div>
 
                 <div style={{ marginTop: "8px", fontSize: "15px", fontWeight: 800, color: "#0f172a" }}>
-                  Terrain Flood Exposure Analysis
+                  Sector-Level Flood Risk Analysis
                 </div>
                 <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
-                  DEM Topography · Noyyal River Drainage · Rainfall Accumulation
+                  Modelled Topographic Risk Indicators · 6 Sector Assessment Points
                 </div>
 
                 {/* Scenario Selector */}
@@ -2195,7 +2127,7 @@ export default function TerrainMapPrototypePage() {
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase" }}>Max Accum.</div>
+                    <div style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase" }}>Peak Index</div>
                     <div style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
                       {floodAnalysis.citywideMaxAccumulationMeters} m
                     </div>
@@ -2217,7 +2149,7 @@ export default function TerrainMapPrototypePage() {
                 {/* Catchment Sectors Selector */}
                 <div style={{ marginTop: "12px" }}>
                   <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase", marginBottom: "5px" }}>
-                    Select Catchment Sector ({floodAnalysis.affectedZones.length})
+                    Select Sector Assessment Point ({floodAnalysis.affectedZones.length})
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                     {floodAnalysis.affectedZones.map((zone) => {
@@ -2298,19 +2230,19 @@ export default function TerrainMapPrototypePage() {
                       {/* Topographic parameters */}
                       <div style={{ marginTop: "8px", fontSize: "11.5px", lineHeight: "1.5", color: "#334155" }}>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span>Elevation (30m DEM):</span>
-                          <strong>{currentZone.elevationMetersASL} m ASL</strong>
+                          <span>Nominal Elevation:</span>
+                          <strong>{currentZone.elevationMetersASL} m ASL (nominal profile)</strong>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                           <span>Terrain Slope:</span>
-                          <strong>{currentZone.slopeDegrees}°</strong>
+                          <strong>{currentZone.slopeDegrees}° (profile constant)</strong>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                           <span>Distance to River:</span>
                           <strong>{currentZone.riverProximityMeters} m</strong>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px", paddingTop: "3px", borderTop: "1px dashed #e2e8f0" }}>
-                          <span>Modelled Accumulation:</span>
+                          <span>Modelled Accumulation Index:</span>
                           <strong style={{ color: riskColor, fontSize: "12px" }}>
                             {currentZone.accumulationDepthMeters} m
                           </strong>
@@ -2325,12 +2257,12 @@ export default function TerrainMapPrototypePage() {
 
                         {/* OSM Building count */}
                         <div style={{ marginTop: "4px", fontSize: "11px", color: "#1e293b" }}>
-                          <strong>OSM Building Footprints:</strong>{" "}
+                          <strong>OSM Building Reference Count:</strong>{" "}
                           <span style={{ color: "#0369a1", fontWeight: 700 }}>
                             {osmCount} buildings mapped
                           </span>
                           <div style={{ fontSize: "9.5px", color: "#64748b", marginTop: "1px" }}>
-                            Vector building footprint centroid count within sector catchment radius. (Indicator only · Not structural damage or population exposure).
+                            Vector building centroid count within sector reference radius for spatial context. This is NOT a flood boundary, structural damage estimate, or population exposure calculation.
                           </div>
                         </div>
 
@@ -2388,11 +2320,11 @@ export default function TerrainMapPrototypePage() {
                   }}
                 >
                   <strong style={{ display: "block", marginBottom: "3px" }}>
-                    ⚠️ Scientific Integrity & Model Limitations:
+                    ⚠️ Scientific Integrity & Provenance Notice:
                   </strong>
-                  This overlay displays a <strong>modelled flood-risk and terrain accumulation indicator</strong>, not a certified hydraulic forecast.
-                  It uses multi-criteria weighting based on 30m DEM elevation, slope, and Noyyal river channel proximity under steady-state rainfall.
-                  It does not solve dynamic 2D shallow water (Saint-Venant) equations and does not provide calibrated building damage or evacuation boundaries.
+                  This overlay displays <strong>sector-level modelled risk indicators</strong> at discrete assessment points. It is <strong>NOT an inundation map or validated flood forecast</strong>.
+                  Elevations and slopes are nominal sector profile estimates from baseline parameters, not real-time or measured 30 m DEM raster grids.
+                  The calculation applies steady-state multi-criteria weighting (rainfall, slope, proximity to Noyyal channel). It does not compute hydrodynamic 2D shallow water equations, flood boundaries, inundation depths, or structural damage estimates.
                 </div>
 
                 {/* Action button */}
@@ -3046,22 +2978,22 @@ export default function TerrainMapPrototypePage() {
               cursor: "pointer",
               opacity: isFloodModeActive ? 1 : 0.45,
             }}
-            title="Click to toggle Modelled Flood Exposure & Risk overlay"
+            title="Click to toggle Modelled Flood Risk Indicators overlay"
           >
             <span
               style={{
                 display: "inline-block",
                 width: "12px",
                 height: "12px",
-                borderRadius: "3px",
+                borderRadius: "50%",
                 background: "rgba(37,99,235,0.3)",
-                border: "1.5px solid #2563eb",
+                border: "2px solid #2563eb",
                 flexShrink: 0,
               }}
             />
             <div style={{ flex: 1, fontSize: "11.5px" }}>
-              <strong style={{ color: "#1d4ed8" }}>Flood Exposure</strong>
-              <span style={{ color: "#64748b", marginLeft: "4px" }}>· 6 DEM catchments</span>
+              <strong style={{ color: "#1d4ed8" }}>Flood Risk Indicators</strong>
+              <span style={{ color: "#64748b", marginLeft: "4px" }}>· 6 Sector Points</span>
             </div>
             <span style={{ fontSize: "10px", color: isFloodModeActive ? "#2563eb" : "#94a3b8" }}>
               {isFloodModeActive ? "ACTIVE" : "OFF"}
@@ -3079,8 +3011,8 @@ export default function TerrainMapPrototypePage() {
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10px" }}>
-                <span style={{ fontWeight: 700, color: "#1e40af" }}>Modelled Flood Risk Scale</span>
-                <span style={{ color: "#64748b" }}>Accum. depth</span>
+                <span style={{ fontWeight: 700, color: "#1e40af" }}>Modelled Sector Risk Scale</span>
+                <span style={{ color: "#64748b" }}>Risk score</span>
               </div>
               <div style={{ display: "flex", gap: "2px", height: "7px", borderRadius: "2px", overflow: "hidden", marginTop: "3px" }}>
                 <div style={{ flex: 1, background: "#10b981" }} title="Low: < 20%" />
@@ -3095,6 +3027,9 @@ export default function TerrainMapPrototypePage() {
                 <span>High</span>
                 <span>V.High</span>
                 <span style={{ color: "#dc2626", fontWeight: 700 }}>≥80%</span>
+              </div>
+              <div style={{ fontSize: "8.5px", color: "#64748b", marginTop: "4px", fontStyle: "italic" }}>
+                Sector point markers · Not an inundation map or flood extent boundary
               </div>
             </div>
           )}
