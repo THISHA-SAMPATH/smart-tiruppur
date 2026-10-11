@@ -31,6 +31,7 @@ export default function TerrainMapPrototypePage() {
 
   const [status, setStatus] = useState("Preparing map...");
   const [is3D, setIs3D] = useState(true);
+  const is3DRef = useRef(is3D);
   const [showRiver, setShowRiver] = useState(true);
   const [showIndustry, setShowIndustry] = useState(true);
   const [showStations, setShowStations] = useState(true);
@@ -88,7 +89,69 @@ export default function TerrainMapPrototypePage() {
               .getStyle()
               .layers?.find((layer) => layer.type === "symbol")?.id;
 
-            // 1. Noyyal River Layer
+            // 1. 3D Building Extrusions from Vector Basemap (openmaptiles tile source)
+            // Reuses tile schema: source="openmaptiles", source-layer="building", render_height, render_min_height
+            if (activeMap.getSource("openmaptiles")) {
+              if (activeMap.getLayer("building-3d")) {
+                activeMap.removeLayer("building-3d");
+              }
+
+              activeMap.addLayer(
+                {
+                  id: "building-3d",
+                  type: "fill-extrusion",
+                  source: "openmaptiles",
+                  "source-layer": "building",
+                  minzoom: 13,
+                  layout: {
+                    visibility: is3DRef.current ? "visible" : "none",
+                  },
+                  paint: {
+                    "fill-extrusion-base": [
+                      "coalesce",
+                      ["get", "render_min_height"],
+                      0,
+                    ],
+                    "fill-extrusion-height": [
+                      "case",
+                      [">", ["coalesce", ["get", "render_height"], 0], 0],
+                      ["get", "render_height"],
+                      6, // Documented conservative display fallback for Tiruppur footprints lacking height tags (~2 storeys)
+                    ],
+                    "fill-extrusion-color": [
+                      "interpolate",
+                      ["linear"],
+                      [
+                        "case",
+                        [">", ["coalesce", ["get", "render_height"], 0], 0],
+                        ["get", "render_height"],
+                        6,
+                      ],
+                      0,
+                      "#e2e8f0",
+                      12,
+                      "#cbd5e1",
+                      25,
+                      "#94a3b8",
+                    ],
+                    "fill-extrusion-opacity": 0.82,
+                    "fill-extrusion-vertical-gradient": true,
+                  },
+                } as any,
+                firstLabel
+              );
+
+              // Extend 2D building footprints zoom range so flat footprints remain visible in 2D mode
+              if (activeMap.getLayer("building")) {
+                try {
+                  activeMap.setLayerZoomRange("building", 13, 24);
+                } catch {
+                  // Fallback if unsupported
+                }
+              }
+            }
+
+            // 2. Noyyal River Layer
             const riverResponse = await fetch("/geo/noyyal-river.geojson");
             if (riverResponse.ok) {
               const riverData = await riverResponse.json();
@@ -366,7 +429,7 @@ export default function TerrainMapPrototypePage() {
               }
             });
 
-            setStatus("Map ready · Basemap, Noyyal River, 12 Facilities & 3 Stations loaded");
+            setStatus("Map ready · Basemap, 3D Buildings, Noyyal River, 12 Facilities & 3 Stations loaded");
           } catch (error) {
             console.error("Layer loading error:", error);
             if (active) {
@@ -396,12 +459,24 @@ export default function TerrainMapPrototypePage() {
   function toggleView() {
     const nextIs3D = !is3D;
     setIs3D(nextIs3D);
+    is3DRef.current = nextIs3D;
 
-    mapRef.current?.easeTo({
-      pitch: nextIs3D ? 52 : 0,
-      bearing: nextIs3D ? -18 : 0,
-      duration: 700,
-    });
+    const map = mapRef.current;
+    if (map) {
+      if (map.getLayer("building-3d")) {
+        map.setLayoutProperty(
+          "building-3d",
+          "visibility",
+          nextIs3D ? "visible" : "none"
+        );
+      }
+
+      map.easeTo({
+        pitch: nextIs3D ? 52 : 0,
+        bearing: nextIs3D ? -18 : 0,
+        duration: 700,
+      });
+    }
   }
 
   function toggleRiver() {
@@ -507,13 +582,13 @@ export default function TerrainMapPrototypePage() {
           </h1>
 
           <p style={{ margin: 0, fontSize: "13px", color: "#526477" }}>
-            OpenFreeMap basemap · Noyyal River GeoJSON · 12 Simulated Facilities · 3 Monitoring Stations
+            OpenFreeMap basemap · 3D Buildings (openmaptiles) · Noyyal River GeoJSON · 12 Simulated Facilities · 3 Monitoring Stations
           </p>
         </div>
 
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-          <button onClick={toggleView} style={buttonStyle} title="Toggle between 3D oblique perspective and 2D top-down view">
-            {is3D ? "Switch to 2D" : "Switch to 3D"}
+          <button onClick={toggleView} style={buttonStyle} title="Toggle between 3D oblique perspective with building extrusions and 2D flat top-down view">
+            {is3D ? "● 3D View (Extruded)" : "○ 2D View (Flat)"}
           </button>
 
           <button
@@ -844,6 +919,37 @@ export default function TerrainMapPrototypePage() {
             <span style={{ fontSize: "10px", color: showStations ? "#0891b2" : "#94a3b8" }}>{showStations ? "ON" : "OFF"}</span>
           </div>
 
+          {/* 3D Buildings Item */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "7px",
+              opacity: is3D ? 1 : 0.45,
+            }}
+            title="OpenFreeMap building footprints with tile render_height / 6m display fallback"
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: "12px",
+                height: "12px",
+                borderRadius: "2px",
+                background: "#cbd5e1",
+                border: "1px solid #94a3b8",
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ flex: 1, fontSize: "11.5px" }}>
+              <strong style={{ color: "#334155" }}>3D Buildings</strong>
+              <span style={{ color: "#64748b", marginLeft: "4px" }}>· openmaptiles</span>
+            </div>
+            <span style={{ fontSize: "10px", color: is3D ? "#0f766e" : "#94a3b8" }}>
+              {is3D ? "EXTRUDED" : "FLAT"}
+            </span>
+          </div>
+
           {/* Basemap Item */}
           <div
             style={{
@@ -864,8 +970,9 @@ export default function TerrainMapPrototypePage() {
       </div>
 
       <p style={{ fontSize: "12px", color: "#526477", marginTop: "10px" }}>
-        Prototype for comparison only. Vector basemap supplied by OpenFreeMap. River geometry uses local project dataset.
-        Facility and telemetry markers reuse project demo coordinates with explicit simulation labeling.
+        Prototype for comparison only. Vector basemap and 3D buildings supplied by OpenFreeMap (openmaptiles schema).
+        Building extrusion uses tile <code>render_height</code> / <code>render_min_height</code> when available, with a conservative 6m (~2 storeys) display fallback for unmeasured footprints.
+        River geometry uses local project dataset. Facility and telemetry markers reuse project demo coordinates with explicit simulation labeling.
       </p>
     </div>
   );
