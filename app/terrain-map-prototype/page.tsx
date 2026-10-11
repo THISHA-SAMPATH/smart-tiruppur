@@ -84,67 +84,101 @@ export default function TerrainMapPrototypePage() {
           setStatus("Basemap loaded. Adding environmental monitoring layers...");
 
           try {
-            // Find first symbol layer so custom layers are rendered below place/street labels
-            const firstLabel = activeMap
-              .getStyle()
-              .layers?.find((layer) => layer.type === "symbol")?.id;
+            // Find first text label layer so environmental overlays and extrusions sit below place/street labels
+            // (road_one_way_arrow at index 61 in Liberty is a transportation line arrow; real text labels start at waterway_line_label at index 88)
+            const styleLayers = activeMap.getStyle().layers || [];
+            const firstLabel =
+              styleLayers.find(
+                (layer) =>
+                  layer.type === "symbol" &&
+                  (Boolean((layer.layout as any)?.["text-field"]) || layer.id.includes("label"))
+              )?.id ||
+              styleLayers.find((layer) => layer.type === "symbol")?.id;
 
             // 1. 3D Building Extrusions from Vector Basemap (openmaptiles tile source)
             // Reuses tile schema: source="openmaptiles", source-layer="building", render_height, render_min_height
+            // Robust expressions safely handle missing, null, string, non-numeric, or zero values
+            const safeHeightExpr: any = [
+              "case",
+              [">", ["to-number", ["get", "render_height"], 0], 0],
+              ["to-number", ["get", "render_height"], 0],
+              6, // Documented conservative estimated display height fallback (~2 storeys) for footprints lacking height tags
+            ];
+
+            const safeBaseExpr: any = [
+              "case",
+              [
+                "all",
+                [">", ["to-number", ["get", "render_min_height"], 0], 0],
+                ["<", ["to-number", ["get", "render_min_height"], 0], safeHeightExpr],
+              ],
+              ["to-number", ["get", "render_min_height"], 0],
+              0,
+            ];
+
+            const safeColorExpr: any = [
+              "interpolate",
+              ["linear"],
+              safeHeightExpr,
+              0,
+              "#e2e8f0",
+              12,
+              "#cbd5e1",
+              25,
+              "#94a3b8",
+            ];
+
             if (activeMap.getSource("openmaptiles")) {
               if (activeMap.getLayer("building-3d")) {
-                activeMap.removeLayer("building-3d");
+                // Avoid adding a duplicate building layer: configure the existing Liberty building-3d layer in place
+                try {
+                  activeMap.setLayerZoomRange("building-3d", 13, 24);
+                  activeMap.setLayoutProperty(
+                    "building-3d",
+                    "visibility",
+                    is3DRef.current ? "visible" : "none"
+                  );
+                  activeMap.setPaintProperty("building-3d", "fill-extrusion-base", safeBaseExpr);
+                  activeMap.setPaintProperty("building-3d", "fill-extrusion-height", safeHeightExpr);
+                  activeMap.setPaintProperty("building-3d", "fill-extrusion-color", safeColorExpr);
+                  activeMap.setPaintProperty("building-3d", "fill-extrusion-opacity", 0.82);
+                  activeMap.setPaintProperty("building-3d", "fill-extrusion-vertical-gradient", true);
+                } catch (err) {
+                  console.warn("Failed to configure existing building-3d layer:", err);
+                }
+              } else {
+                activeMap.addLayer(
+                  {
+                    id: "building-3d",
+                    type: "fill-extrusion",
+                    source: "openmaptiles",
+                    "source-layer": "building",
+                    minzoom: 13,
+                    layout: {
+                      visibility: is3DRef.current ? "visible" : "none",
+                    },
+                    paint: {
+                      "fill-extrusion-base": safeBaseExpr,
+                      "fill-extrusion-height": safeHeightExpr,
+                      "fill-extrusion-color": safeColorExpr,
+                      "fill-extrusion-opacity": 0.82,
+                      "fill-extrusion-vertical-gradient": true,
+                    },
+                  } as any,
+                  firstLabel
+                );
               }
 
-              activeMap.addLayer(
-                {
-                  id: "building-3d",
-                  type: "fill-extrusion",
-                  source: "openmaptiles",
-                  "source-layer": "building",
-                  minzoom: 13,
-                  layout: {
-                    visibility: is3DRef.current ? "visible" : "none",
-                  },
-                  paint: {
-                    "fill-extrusion-base": [
-                      "coalesce",
-                      ["get", "render_min_height"],
-                      0,
-                    ],
-                    "fill-extrusion-height": [
-                      "case",
-                      [">", ["coalesce", ["get", "render_height"], 0], 0],
-                      ["get", "render_height"],
-                      6, // Documented conservative display fallback for Tiruppur footprints lacking height tags (~2 storeys)
-                    ],
-                    "fill-extrusion-color": [
-                      "interpolate",
-                      ["linear"],
-                      [
-                        "case",
-                        [">", ["coalesce", ["get", "render_height"], 0], 0],
-                        ["get", "render_height"],
-                        6,
-                      ],
-                      0,
-                      "#e2e8f0",
-                      12,
-                      "#cbd5e1",
-                      25,
-                      "#94a3b8",
-                    ],
-                    "fill-extrusion-opacity": 0.82,
-                    "fill-extrusion-vertical-gradient": true,
-                  },
-                } as any,
-                firstLabel
-              );
-
-              // Extend 2D building footprints zoom range so flat footprints remain visible in 2D mode
+              // Manage 2D building footprints: extend zoom range so flat footprints display in 2D mode,
+              // but hide them when 3D extrusion is active so they don't obscure or z-fight with 3D buildings.
               if (activeMap.getLayer("building")) {
                 try {
                   activeMap.setLayerZoomRange("building", 13, 24);
+                  activeMap.setLayoutProperty(
+                    "building",
+                    "visibility",
+                    is3DRef.current ? "none" : "visible"
+                  );
                 } catch {
                   // Fallback if unsupported
                 }
@@ -468,6 +502,13 @@ export default function TerrainMapPrototypePage() {
           "building-3d",
           "visibility",
           nextIs3D ? "visible" : "none"
+        );
+      }
+      if (map.getLayer("building")) {
+        map.setLayoutProperty(
+          "building",
+          "visibility",
+          nextIs3D ? "none" : "visible"
         );
       }
 
@@ -921,14 +962,16 @@ export default function TerrainMapPrototypePage() {
 
           {/* 3D Buildings Item */}
           <div
+            onClick={toggleView}
             style={{
               display: "flex",
               alignItems: "center",
               gap: "8px",
               marginBottom: "7px",
+              cursor: "pointer",
               opacity: is3D ? 1 : 0.45,
             }}
-            title="OpenFreeMap building footprints with tile render_height / 6m display fallback"
+            title="Click to toggle 3D Buildings (openmaptiles tile render_height / estimated display height fallback)"
           >
             <span
               style={{
@@ -971,7 +1014,7 @@ export default function TerrainMapPrototypePage() {
 
       <p style={{ fontSize: "12px", color: "#526477", marginTop: "10px" }}>
         Prototype for comparison only. Vector basemap and 3D buildings supplied by OpenFreeMap (openmaptiles schema).
-        Building extrusion uses tile <code>render_height</code> / <code>render_min_height</code> when available, with a conservative 6m (~2 storeys) display fallback for unmeasured footprints.
+        Building extrusion uses tile <code>render_height</code> / <code>render_min_height</code> when available, with a conservative 6m (~2 storeys) fallback clearly designated as estimated display height—not measured building height.
         River geometry uses local project dataset. Facility and telemetry markers reuse project demo coordinates with explicit simulation labeling.
       </p>
     </div>
