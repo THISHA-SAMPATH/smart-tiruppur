@@ -58,6 +58,7 @@ interface ModelledPathway {
   syntheticFlowRate: number; // L/s
   syntheticPollutant: string;
   syntheticConcentration: number; // mg/L index
+  pathwayStatus: "available" | "unavailable" | "unsupported";
   hasValidPath: boolean;
   invalidationReason?: string;
   linkedStations: LinkedStation[];
@@ -187,6 +188,7 @@ function computeModelledPathway(unitId: string, riverData: any): ModelledPathway
       syntheticFlowRate: 0,
       syntheticPollutant: "None",
       syntheticConcentration: 0,
+      pathwayStatus: "unsupported",
       hasValidPath: false,
       invalidationReason: "Facility record not found in industrial registry.",
       linkedStations: [],
@@ -209,6 +211,7 @@ function computeModelledPathway(unitId: string, riverData: any): ModelledPathway
       syntheticFlowRate: 0,
       syntheticPollutant: "None",
       syntheticConcentration: 0,
+      pathwayStatus: "unsupported",
       hasValidPath: false,
       invalidationReason: "No modelled outfall entry configured for this facility in the industrial layer.",
       linkedStations: [],
@@ -233,6 +236,7 @@ function computeModelledPathway(unitId: string, riverData: any): ModelledPathway
       syntheticFlowRate: outfall.flow_rate,
       syntheticPollutant: outfall.pollutant,
       syntheticConcentration: outfall.concentration,
+      pathwayStatus: "unavailable",
       hasValidPath: false,
       invalidationReason: "Hydrology river network dataset is not loaded. Cannot compute modelled discharge pathway.",
       linkedStations: [],
@@ -255,6 +259,7 @@ function computeModelledPathway(unitId: string, riverData: any): ModelledPathway
       syntheticFlowRate: outfall.flow_rate,
       syntheticPollutant: outfall.pollutant,
       syntheticConcentration: outfall.concentration,
+      pathwayStatus: "unavailable",
       hasValidPath: false,
       invalidationReason: `Nearest mapped waterway is ${Math.round(distanceMeters).toLocaleString()} m away, which exceeds the model's overland discharge channel threshold (${MAX_OVERLAND_THRESHOLD_METERS.toLocaleString()} m). In accordance with scientific integrity guidelines, no fabricated overland route is drawn.`,
       linkedStations: [],
@@ -307,6 +312,7 @@ function computeModelledPathway(unitId: string, riverData: any): ModelledPathway
     syntheticFlowRate: outfall.flow_rate,
     syntheticPollutant: outfall.pollutant,
     syntheticConcentration: outfall.concentration,
+    pathwayStatus: "available",
     hasValidPath: true,
     linkedStations,
     unlinkedStations,
@@ -405,6 +411,23 @@ function updateMapPathwaySource(
       pointType: "confluence",
       label: `River Inflow (${pathway.waterwayName})`,
     },
+  });
+
+  // 5. Linked Downstream Station Markers (prominent target highlight rings on map)
+  pathway.linkedStations.forEach((station) => {
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [station.lon, station.lat],
+      },
+      properties: {
+        kind: "point",
+        pointType: "linked_station",
+        stationId: station.sensor_id,
+        label: `Linked Station: ${station.name}`,
+      },
+    });
   });
 
   source.setData({
@@ -603,56 +626,62 @@ export default function TerrainMapPrototypePage() {
               const riverData = await riverResponse.json();
               if (active) {
                 riverDataRef.current = riverData;
-                activeMap.addSource("prototype-noyyal-river", {
-                  type: "geojson",
-                  data: riverData,
-                });
+                if (!activeMap.getSource("prototype-noyyal-river")) {
+                  activeMap.addSource("prototype-noyyal-river", {
+                    type: "geojson",
+                    data: riverData,
+                  });
+                }
 
-                activeMap.addLayer(
-                  {
-                    id: "prototype-noyyal-river-glow",
-                    type: "line",
-                    source: "prototype-noyyal-river",
-                    layout: {
-                      "line-join": "round",
-                      "line-cap": "round",
+                if (!activeMap.getLayer("prototype-noyyal-river-glow")) {
+                  activeMap.addLayer(
+                    {
+                      id: "prototype-noyyal-river-glow",
+                      type: "line",
+                      source: "prototype-noyyal-river",
+                      layout: {
+                        "line-join": "round",
+                        "line-cap": "round",
+                      },
+                      paint: {
+                        "line-color": "#38bdf8",
+                        "line-width": 10,
+                        "line-opacity": 0.18,
+                        "line-blur": 2,
+                      },
                     },
-                    paint: {
-                      "line-color": "#38bdf8",
-                      "line-width": 10,
-                      "line-opacity": 0.18,
-                      "line-blur": 2,
-                    },
-                  },
-                  firstLabel
-                );
+                    firstLabel
+                  );
+                }
 
-                activeMap.addLayer(
-                  {
-                    id: "prototype-noyyal-river-core",
-                    type: "line",
-                    source: "prototype-noyyal-river",
-                    layout: {
-                      "line-join": "round",
-                      "line-cap": "round",
+                if (!activeMap.getLayer("prototype-noyyal-river-core")) {
+                  activeMap.addLayer(
+                    {
+                      id: "prototype-noyyal-river-core",
+                      type: "line",
+                      source: "prototype-noyyal-river",
+                      layout: {
+                        "line-join": "round",
+                        "line-cap": "round",
+                      },
+                      paint: {
+                        "line-color": "#0284c7",
+                        "line-width": [
+                          "interpolate",
+                          ["linear"],
+                          ["zoom"],
+                          10,
+                          1.5,
+                          14,
+                          3.5,
+                          17,
+                          6,
+                        ],
+                      },
                     },
-                    paint: {
-                      "line-color": "#0284c7",
-                      "line-width": [
-                        "interpolate",
-                        ["linear"],
-                        ["zoom"],
-                        10,
-                        1.5,
-                        14,
-                        3.5,
-                        17,
-                        6,
-                      ],
-                    },
-                  },
-                  firstLabel
-                );
+                    firstLabel
+                  );
+                }
               }
             }
 
@@ -677,62 +706,68 @@ export default function TerrainMapPrototypePage() {
               },
             }));
 
-            activeMap.addSource("prototype-industrial-units", {
-              type: "geojson",
-              data: {
-                type: "FeatureCollection",
-                features: industrialFeatures,
-              },
-            });
-
-            activeMap.addLayer(
-              {
-                id: "prototype-industrial-glow",
-                type: "circle",
-                source: "prototype-industrial-units",
-                paint: {
-                  "circle-color": "#ea580c",
-                  "circle-radius": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    10,
-                    6,
-                    14,
-                    11,
-                    17,
-                    15,
-                  ],
-                  "circle-opacity": 0.22,
+            if (!activeMap.getSource("prototype-industrial-units")) {
+              activeMap.addSource("prototype-industrial-units", {
+                type: "geojson",
+                data: {
+                  type: "FeatureCollection",
+                  features: industrialFeatures,
                 },
-              },
-              firstLabel
-            );
+              });
+            }
 
-            activeMap.addLayer(
-              {
-                id: "prototype-industrial-core",
-                type: "circle",
-                source: "prototype-industrial-units",
-                paint: {
-                  "circle-color": "#f97316",
-                  "circle-radius": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    10,
-                    3.5,
-                    14,
-                    6,
-                    17,
-                    9,
-                  ],
-                  "circle-stroke-color": "#ffffff",
-                  "circle-stroke-width": 1.75,
+            if (!activeMap.getLayer("prototype-industrial-glow")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-industrial-glow",
+                  type: "circle",
+                  source: "prototype-industrial-units",
+                  paint: {
+                    "circle-color": "#ea580c",
+                    "circle-radius": [
+                      "interpolate",
+                      ["linear"],
+                      ["zoom"],
+                      10,
+                      6,
+                      14,
+                      11,
+                      17,
+                      15,
+                    ],
+                    "circle-opacity": 0.22,
+                  },
                 },
-              },
-              firstLabel
-            );
+                firstLabel
+              );
+            }
+
+            if (!activeMap.getLayer("prototype-industrial-core")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-industrial-core",
+                  type: "circle",
+                  source: "prototype-industrial-units",
+                  paint: {
+                    "circle-color": "#f97316",
+                    "circle-radius": [
+                      "interpolate",
+                      ["linear"],
+                      ["zoom"],
+                      10,
+                      3.5,
+                      14,
+                      6,
+                      17,
+                      9,
+                    ],
+                    "circle-stroke-color": "#ffffff",
+                    "circle-stroke-width": 1.75,
+                  },
+                },
+                firstLabel
+              );
+            }
 
             // 3. Simulated Telemetry Monitoring Stations Layer (3 stations)
             const stationFeatures = ENVIRONMENTAL_SENSOR_REGISTRY.map((station) => ({
@@ -757,187 +792,237 @@ export default function TerrainMapPrototypePage() {
               },
             }));
 
-            activeMap.addSource("prototype-monitoring-stations", {
-              type: "geojson",
-              data: {
-                type: "FeatureCollection",
-                features: stationFeatures,
-              },
-            });
-
-            activeMap.addLayer(
-              {
-                id: "prototype-stations-glow",
-                type: "circle",
-                source: "prototype-monitoring-stations",
-                paint: {
-                  "circle-color": "#06b6d4",
-                  "circle-radius": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    10,
-                    8,
-                    14,
-                    14,
-                    17,
-                    18,
-                  ],
-                  "circle-opacity": 0.3,
+            if (!activeMap.getSource("prototype-monitoring-stations")) {
+              activeMap.addSource("prototype-monitoring-stations", {
+                type: "geojson",
+                data: {
+                  type: "FeatureCollection",
+                  features: stationFeatures,
                 },
-              },
-              firstLabel
-            );
+              });
+            }
 
-            activeMap.addLayer(
-              {
-                id: "prototype-stations-core",
-                type: "circle",
-                source: "prototype-monitoring-stations",
-                paint: {
-                  "circle-color": "#0891b2",
-                  "circle-radius": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    10,
-                    4.5,
-                    14,
-                    7.5,
-                    17,
-                    11,
-                  ],
-                  "circle-stroke-color": "#ffffff",
-                  "circle-stroke-width": 2,
+            if (!activeMap.getLayer("prototype-stations-glow")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-stations-glow",
+                  type: "circle",
+                  source: "prototype-monitoring-stations",
+                  paint: {
+                    "circle-color": "#06b6d4",
+                    "circle-radius": [
+                      "interpolate",
+                      ["linear"],
+                      ["zoom"],
+                      10,
+                      8,
+                      14,
+                      14,
+                      17,
+                      18,
+                    ],
+                    "circle-opacity": 0.3,
+                  },
                 },
-              },
-              firstLabel
-            );
+                firstLabel
+              );
+            }
+
+            if (!activeMap.getLayer("prototype-stations-core")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-stations-core",
+                  type: "circle",
+                  source: "prototype-monitoring-stations",
+                  paint: {
+                    "circle-color": "#0891b2",
+                    "circle-radius": [
+                      "interpolate",
+                      ["linear"],
+                      ["zoom"],
+                      10,
+                      4.5,
+                      14,
+                      7.5,
+                      17,
+                      11,
+                    ],
+                    "circle-stroke-color": "#ffffff",
+                    "circle-stroke-width": 2,
+                  },
+                },
+                firstLabel
+              );
+            }
 
             // 4. Modelled Pollution Discharge Pathway Layers
-            activeMap.addSource("prototype-trace-pathway", {
-              type: "geojson",
-              data: {
-                type: "FeatureCollection",
-                features: [],
-              },
-            });
+            if (!activeMap.getSource("prototype-trace-pathway")) {
+              activeMap.addSource("prototype-trace-pathway", {
+                type: "geojson",
+                data: {
+                  type: "FeatureCollection",
+                  features: [],
+                },
+              });
+            }
 
             // Downstream channel reach glow (amber halo along river to station)
-            activeMap.addLayer(
-              {
-                id: "prototype-trace-reach-glow",
-                type: "line",
-                source: "prototype-trace-pathway",
-                filter: ["==", ["get", "lineType"], "downstream_reach"],
-                layout: {
-                  "line-join": "round",
-                  "line-cap": "round",
+            if (!activeMap.getLayer("prototype-trace-reach-glow")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-trace-reach-glow",
+                  type: "line",
+                  source: "prototype-trace-pathway",
+                  filter: ["==", ["get", "lineType"], "downstream_reach"],
+                  layout: {
+                    "line-join": "round",
+                    "line-cap": "round",
+                  },
+                  paint: {
+                    "line-color": "#fbbf24",
+                    "line-width": 8,
+                    "line-opacity": 0.45,
+                    "line-blur": 3,
+                  },
                 },
-                paint: {
-                  "line-color": "#fbbf24",
-                  "line-width": 8,
-                  "line-opacity": 0.45,
-                  "line-blur": 3,
-                },
-              },
-              firstLabel
-            );
+                firstLabel
+              );
+            }
 
             // Downstream channel reach core line
-            activeMap.addLayer(
-              {
-                id: "prototype-trace-reach-core",
-                type: "line",
-                source: "prototype-trace-pathway",
-                filter: ["==", ["get", "lineType"], "downstream_reach"],
-                layout: {
-                  "line-join": "round",
-                  "line-cap": "round",
+            if (!activeMap.getLayer("prototype-trace-reach-core")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-trace-reach-core",
+                  type: "line",
+                  source: "prototype-trace-pathway",
+                  filter: ["==", ["get", "lineType"], "downstream_reach"],
+                  layout: {
+                    "line-join": "round",
+                    "line-cap": "round",
+                  },
+                  paint: {
+                    "line-color": "#f59e0b",
+                    "line-width": 3,
+                    "line-opacity": 0.9,
+                  },
                 },
-                paint: {
-                  "line-color": "#f59e0b",
-                  "line-width": 3,
-                  "line-opacity": 0.9,
-                },
-              },
-              firstLabel
-            );
+                firstLabel
+              );
+            }
 
             // Discharge path glow (crimson / orange halo)
-            activeMap.addLayer(
-              {
-                id: "prototype-trace-discharge-glow",
-                type: "line",
-                source: "prototype-trace-pathway",
-                filter: ["==", ["get", "lineType"], "discharge_path"],
-                layout: {
-                  "line-join": "round",
-                  "line-cap": "round",
+            if (!activeMap.getLayer("prototype-trace-discharge-glow")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-trace-discharge-glow",
+                  type: "line",
+                  source: "prototype-trace-pathway",
+                  filter: ["==", ["get", "lineType"], "discharge_path"],
+                  layout: {
+                    "line-join": "round",
+                    "line-cap": "round",
+                  },
+                  paint: {
+                    "line-color": "#ea580c",
+                    "line-width": 10,
+                    "line-opacity": 0.5,
+                    "line-blur": 3,
+                  },
                 },
-                paint: {
-                  "line-color": "#ea580c",
-                  "line-width": 10,
-                  "line-opacity": 0.5,
-                  "line-blur": 3,
-                },
-              },
-              firstLabel
-            );
+                firstLabel
+              );
+            }
 
             // Discharge path core (dashed crimson conduit)
-            activeMap.addLayer(
-              {
-                id: "prototype-trace-discharge-core",
-                type: "line",
-                source: "prototype-trace-pathway",
-                filter: ["==", ["get", "lineType"], "discharge_path"],
-                layout: {
-                  "line-join": "round",
-                  "line-cap": "round",
+            if (!activeMap.getLayer("prototype-trace-discharge-core")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-trace-discharge-core",
+                  type: "line",
+                  source: "prototype-trace-pathway",
+                  filter: ["==", ["get", "lineType"], "discharge_path"],
+                  layout: {
+                    "line-join": "round",
+                    "line-cap": "round",
+                  },
+                  paint: {
+                    "line-color": "#dc2626",
+                    "line-width": 3.5,
+                    "line-dasharray": [2, 1.5],
+                  },
                 },
-                paint: {
-                  "line-color": "#dc2626",
-                  "line-width": 3.5,
-                  "line-dasharray": [2, 1.5],
+                firstLabel
+              );
+            }
+
+            // Linked downstream monitoring station highlight halo
+            if (!activeMap.getLayer("prototype-trace-station-highlight")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-trace-station-highlight",
+                  type: "circle",
+                  source: "prototype-trace-pathway",
+                  filter: ["==", ["get", "pointType"], "linked_station"],
+                  paint: {
+                    "circle-color": "#06b6d4",
+                    "circle-radius": [
+                      "interpolate",
+                      ["linear"],
+                      ["zoom"],
+                      10,
+                      9,
+                      14,
+                      16,
+                      17,
+                      22,
+                    ],
+                    "circle-opacity": 0.28,
+                    "circle-stroke-color": "#22d3ee",
+                    "circle-stroke-width": 2.5,
+                  },
                 },
-              },
-              firstLabel
-            );
+                firstLabel
+              );
+            }
 
             // Outfall point marker
-            activeMap.addLayer(
-              {
-                id: "prototype-trace-outfall-marker",
-                type: "circle",
-                source: "prototype-trace-pathway",
-                filter: ["==", ["get", "pointType"], "outfall"],
-                paint: {
-                  "circle-color": "#f97316",
-                  "circle-radius": 6.5,
-                  "circle-stroke-color": "#ffffff",
-                  "circle-stroke-width": 2,
+            if (!activeMap.getLayer("prototype-trace-outfall-marker")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-trace-outfall-marker",
+                  type: "circle",
+                  source: "prototype-trace-pathway",
+                  filter: ["==", ["get", "pointType"], "outfall"],
+                  paint: {
+                    "circle-color": "#f97316",
+                    "circle-radius": 6.5,
+                    "circle-stroke-color": "#ffffff",
+                    "circle-stroke-width": 2,
+                  },
                 },
-              },
-              firstLabel
-            );
+                firstLabel
+              );
+            }
 
             // Confluence point marker at river entry
-            activeMap.addLayer(
-              {
-                id: "prototype-trace-confluence-marker",
-                type: "circle",
-                source: "prototype-trace-pathway",
-                filter: ["==", ["get", "pointType"], "confluence"],
-                paint: {
-                  "circle-color": "#dc2626",
-                  "circle-radius": 7.5,
-                  "circle-stroke-color": "#ffffff",
-                  "circle-stroke-width": 2.5,
+            if (!activeMap.getLayer("prototype-trace-confluence-marker")) {
+              activeMap.addLayer(
+                {
+                  id: "prototype-trace-confluence-marker",
+                  type: "circle",
+                  source: "prototype-trace-pathway",
+                  filter: ["==", ["get", "pointType"], "confluence"],
+                  paint: {
+                    "circle-color": "#dc2626",
+                    "circle-radius": 7.5,
+                    "circle-stroke-color": "#ffffff",
+                    "circle-stroke-width": 2.5,
+                  },
                 },
-              },
-              firstLabel
-            );
+                firstLabel
+              );
+            }
 
             // Click handling for industrial facilities
             activeMap.on("click", "prototype-industrial-core", (e) => {
@@ -985,12 +1070,39 @@ export default function TerrainMapPrototypePage() {
               });
             });
 
+            // Click handling for highlighted linked monitoring stations
+            activeMap.on("click", "prototype-trace-station-highlight", (e) => {
+              if (!e.features || !e.features[0]) return;
+              const p = e.features[0].properties as any;
+              const station = ENVIRONMENTAL_SENSOR_REGISTRY.find(
+                (s) => s.sensor_id === p.stationId
+              );
+              if (station) {
+                setSelectedEntity({
+                  category: "station",
+                  id: station.sensor_id,
+                  streamId: station.stream_id,
+                  name: station.name,
+                  designation: station.designation,
+                  lat: station.lat,
+                  lon: station.lon,
+                  ph: Number(station.ph),
+                  ec: Number(station.ec),
+                  turbidity: Number(station.turbidity),
+                  flow: Number(station.flow),
+                  sourceType: station.sourceType,
+                  source: station.source,
+                });
+              }
+            });
+
             // Pointer cursor on hover over interactive markers
             [
               "prototype-industrial-core",
               "prototype-stations-core",
               "prototype-trace-discharge-core",
               "prototype-trace-reach-core",
+              "prototype-trace-station-highlight",
               "prototype-trace-outfall-marker",
               "prototype-trace-confluence-marker",
             ].forEach((layerId) => {
@@ -1009,6 +1121,7 @@ export default function TerrainMapPrototypePage() {
                   "prototype-industrial-core",
                   "prototype-stations-core",
                   "prototype-trace-discharge-core",
+                  "prototype-trace-station-highlight",
                   "prototype-trace-outfall-marker",
                   "prototype-trace-confluence-marker",
                 ],
@@ -1130,6 +1243,24 @@ export default function TerrainMapPrototypePage() {
     isTracingActiveRef.current = true;
     setTracedFacilityId(unitId);
 
+    // Ensure relevant environmental layers are visible on the map
+    if (!showIndustry) {
+      setShowIndustry(true);
+      if (map) {
+        for (const id of ["prototype-industrial-glow", "prototype-industrial-core"]) {
+          if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "visible");
+        }
+      }
+    }
+    if (!showRiver) {
+      setShowRiver(true);
+      if (map) {
+        for (const id of ["prototype-noyyal-river-glow", "prototype-noyyal-river-core"]) {
+          if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "visible");
+        }
+      }
+    }
+
     const pathway = computeModelledPathway(unitId, riverData);
     setModelledPathway(pathway);
 
@@ -1143,7 +1274,7 @@ export default function TerrainMapPrototypePage() {
       );
     } else {
       setStatus(
-        `Tracing ${pathway.unitName} · ${pathway.invalidationReason || "No valid modelled discharge path available"}`
+        `Tracing ${pathway.unitName} · Pathway ${pathway.pathwayStatus.toUpperCase()}: ${pathway.invalidationReason || "No valid modelled discharge path available"}`
       );
     }
   }
@@ -1276,7 +1407,7 @@ export default function TerrainMapPrototypePage() {
               color: "#0f766e",
             }}
           >
-            NOYYALSENSE · ENVIRONMENTAL MAP PROTOTYPE
+            NOYYALSENSE · ENVIRONMENTAL DIGITAL TWIN
           </div>
 
           <h1
@@ -1286,7 +1417,7 @@ export default function TerrainMapPrototypePage() {
               fontWeight: 800,
             }}
           >
-            Tiruppur City Map Prototype
+            Tiruppur Environmental Investigation Map
           </h1>
 
           <p style={{ margin: 0, fontSize: "13px", color: "#526477" }}>
@@ -1295,8 +1426,12 @@ export default function TerrainMapPrototypePage() {
         </div>
 
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-          <button onClick={toggleView} style={buttonStyle} title="Toggle between 3D oblique perspective with building extrusions and 2D flat top-down view">
-            {is3D ? "● 3D View (Extruded)" : "○ 2D View (Flat)"}
+          <button
+            onClick={toggleView}
+            style={buttonStyle}
+            title="Toggle between 3D oblique perspective with building extrusions and 2D flat top-down view"
+          >
+            {is3D ? "● 3D Buildings: Extruded" : "○ 2D Buildings: Flat"}
           </button>
 
           <button
@@ -1567,18 +1702,50 @@ export default function TerrainMapPrototypePage() {
                   border: `1.5px solid ${modelledPathway.hasValidPath ? "#f97316" : "#f43f5e"}`,
                 }}
               >
-                <div
-                  style={{
-                    fontSize: "10.5px",
-                    fontWeight: 800,
-                    letterSpacing: "0.5px",
-                    color: modelledPathway.hasValidPath ? "#c2410c" : "#e11d48",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {modelledPathway.hasValidPath
-                    ? "Modelled Discharge Pathway (Simulated)"
-                    : "No Valid Modelled Discharge Path"}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      letterSpacing: "0.5px",
+                      color:
+                        modelledPathway.pathwayStatus === "available"
+                          ? "#c2410c"
+                          : modelledPathway.pathwayStatus === "unavailable"
+                          ? "#e11d48"
+                          : "#475569",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    PATHWAY STATUS: {modelledPathway.pathwayStatus.toUpperCase()}
+                  </div>
+
+                  <span
+                    style={{
+                      fontSize: "9.5px",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      fontWeight: 700,
+                      background:
+                        modelledPathway.pathwayStatus === "available"
+                          ? "#ffedd5"
+                          : modelledPathway.pathwayStatus === "unavailable"
+                          ? "#ffe4e6"
+                          : "#e2e8f0",
+                      color:
+                        modelledPathway.pathwayStatus === "available"
+                          ? "#9a3412"
+                          : modelledPathway.pathwayStatus === "unavailable"
+                          ? "#9f1239"
+                          : "#334155",
+                    }}
+                  >
+                    {modelledPathway.pathwayStatus === "available"
+                      ? "Modelled Channel Snapped"
+                      : modelledPathway.pathwayStatus === "unavailable"
+                      ? "Exceeds Overland Buffer"
+                      : "No Registry Link"}
+                  </span>
                 </div>
 
                 {modelledPathway.hasValidPath ? (
@@ -1593,7 +1760,7 @@ export default function TerrainMapPrototypePage() {
                       <strong>Synthetic Discharge:</strong> {modelledPathway.syntheticFlowRate} L/s ({modelledPathway.syntheticPollutant}, {modelledPathway.syntheticConcentration} mg/L index)
                     </div>
                     <div style={{ marginTop: "4px" }}>
-                      <strong>Waterway Entry:</strong> {modelledPathway.waterwayName}
+                      <strong>Linked River Segment:</strong> {modelledPathway.waterwayName}
                     </div>
                     <div>
                       <strong>Overland Snapping Distance:</strong>{" "}
@@ -1604,8 +1771,11 @@ export default function TerrainMapPrototypePage() {
 
                     {/* Linked Downstream Stations */}
                     <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px dashed #fdba74" }}>
-                      <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#9a3412", textTransform: "uppercase" }}>
-                        Linked Downstream Monitoring ({modelledPathway.linkedStations.length})
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#9a3412", textTransform: "uppercase" }}>
+                          Linked Downstream Monitoring ({modelledPathway.linkedStations.length})
+                        </span>
+                        <span style={{ fontSize: "10px", color: "#0e7490", fontWeight: 600 }}>Highlighted on map</span>
                       </div>
                       {modelledPathway.linkedStations.length > 0 ? (
                         <div style={{ marginTop: "4px" }}>
@@ -1614,15 +1784,19 @@ export default function TerrainMapPrototypePage() {
                               key={station.sensor_id}
                               style={{
                                 marginTop: "4px",
-                                padding: "5px 7px",
+                                padding: "6px 8px",
                                 background: "#ffffff",
                                 borderRadius: "5px",
-                                border: "1px solid #fed7aa",
+                                border: "1px solid #cffafe",
+                                boxShadow: "0 1px 3px rgba(6,182,212,0.1)",
                                 fontSize: "11px",
                               }}
                             >
-                              <strong style={{ color: "#0e7490" }}>{station.name}</strong>
-                              <div style={{ color: "#64748b", fontSize: "10px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: "#06b6d4", border: "1.5px solid #22d3ee" }} />
+                                <strong style={{ color: "#0e7490" }}>{station.name}</strong>
+                              </div>
+                              <div style={{ color: "#64748b", fontSize: "10px", marginTop: "2px" }}>
                                 {station.designation} · ~{(station.distanceMeters / 1000).toFixed(1)} km downstream · Modelled travel: ~{station.travelHours} hrs
                               </div>
                             </div>
@@ -1980,6 +2154,35 @@ export default function TerrainMapPrototypePage() {
                 <span style={{ color: "#64748b", marginLeft: "4px" }}>· to linked station</span>
               </div>
               <span style={{ fontSize: "10px", color: "#d97706" }}>LINKED</span>
+            </div>
+          )}
+
+          {/* Linked Station Highlight Item (when active) */}
+          {isTracingActive && modelledPathway?.hasValidPath && modelledPathway.linkedStations.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "7px",
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-block",
+                  width: "12px",
+                  height: "12px",
+                  borderRadius: "50%",
+                  background: "rgba(6,182,212,0.3)",
+                  border: "2px solid #22d3ee",
+                  flexShrink: 0,
+                }}
+              />
+              <div style={{ flex: 1, fontSize: "11.5px" }}>
+                <strong style={{ color: "#0891b2" }}>Linked Station Target</strong>
+                <span style={{ color: "#64748b", marginLeft: "4px" }}>· downstream highlight</span>
+              </div>
+              <span style={{ fontSize: "10px", color: "#0891b2" }}>TARGET</span>
             </div>
           )}
 
