@@ -1,0 +1,114 @@
+{
+  "simulation_metadata": {
+    "model_name": "NoyyalSense-1D-ADE-Screening",
+    "version": "1.0.0",
+    "description": "Simplified 1D advection-dispersion screening simulator for controlled pollution-source attribution benchmarking. Channel coordinates and hydraulic scales are synthetic screening assumptions.",
+    "idealized_domain": true
+  },
+  "channel_physics": {
+    "domain_length_m": 32000.0,
+    "cross_section_area_m2": 25.0,
+    "flow_velocity_mps": 0.25,
+    "dispersion_m2ps": 4.5,
+    "decay_rate_per_sec": 0.0,
+    "background_concentration": 50.0
+  },
+  "numerical_scheme": {
+    "scheme": "finite_volume_upwind_central",
+    "dx_m": 100.0,
+    "dt_sec": 10.0,
+    "simulation_duration_sec": 86400.0,
+    "sample_interval_sec": 300.0
+  },
+  "monitoring_stations": [
+    {
+      "station_id": "sensor_001",
+      "name": "Mangalam Telemetry Station (Upstream Entry)",
+      "chainage_m": 0.0
+    },
+    {
+      "station_id": "sensor_002",
+      "name": "Kasipalayam Bridge Telemetry (Urban/Industrial Exit)",
+      "chainage_m": 14800.0
+    },
+    {
+      "station_id": "sensor_003",
+      "name": "Orathapalayam Reservoir Exit (Downstream Containment)",
+      "chainage_m": 31200.0
+    }
+  ],
+  "candidate_sources": [
+    {
+      "source_id": "unit_001",
+      "name": "Synthetic Dyeing Cluster 001 (Arulpuram Archetype)",
+      "chainage_m": 3200.0,
+      "nominal_mass_rate_gps": 25.0
+    },
+    {
+      "source_id": "unit_002",
+      "name": "Synthetic Dyeing Cluster 002 (Veerapandi Archetype)",
+      "chainage_m": 5500.0,
+      "nominal_mass_rate_gps": 30.0
+    },
+    {
+      "source_id": "unit_003",
+      "name": "Synthetic Dyeing Cluster 003 (Mangalam Rd Archetype)",
+      "chainage_m": 8100.0,
+      "nominal_mass_rate_gps": 20.0
+    },
+    {
+      "source_id": "unit_004",
+      "name": "Synthetic Dyeing Cluster 004 (Kasipalayam Archetype)",
+      "chainage_m": 11200.0,
+      "nominal_mass_rate_gps": 35.0
+    },
+    {
+      "source_id": "unit_005",
+      "name": "Synthetic Dyeing Cluster 005 (Rayapuram Archetype)",
+      "chainage_m": 13400.0,
+      "nominal_mass_rate_gps": 22.0
+    },
+    {
+      "source_id": "unit_006",
+      "name": "Synthetic Dyeing Cluster 006 (Tiruppur North Archetype)",
+      "chainage_m": 14200.0,
+      "nominal_mass_rate_gps": 40.0
+    },
+    {
+      "source_id": "unit_007",
+      "name": "Synthetic Dyeing Cluster 007 (Angeripalayam Archetype)",
+      "chainage_m": 16500.0,
+      "nominal_mass_rate_gps": 28.0
+    },
+    {
+      "source_id": "unit_008",
+      "name": "Synthetic Dyeing Cluster 008 (Murugampalayam Archetype)",
+      "chainage_m": 18900.0,
+      "nominal_mass_rate_gps": 18.0
+    },
+    {
+      "source_id": "unit_009",
+      "name": "Synthetic Dyeing Cluster 009 (Nallur Archetype)",
+      "chainage_m": 21400.0,
+      "nominal_mass_rate_gps": 24.0
+    },
+    {
+      "source_id": "unit_010",
+      "name": "Synthetic Dyeing Cluster 010 (Palayakkarai Archetype)",
+      "chainage_m": 23800.0,
+      "nominal_mass_rate_gps": 32.0
+    },
+    {
+      "source_id": "unit_011",
+      "name": "Synthetic Dyeing Cluster 011 (Uthukuli Archetype)",
+      "chainage_m": 25600.0,
+      "nominal_mass_rate_gps": 20.0
+    },
+    {
+      "source_id": "unit_012",
+      "name": "Synthetic Dyeing Cluster 012 (Vijayapuram Archetype)",
+      "chainage_m": 27800.0,
+      "nominal_mass_rate_gps": 26.0
+    }
+  ]
+}

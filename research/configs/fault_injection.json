@@ -1,0 +1,39 @@
+{
+  "fault_metadata": {
+    "version": "1.0.0",
+    "description": "Independently configurable sensor fault transformations for uncertainty and abstention benchmarking. All thresholds and noise fractions are explicit configuration parameters."
+  },
+  "additive_noise": {
+    "enabled": false,
+    "noise_std_ratio": 0.10,
+    "distribution": "gaussian",
+    "zero_floor": true
+  },
+  "random_missingness": {
+    "enabled": false,
+    "dropout_probability": 0.15
+  },
+  "burst_dropout": {
+    "enabled": false,
+    "duration_hours": 3.0,
+    "start_time_sec": 21600.0,
+    "affected_stations": ["sensor_002"]
+  },
+  "sensor_drift": {
+    "enabled": false,
+    "drift_rate_per_hour": 15.0,
+    "start_time_sec": 28800.0,
+    "affected_stations": ["sensor_002"]
+  },
+  "stuck_value": {
+    "enabled": false,
+    "start_time_sec": 36000.0,
+    "duration_sec": 14400.0,
+    "affected_stations": ["sensor_002"]
+  },
+  "telemetry_delay": {
+    "enabled": false,
+    "delay_sec": 7200.0,
+    "affected_stations": ["sensor_002", "sensor_003"]
+  }
+}
