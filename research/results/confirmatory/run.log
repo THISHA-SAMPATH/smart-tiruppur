@@ -1,0 +1,24 @@
+2026-10-12T04:28:19.970413+00:00 Run started; config=research/configs/confirmatory.json; seeds=[202, 303, 404, 505, 606, 707, 808, 909, 1010, 1111]
+2026-10-12T04:28:19.978318+00:00 Starting confirmatory study across 10 seeds
+2026-10-12T04:28:19.981406+00:00 [1/10] seed=202 started
+2026-10-12T04:30:42.063270+00:00 [1/10] seed=202 completed; episodes=104; counts={'clean': 52, 'faulted': 52}; elapsed=142.08s
+2026-10-12T04:30:42.069576+00:00 [2/10] seed=303 started
+2026-10-12T04:32:36.686873+00:00 [2/10] seed=303 completed; episodes=104; counts={'clean': 52, 'faulted': 52}; elapsed=114.62s
+2026-10-12T04:32:36.689875+00:00 [3/10] seed=404 started
+2026-10-12T04:34:30.679395+00:00 [3/10] seed=404 completed; episodes=104; counts={'clean': 52, 'faulted': 52}; elapsed=113.99s
+2026-10-12T04:34:30.682354+00:00 [4/10] seed=505 started
+2026-10-12T04:36:49.528690+00:00 [4/10] seed=505 completed; episodes=104; counts={'clean': 52, 'faulted': 52}; elapsed=138.85s
+2026-10-12T04:36:49.531821+00:00 [5/10] seed=606 started
+2026-10-12T04:44:39.520345+00:00 [5/10] seed=606 completed; episodes=104; counts={'clean': 52, 'faulted': 52}; elapsed=469.99s
+2026-10-12T04:44:39.523485+00:00 [6/10] seed=707 started
+2026-10-12T04:52:23.921309+00:00 [6/10] seed=707 completed; episodes=104; counts={'clean': 52, 'faulted': 52}; elapsed=464.40s
+2026-10-12T04:52:23.926614+00:00 [7/10] seed=808 started
+2026-10-12T05:01:40.514411+00:00 [7/10] seed=808 completed; episodes=104; counts={'clean': 52, 'faulted': 52}; elapsed=556.59s
+2026-10-12T05:01:40.527268+00:00 [8/10] seed=909 started
+2026-10-12T05:09:55.056464+00:00 [8/10] seed=909 completed; episodes=104; counts={'clean': 52, 'faulted': 52}; elapsed=494.53s
+2026-10-12T05:09:55.062110+00:00 [9/10] seed=1010 started
+2026-10-12T05:16:56.121236+00:00 [9/10] seed=1010 completed; episodes=104; counts={'clean': 52, 'faulted': 52}; elapsed=421.06s
+2026-10-12T05:16:56.127212+00:00 [10/10] seed=1111 started
+2026-10-12T05:25:23.382475+00:00 [10/10] seed=1111 completed; episodes=104; counts={'clean': 52, 'faulted': 52}; elapsed=507.26s
+2026-10-12T05:25:24.022554+00:00 Executing bootstrap analysis (1000 replicates)
+2026-10-12T05:26:05.033933+00:00 Run completed successfully

@@ -1,0 +1,4235 @@
+{
+  "seed": 505,
+  "metrics": [
+    {
+      "seed": 505,
+      "condition": "clean",
+      "test_episodes_count": 52,
+      "task1_detection": {
+        "detection_rate": 0.7708333333333334,
+        "false_alarm_rate": 0.0,
+        "mean_ttd_hours": 6.855555326974637,
+        "tp": 37,
+        "n_pos": 48,
+        "fp": 0,
+        "n_clean": 4
+      },
+      "m1_nearest_heuristic": {
+        "overall_accuracy": 0.23076923076923078,
+        "macro_f1": 0.08777327935222673,
+        "coverage": 1.0,
+        "selective_risk": 0.7692307692307693,
+        "errors": 40,
+        "total": 52
+      },
+      "m1_secondary_privileged_capacity": {
+        "overall_accuracy": 0.15384615384615385,
+        "macro_f1": 0.04739804483065073,
+        "coverage": 1.0,
+        "selective_risk": 0.8461538461538461,
+        "errors": 44,
+        "total": 52,
+        "is_privileged_prior": true
+      },
+      "m2_spatial_transit_heuristic": {
+        "overall_accuracy": 0.23076923076923078,
+        "macro_f1": 0.08777327935222673,
+        "coverage": 1.0,
+        "selective_risk": 0.7692307692307693,
+        "errors": 40,
+        "total": 52
+      },
+      "m3_conventional_classifier": {
+        "overall_accuracy": 0.9423076923076923,
+        "macro_f1": 0.9423909423909423,
+        "coverage": 1.0,
+        "selective_risk": 0.057692307692307696,
+        "brier_score": 0.17788461538461536,
+        "log_loss": 0.3651303487652846,
+        "ece": 0.18980769230769243,
+        "errors": 3,
+        "total": 52
+      },
+      "m3_selective_confidence_only": {
+        "decision_coverage": 1.0,
+        "abstention_rate": 0.0,
+        "selective_risk": 0.057692307692307696,
+        "selective_accuracy": 0.9423076923076923,
+        "overall_accuracy_forced": 0.9423076923076923,
+        "abstention_fault_cooccurrence_rate": null,
+        "selective_error_avoidance_rate": null,
+        "fault_diagnostic_precision": null,
+        "locked_tau": 0.3,
+        "accepted_errors": 3,
+        "accepted_count": 52,
+        "abstained_count": 0,
+        "avoided_errors": 0,
+        "fault_cooccur_count": 0,
+        "total_episodes": 52
+      },
+      "m4_selective_attributor": {
+        "decision_coverage": 1.0,
+        "abstention_rate": 0.0,
+        "selective_risk": 0.057692307692307696,
+        "selective_accuracy": 0.9423076923076923,
+        "overall_accuracy_forced": 0.9423076923076923,
+        "abstention_fault_cooccurrence_rate": null,
+        "selective_error_avoidance_rate": null,
+        "fault_diagnostic_precision": null,
+        "abstention_appropriateness_rate": null,
+        "temperature": 0.500263440620707,
+        "locked_tau": 0.3,
+        "locked_delta": 0.0,
+        "brier_score": 0.12247818955777484,
+        "log_loss": 0.24179640765063926,
+        "ece": 0.05350711276428451,
+        "validation_tuning_report": {
+          "selected_tau": 0.3,
+          "selected_delta": 0.0,
+          "validation_coverage": 1.0,
+          "validation_selective_risk": 0.02564102564102564,
+          "target_max_risk": 0.1,
+          "grid_evaluated_count": 40
+        },
+        "accepted_errors": 3,
+        "accepted_count": 52,
+        "abstained_count": 0,
+        "avoided_errors": 0,
+        "diag_vetoes": 0,
+        "diag_true_positives": 0,
+        "fault_cooccur_count": 0,
+        "total_episodes": 52
+      },
+      "target_coverage_evaluations": {
+        "0.30": {
+          "target_coverage": 0.3,
+          "m3_selective": {
+            "locked_tau": 0.9,
+            "achieved_coverage": 0.23076923076923078,
+            "selective_risk": 0.0,
+            "accepted_count": 12,
+            "accepted_errors": 0,
+            "total_episodes": 52
+          },
+          "m4_selective": {
+            "locked_tau": 0.9,
+            "locked_delta": 0.0,
+            "achieved_coverage": 0.6346153846153846,
+            "selective_risk": 0.030303030303030304,
+            "accepted_count": 33,
+            "accepted_errors": 1,
+            "total_episodes": 52
+          }
+        },
+        "0.50": {
+          "target_coverage": 0.5,
+          "m3_selective": {
+            "locked_tau": 0.8,
+            "achieved_coverage": 0.4423076923076923,
+            "selective_risk": 0.043478260869565216,
+            "accepted_count": 23,
+            "accepted_errors": 1,
+            "total_episodes": 52
+          },
+          "m4_selective": {
+            "locked_tau": 0.9,
+            "locked_delta": 0.0,
+            "achieved_coverage": 0.6346153846153846,
+            "selective_risk": 0.030303030303030304,
+            "accepted_count": 33,
+            "accepted_errors": 1,
+            "total_episodes": 52
+          }
+        },
+        "0.70": {
+          "target_coverage": 0.7,
+          "m3_selective": {
+            "locked_tau": 0.7,
+            "achieved_coverage": 0.6346153846153846,
+            "selective_risk": 0.030303030303030304,
+            "accepted_count": 33,
+            "accepted_errors": 1,
+            "total_episodes": 52
+          },
+          "m4_selective": {
+            "locked_tau": 0.9,
+            "locked_delta": 0.0,
+            "achieved_coverage": 0.6346153846153846,
+            "selective_risk": 0.030303030303030304,
+            "accepted_count": 33,
+            "accepted_errors": 1,
+            "total_episodes": 52
+          }
+        }
+      }
+    },
+    {
+      "seed": 505,
+      "condition": "faulted",
+      "test_episodes_count": 52,
+      "task1_detection": {
+        "detection_rate": 0.5625,
+        "false_alarm_rate": 0.0,
+        "mean_ttd_hours": 7.517859594428341,
+        "tp": 27,
+        "n_pos": 48,
+        "fp": 0,
+        "n_clean": 4
+      },
+      "m1_nearest_heuristic": {
+        "overall_accuracy": 0.21153846153846154,
+        "macro_f1": 0.08275862068965517,
+        "coverage": 1.0,
+        "selective_risk": 0.7884615384615384,
+        "errors": 41,
+        "total": 52
+      },
+      "m1_secondary_privileged_capacity": {
+        "overall_accuracy": 0.1346153846153846,
+        "macro_f1": 0.03610849662017626,
+        "coverage": 1.0,
+        "selective_risk": 0.8653846153846154,
+        "errors": 45,
+        "total": 52,
+        "is_privileged_prior": true
+      },
+      "m2_spatial_transit_heuristic": {
+        "overall_accuracy": 0.21153846153846154,
+        "macro_f1": 0.08275862068965517,
+        "coverage": 1.0,
+        "selective_risk": 0.7884615384615384,
+        "errors": 41,
+        "total": 52
+      },
+      "m3_conventional_classifier": {
+        "overall_accuracy": 0.7307692307692307,
+        "macro_f1": 0.7048464356156663,
+        "coverage": 1.0,
+        "selective_risk": 0.2692307692307692,
+        "brier_score": 0.3335961538461539,
+        "log_loss": 0.767565671952296,
+        "ece": 0.1315384615384615,
+        "errors": 14,
+        "total": 52
+      },
+      "m3_selective_confidence_only": {
+        "decision_coverage": 0.9230769230769231,
+        "abstention_rate": 0.07692307692307693,
+        "selective_risk": 0.20833333333333334,
+        "selective_accuracy": 0.7916666666666666,
+        "overall_accuracy_forced": 0.7307692307692307,
+        "abstention_fault_cooccurrence_rate": 1.0,
+        "selective_error_avoidance_rate": 1.0,
+        "fault_diagnostic_precision": null,
+        "locked_tau": 0.3,
+        "accepted_errors": 10,
+        "accepted_count": 48,
+        "abstained_count": 4,
+        "avoided_errors": 4,
+        "fault_cooccur_count": 4,
+        "total_episodes": 52
+      },
+      "m4_selective_attributor": {
+        "decision_coverage": 0.8461538461538461,
+        "abstention_rate": 0.15384615384615385,
+        "selective_risk": 0.29545454545454547,
+        "selective_accuracy": 0.7045454545454546,
+        "overall_accuracy_forced": 0.7307692307692307,
+        "abstention_fault_cooccurrence_rate": 1.0,
+        "selective_error_avoidance_rate": 0.125,
+        "fault_diagnostic_precision": 1.0,
+        "abstention_appropriateness_rate": 1.0,
+        "temperature": 0.500263440620707,
+        "locked_tau": 0.3,
+        "locked_delta": 0.0,
+        "brier_score": 0.34496556792047434,
+        "log_loss": 0.8311332062807443,
+        "ece": 0.10437436654943973,
+        "validation_tuning_report": {
+          "selected_tau": 0.3,
+          "selected_delta": 0.0,
+          "validation_coverage": 1.0,
+          "validation_selective_risk": 0.02564102564102564,
+          "target_max_risk": 0.1,
+          "grid_evaluated_count": 40
+        },
+        "accepted_errors": 13,
+        "accepted_count": 44,
+        "abstained_count": 8,
+        "avoided_errors": 1,
+        "diag_vetoes": 8,
+        "diag_true_positives": 8,
+        "fault_cooccur_count": 8,
+        "total_episodes": 52
+      },
+      "target_coverage_evaluations": {
+        "0.30": {
+          "target_coverage": 0.3,
+          "m3_selective": {
+            "locked_tau": 0.9,
+            "achieved_coverage": 0.11538461538461539,
+            "selective_risk": 0.0,
+            "accepted_count": 6,
+            "accepted_errors": 0,
+            "total_episodes": 52
+          },
+          "m4_selective": {
+            "locked_tau": 0.9,
+            "locked_delta": 0.0,
+            "achieved_coverage": 0.5,
+            "selective_risk": 0.038461538461538464,
+            "accepted_count": 26,
+            "accepted_errors": 1,
+            "total_episodes": 52
+          }
+        },
+        "0.50": {
+          "target_coverage": 0.5,
+          "m3_selective": {
+            "locked_tau": 0.8,
+            "achieved_coverage": 0.28846153846153844,
+            "selective_risk": 0.0,
+            "accepted_count": 15,
+            "accepted_errors": 0,
+            "total_episodes": 52
+          },
+          "m4_selective": {
+            "locked_tau": 0.9,
+            "locked_delta": 0.0,
+            "achieved_coverage": 0.5,
+            "selective_risk": 0.038461538461538464,
+            "accepted_count": 26,
+            "accepted_errors": 1,
+            "total_episodes": 52
+          }
+        },
+        "0.70": {
+          "target_coverage": 0.7,
+          "m3_selective": {
+            "locked_tau": 0.7,
+            "achieved_coverage": 0.5384615384615384,
+            "selective_risk": 0.0,
+            "accepted_count": 28,
+            "accepted_errors": 0,
+            "total_episodes": 52
+          },
+          "m4_selective": {
+            "locked_tau": 0.9,
+            "locked_delta": 0.0,
+            "achieved_coverage": 0.5,
+            "selective_risk": 0.038461538461538464,
+            "accepted_count": 26,
+            "accepted_errors": 1,
+            "total_episodes": 52
+          }
+        }
+      }
+    }
+  ],
+  "episode_predictions": [
+    {
+      "event_id": "ev_pilot_s0_background_rep19_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "s0_background",
+      "is_background": true,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.0,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 1.0,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "confidence": 1.0,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 1.0,
+        "probability_margin": 1.0,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_s0_background_rep1_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "s0_background",
+      "is_background": true,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.0,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 1.0,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "confidence": 1.0,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 1.0,
+        "probability_margin": 1.0,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_s0_background_rep16_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "s0_background",
+      "is_background": true,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.0,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 1.0,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "confidence": 1.0,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 1.0,
+        "probability_margin": 1.0,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_s0_background_rep8_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "s0_background",
+      "is_background": true,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.0,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 1.0,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "confidence": 1.0,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 1.0,
+        "probability_margin": 1.0,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_001_rep18_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_001",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.9167909482536276,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_001",
+      "m3_confidence": 0.93,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "confidence": 0.93,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "calibrated_confidence": 0.9943512395228387,
+        "probability_margin": 0.9887024790456774,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_001_rep19_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_001",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.0699350203957518,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_001",
+      "m3_confidence": 0.91,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "confidence": 0.91,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "calibrated_confidence": 0.9945790402566016,
+        "probability_margin": 0.9902429057928186,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_001_rep9_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_001",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.312353944542762,
+        "detection_time_sec": 57000.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_001",
+      "m3_confidence": 0.56,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "confidence": 0.56,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "calibrated_confidence": 0.6396680187574456,
+        "probability_margin": 0.27974572225199124,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_001_rep12_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_001",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.551917755586913,
+        "detection_time_sec": 65700.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_001",
+      "m3_confidence": 0.84,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "confidence": 0.84,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "calibrated_confidence": 0.9791404567650924,
+        "probability_margin": 0.9591170034744712,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_002_rep15_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_002",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.0205810600750236,
+        "detection_time_sec": 42900.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_003",
+      "m3_confidence": 0.52,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "confidence": 0.52,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "calibrated_confidence": 0.6477160624416818,
+        "probability_margin": 0.3196682895229012,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_002_rep11_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_002",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.5810192034032227,
+        "detection_time_sec": 55500.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_002",
+      "m3_confidence": 0.81,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "confidence": 0.81,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "calibrated_confidence": 0.9759951971929506,
+        "probability_margin": 0.9579577014624021,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_002_rep5_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_002",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.55027662708763,
+        "detection_time_sec": 54900.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_002",
+      "m3_confidence": 0.52,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "confidence": 0.52,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "calibrated_confidence": 0.6597120697758787,
+        "probability_margin": 0.3607163889060527,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_002_rep12_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_002",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.7310294013823118,
+        "detection_time_sec": 44100.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_002",
+      "m3_confidence": 0.77,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "confidence": 0.77,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "calibrated_confidence": 0.9555942103933447,
+        "probability_margin": 0.919267775685809,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_003_rep19_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_003",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.557632813556469,
+        "detection_time_sec": 38700.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_003",
+      "m3_confidence": 0.94,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "confidence": 0.94,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "calibrated_confidence": 0.9959305622284409,
+        "probability_margin": 0.9918611244568819,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_003_rep1_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_003",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.7627842260010484,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_003",
+      "m3_confidence": 0.97,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "confidence": 0.97,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "calibrated_confidence": 0.9994666237231576,
+        "probability_margin": 0.9990399850160548,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_003_rep6_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_003",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.726083013187267,
+        "detection_time_sec": 42300.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_003",
+      "m3_confidence": 0.56,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "confidence": 0.56,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "calibrated_confidence": 0.6396680187574455,
+        "probability_margin": 0.2797457222519912,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_003_rep20_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_003",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.1904483247017073,
+        "detection_time_sec": 44700.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_003",
+      "m3_confidence": 0.61,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "confidence": 0.61,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "calibrated_confidence": 0.7097465285365544,
+        "probability_margin": 0.41949305707310874,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_004_rep1_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_004",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.7679056629901497,
+        "detection_time_sec": 30000.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_004",
+      "m3_confidence": 0.69,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_004",
+        "confidence": 0.69,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_004",
+        "calibrated_confidence": 0.896486433991313,
+        "probability_margin": 0.8052404535101093,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_004_rep3_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_004",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.282554077806347,
+        "detection_time_sec": 31500.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_003",
+      "m3_confidence": 0.8,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "confidence": 0.8,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "calibrated_confidence": 0.9737708355139678,
+        "probability_margin": 0.9553219682709282,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_004_rep18_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_004",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 4.618423505142019,
+        "detection_time_sec": 21900.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_004",
+      "m3_confidence": 0.94,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_004",
+        "confidence": 0.94,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_004",
+        "calibrated_confidence": 0.9959305622284409,
+        "probability_margin": 0.9918611244568819,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_004_rep5_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_004",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 6.073713564377823,
+        "detection_time_sec": 33900.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_003",
+      "m3_confidence": 0.48,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "confidence": 0.48,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "calibrated_confidence": 0.695910357848593,
+        "probability_margin": 0.44175614734649077,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_005_rep16_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_005",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.0963077806083703,
+        "detection_time_sec": 18300.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_005",
+      "m3_confidence": 0.75,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "confidence": 0.75,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "calibrated_confidence": 0.9449720294087468,
+        "probability_margin": 0.8963455104826344,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_005_rep17_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_005",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.6823369144617706,
+        "detection_time_sec": 24900.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_005",
+      "m3_confidence": 0.59,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "confidence": 0.59,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "calibrated_confidence": 0.8154352579603298,
+        "probability_margin": 0.6913923248261369,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_005_rep8_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_005",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.1268243376413145,
+        "detection_time_sec": 15000.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_005",
+      "m3_confidence": 0.78,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "confidence": 0.78,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "calibrated_confidence": 0.9431743034302449,
+        "probability_margin": 0.8871268439203227,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_005_rep11_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_005",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.917694074375289,
+        "detection_time_sec": 12900.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_005",
+      "m3_confidence": 0.47,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "confidence": 0.47,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "calibrated_confidence": 0.5985272237725743,
+        "probability_margin": 0.28520288772352903,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_006_rep4_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_006",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 7.1199744653330495,
+        "detection_time_sec": 13200.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_006",
+      "m3_confidence": 0.92,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "confidence": 0.92,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "calibrated_confidence": 0.9941112196347918,
+        "probability_margin": 0.9883404516571356,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_006_rep15_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_006",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 4.870873962077679,
+        "detection_time_sec": 24000.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_006",
+      "m3_confidence": 0.37,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "confidence": 0.37,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "calibrated_confidence": 0.4217087694990671,
+        "probability_margin": 0.02247550672273957,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_006_rep17_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_006",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 7.5127931692120615,
+        "detection_time_sec": 16800.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_006",
+      "m3_confidence": 0.94,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "confidence": 0.94,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "calibrated_confidence": 0.9979596466567998,
+        "probability_margin": 0.9969394699851998,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_006_rep5_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_006",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 5.528773873549763,
+        "detection_time_sec": 18000.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_006",
+      "m3_confidence": 0.82,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "confidence": 0.82,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "calibrated_confidence": 0.9761367776193038,
+        "probability_margin": 0.9615873668030176,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_007_rep14_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_007",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.7629420071171862,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_007",
+      "m3_confidence": 0.76,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "confidence": 0.76,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "calibrated_confidence": 0.9222945314632495,
+        "probability_margin": 0.8449098769409817,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_007_rep4_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_007",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.515065860552152,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_007",
+      "m3_confidence": 0.7,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "confidence": 0.7,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "calibrated_confidence": 0.8613458280972042,
+        "probability_margin": 0.7233974335009596,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_007_rep7_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_007",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.829704594933852,
+        "detection_time_sec": 68400.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_007",
+      "m3_confidence": 0.87,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "confidence": 0.87,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "calibrated_confidence": 0.9932863782645299,
+        "probability_margin": 0.9885487428466373,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_007_rep18_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_007",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.5774602230761223,
+        "detection_time_sec": 68400.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_007",
+      "m3_confidence": 0.94,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "confidence": 0.94,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "calibrated_confidence": 0.9979596466567998,
+        "probability_margin": 0.9969394699851998,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_008_rep13_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_008",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.9711561989460786,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_008",
+      "m3_confidence": 0.52,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "confidence": 0.52,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "calibrated_confidence": 0.6565330684486178,
+        "probability_margin": 0.32401975985440035,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_008_rep14_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_008",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.2593583000704613,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_008",
+      "m3_confidence": 0.87,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "confidence": 0.87,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "calibrated_confidence": 0.9873150750274082,
+        "probability_margin": 0.9767240015084602,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_008_rep15_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_008",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.8702083920451316,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_008",
+      "m3_confidence": 0.88,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "confidence": 0.88,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "calibrated_confidence": 0.9905085084263607,
+        "probability_margin": 0.9842243543243595,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_008_rep3_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_008",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.5527694320503427,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_008",
+      "m3_confidence": 0.58,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "confidence": 0.58,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "calibrated_confidence": 0.7906104161874465,
+        "probability_margin": 0.6661631701310925,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_009_rep13_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_009",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.8316134740197274,
+        "detection_time_sec": 50100.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_009",
+      "m3_confidence": 0.63,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "confidence": 0.63,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "calibrated_confidence": 0.868729541727347,
+        "probability_margin": 0.752819767369538,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_009_rep6_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_009",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.4374556194823587,
+        "detection_time_sec": 55200.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_009",
+      "m3_confidence": 0.65,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "confidence": 0.65,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "calibrated_confidence": 0.8786107281909901,
+        "probability_margin": 0.7684819927034844,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_009_rep10_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_009",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.948041972879823,
+        "detection_time_sec": 57600.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_009",
+      "m3_confidence": 0.47,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "confidence": 0.47,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "calibrated_confidence": 0.6349999614334212,
+        "probability_margin": 0.34052134060464817,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_009_rep18_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_009",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.361335930015565,
+        "detection_time_sec": 47700.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_009",
+      "m3_confidence": 0.77,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "confidence": 0.77,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "calibrated_confidence": 0.9614877624606363,
+        "probability_margin": 0.9340301565128761,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_010_rep16_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_010",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.6648825165764687,
+        "detection_time_sec": 49500.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_010",
+      "m3_confidence": 0.79,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "confidence": 0.79,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "calibrated_confidence": 0.9747921623775022,
+        "probability_margin": 0.9621116604398702,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_010_rep12_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_010",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.3661905313810654,
+        "detection_time_sec": 32700.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_010",
+      "m3_confidence": 0.64,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "confidence": 0.64,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "calibrated_confidence": 0.8856609000435047,
+        "probability_margin": 0.8302262151204745,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_010_rep7_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_010",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.113175749615017,
+        "detection_time_sec": 46800.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_010",
+      "m3_confidence": 0.79,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "confidence": 0.79,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "calibrated_confidence": 0.9542078624069628,
+        "probability_margin": 0.9099501127404864,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_010_rep13_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_010",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.7115443823382086,
+        "detection_time_sec": 39000.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_010",
+      "m3_confidence": 0.62,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "confidence": 0.62,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "calibrated_confidence": 0.8184279437450238,
+        "probability_margin": 0.6513663056288574,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_011_rep16_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_011",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.274587254458015,
+        "detection_time_sec": 29100.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_011",
+      "m3_confidence": 0.63,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "confidence": 0.63,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "calibrated_confidence": 0.8937695646225966,
+        "probability_margin": 0.8207124544291736,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_011_rep6_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_011",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.754235770081912,
+        "detection_time_sec": 37500.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_011",
+      "m3_confidence": 0.8,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "confidence": 0.8,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "calibrated_confidence": 0.9746605362559193,
+        "probability_margin": 0.962296571449429,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_011_rep12_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_011",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.776787550439307,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_011",
+      "m3_confidence": 0.81,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "confidence": 0.81,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "calibrated_confidence": 0.9806708373209337,
+        "probability_margin": 0.9656908982748058,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_011_rep19_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_011",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.6640870820198392,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_011",
+      "m3_confidence": 0.67,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "confidence": 0.67,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "calibrated_confidence": 0.9223977127224285,
+        "probability_margin": 0.8697155464376332,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_012_rep16_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_012",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.540204425031276,
+        "detection_time_sec": 23700.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_012",
+      "m3_confidence": 0.76,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "confidence": 0.76,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "calibrated_confidence": 0.9158556199069543,
+        "probability_margin": 0.8318705269548845,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_012_rep11_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_012",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 4.099300345089144,
+        "detection_time_sec": 32400.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_012",
+      "m3_confidence": 0.88,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "confidence": 0.88,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "calibrated_confidence": 0.9897479787711727,
+        "probability_margin": 0.981547559532146,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_012_rep18_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_012",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.9438141881001365,
+        "detection_time_sec": 17100.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_012",
+      "m3_confidence": 0.73,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "confidence": 0.73,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "calibrated_confidence": 0.9260319046615896,
+        "probability_margin": 0.8632111565216298,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_012_rep6_505",
+      "seed": 505,
+      "condition": "clean",
+      "true_source_id": "unit_012",
+      "is_background": false,
+      "has_hardware_fault": false,
+      "applied_faults": {},
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.3806901090350405,
+        "detection_time_sec": 35100.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_012",
+      "m3_confidence": 0.88,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "confidence": 0.88,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "calibrated_confidence": 0.9920342211229967,
+        "probability_margin": 0.9874094291845414,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_s0_background_rep19_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "s0_background",
+      "is_background": true,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.0,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 1.0,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "confidence": 1.0,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 1.0,
+        "probability_margin": 1.0,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_s0_background_rep1_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "s0_background",
+      "is_background": true,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.0,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 1.0,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "confidence": 1.0,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 1.0,
+        "probability_margin": 1.0,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_s0_background_rep16_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "s0_background",
+      "is_background": true,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.0,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 1.0,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "confidence": 1.0,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 1.0,
+        "probability_margin": 1.0,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_s0_background_rep8_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "s0_background",
+      "is_background": true,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.0,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 1.0,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "confidence": 1.0,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 1.0,
+        "probability_margin": 1.0,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_001_rep18_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_001",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.9167909482536276,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_001",
+      "m3_confidence": 0.88,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "confidence": 0.88,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "calibrated_confidence": 0.9817067749210755,
+        "probability_margin": 0.9634135498421511,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_001_rep19_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_001",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.0699350203957518,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_001",
+      "m3_confidence": 0.91,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "confidence": 0.91,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "calibrated_confidence": 0.9945790402566016,
+        "probability_margin": 0.9902429057928186,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_001_rep9_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_001",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.312353944542762,
+        "detection_time_sec": 57000.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_001",
+      "m3_confidence": 0.56,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "confidence": 0.56,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "calibrated_confidence": 0.6396680187574456,
+        "probability_margin": 0.27974572225199124,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_001_rep12_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_001",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.551917755586913,
+        "detection_time_sec": 65700.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_001",
+      "m3_confidence": 0.83,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "confidence": 0.83,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_001",
+        "calibrated_confidence": 0.9751774439959732,
+        "probability_margin": 0.9512077692316994,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_002_rep15_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_002",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.7268247472337046,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_003",
+      "m3_confidence": 0.25,
+      "m3_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "confidence": 0.25,
+        "abstain_cause": "LOW_CONFIDENCE"
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_003",
+        "calibrated_confidence": 0.3954314381571593,
+        "probability_margin": 0.19036884472353344,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_002_rep11_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_002",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.5810192034032227,
+        "detection_time_sec": 55500.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_002",
+      "m3_confidence": 0.78,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "confidence": 0.78,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "calibrated_confidence": 0.965952317991157,
+        "probability_margin": 0.9390696268120793,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_002_rep5_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_002",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.55027662708763,
+        "detection_time_sec": 54900.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_002",
+      "m3_confidence": 0.53,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "confidence": 0.53,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "calibrated_confidence": 0.6793572008346992,
+        "probability_margin": 0.39964762597276204,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_002_rep12_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_002",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.7031858015271246,
+        "detection_time_sec": 50400.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_002",
+      "m3_confidence": 0.71,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "confidence": 0.71,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "calibrated_confidence": 0.9358374257989754,
+        "probability_margin": 0.8882376126073771,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_003_rep19_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_003",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.38425329091399224,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 0.29,
+      "m3_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "confidence": 0.29,
+        "abstain_cause": "LOW_CONFIDENCE"
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 0.4415819541444926,
+        "probability_margin": 0.08659534962713666,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_003_rep1_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_003",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.1140385561647337,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 0.43,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "confidence": 0.43,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 0.7682431811821475,
+        "probability_margin": 0.6617666335061503,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_003_rep6_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_003",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.6176517883169945,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_002",
+      "m3_confidence": 0.43,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "confidence": 0.43,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "calibrated_confidence": 0.5986432822823252,
+        "probability_margin": 0.26700374168141605,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_003_rep20_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_003",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.716488418416224,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_002",
+      "m3_confidence": 0.52,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "confidence": 0.52,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_002",
+        "calibrated_confidence": 0.6527246551839943,
+        "probability_margin": 0.3221401878865396,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_004_rep1_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_004",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.27076228965736393,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 0.28,
+      "m3_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "confidence": 0.28,
+        "abstain_cause": "LOW_CONFIDENCE"
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 0.48555812463212844,
+        "probability_margin": 0.23773658134837156,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_004_rep3_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_004",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.1567939007571978,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 0.35,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "confidence": 0.35,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 0.6215856502683527,
+        "probability_margin": 0.4748306052383596,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_004_rep18_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_004",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.9038972864412425,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_004",
+      "m3_confidence": 0.68,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_004",
+        "confidence": 0.68,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "calibrated_confidence": 0.0,
+        "probability_margin": 0.0,
+        "abstain_cause": "SENSOR_FAULT_STUCK"
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_004_rep5_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_004",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.46197087338799836,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "s0_background",
+      "m3_confidence": 0.26,
+      "m3_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "confidence": 0.26,
+        "abstain_cause": "LOW_CONFIDENCE"
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "s0_background",
+        "calibrated_confidence": 0.41972729099516876,
+        "probability_margin": 0.24020734966908078,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_005_rep16_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_005",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.0245127125676223,
+        "detection_time_sec": 18300.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_005",
+      "m3_confidence": 0.53,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "confidence": 0.53,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "calibrated_confidence": 0.0,
+        "probability_margin": 0.0,
+        "abstain_cause": "SENSOR_FAULT_STUCK"
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_005_rep17_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_005",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.698072240183583,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_007",
+      "m3_confidence": 0.41,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "confidence": 0.41,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "calibrated_confidence": 0.0,
+        "probability_margin": 0.0,
+        "abstain_cause": "SENSOR_FAULT_STUCK"
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_005_rep8_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_005",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.1268243376413145,
+        "detection_time_sec": 15000.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_005",
+      "m3_confidence": 0.79,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "confidence": 0.79,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "calibrated_confidence": 0.0,
+        "probability_margin": 0.0,
+        "abstain_cause": "SENSOR_FAULT_STUCK"
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_005_rep11_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_005",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.917694074375289,
+        "detection_time_sec": 12900.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_005",
+      "m3_confidence": 0.41,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_005",
+        "confidence": 0.41,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "calibrated_confidence": 0.0,
+        "probability_margin": 0.0,
+        "abstain_cause": "SENSOR_FAULT_STUCK"
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_006_rep4_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_006",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 7.1199744653330495,
+        "detection_time_sec": 13200.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_006",
+      "m3_confidence": 0.85,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "confidence": 0.85,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "calibrated_confidence": 0.0,
+        "probability_margin": 0.0,
+        "abstain_cause": "SENSOR_FAULT_STUCK"
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_006_rep15_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_006",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.38228729619676,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_007",
+      "m3_confidence": 0.69,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "confidence": 0.69,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "calibrated_confidence": 0.931236497582882,
+        "probability_margin": 0.8677733738527842,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_006_rep17_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_006",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 7.451318471962727,
+        "detection_time_sec": 16800.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_006",
+      "m3_confidence": 0.84,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "confidence": 0.84,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "calibrated_confidence": 0.0,
+        "probability_margin": 0.0,
+        "abstain_cause": "SENSOR_FAULT_STUCK"
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_006_rep5_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_006",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 5.4059884825014795,
+        "detection_time_sec": 18000.0
+      },
+      "m1_nearest_predicted": "unit_006",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_006",
+      "m3_conventional_predicted": "unit_006",
+      "m3_confidence": 0.72,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_006",
+        "confidence": 0.72,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ABSTAIN",
+        "predicted_source": null,
+        "calibrated_confidence": 0.0,
+        "probability_margin": 0.0,
+        "abstain_cause": "SENSOR_FAULT_STUCK"
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_007_rep14_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_007",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.7629420071171862,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_007",
+      "m3_confidence": 0.79,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "confidence": 0.79,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "calibrated_confidence": 0.9449544098028775,
+        "probability_margin": 0.890213037856192,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_007_rep4_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_007",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.515065860552152,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_007",
+      "m3_confidence": 0.72,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "confidence": 0.72,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "calibrated_confidence": 0.9246224164908828,
+        "probability_margin": 0.8531817794207202,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_007_rep7_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_007",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.829704594933852,
+        "detection_time_sec": 68400.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_007",
+      "m3_confidence": 0.89,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "confidence": 0.89,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "calibrated_confidence": 0.9955861076761192,
+        "probability_margin": 0.9924343285489164,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_007_rep18_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_007",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.5774602230761223,
+        "detection_time_sec": 68400.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_007",
+      "m3_confidence": 0.94,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "confidence": 0.94,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_007",
+        "calibrated_confidence": 0.9979596466567998,
+        "probability_margin": 0.9969394699851998,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_008_rep13_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_008",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 0.970087981468015,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_009",
+      "m3_confidence": 0.57,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "confidence": 0.57,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "calibrated_confidence": 0.850804709499237,
+        "probability_margin": 0.7352000090674415,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_008_rep14_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_008",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.2593583000704613,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_008",
+      "m3_confidence": 0.8,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "confidence": 0.8,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "calibrated_confidence": 0.9684580179523856,
+        "probability_margin": 0.9466241306611987,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_008_rep15_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_008",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.8702083920451316,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_008",
+      "m3_confidence": 0.78,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "confidence": 0.78,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_008",
+        "calibrated_confidence": 0.9508424264473251,
+        "probability_margin": 0.9056033178118011,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_008_rep3_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_008",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.5527694320503427,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_009",
+      "m3_confidence": 0.48,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "confidence": 0.48,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "calibrated_confidence": 0.728455170283039,
+        "probability_margin": 0.546208381031012,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_009_rep13_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_009",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.8316134740197274,
+        "detection_time_sec": 50100.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_010",
+      "m3_confidence": 0.46,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "confidence": 0.46,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "calibrated_confidence": 0.5962860572943286,
+        "probability_margin": 0.25098326931810533,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_009_rep6_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_009",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.4374556194823587,
+        "detection_time_sec": 55200.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_009",
+      "m3_confidence": 0.55,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "confidence": 0.55,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "calibrated_confidence": 0.7656636130206921,
+        "probability_margin": 0.5670827025880532,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_009_rep10_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_009",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.948041972879823,
+        "detection_time_sec": 57600.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_009",
+      "m3_confidence": 0.47,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "confidence": 0.47,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_009",
+        "calibrated_confidence": 0.6353657315812603,
+        "probability_margin": 0.3407174863505695,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_009_rep18_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_009",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.361335930015565,
+        "detection_time_sec": 47700.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_010",
+      "m3_confidence": 0.54,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "confidence": 0.54,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "calibrated_confidence": 0.7131665139218282,
+        "probability_margin": 0.46258864294855906,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_010_rep16_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_010",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.6648825165764687,
+        "detection_time_sec": 49500.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_010",
+      "m3_confidence": 0.79,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "confidence": 0.79,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "calibrated_confidence": 0.9747921623775022,
+        "probability_margin": 0.9621116604398702,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_010_rep12_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_010",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.3661905313810654,
+        "detection_time_sec": 32700.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_010",
+      "m3_confidence": 0.72,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "confidence": 0.72,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "calibrated_confidence": 0.9272615691584034,
+        "probability_margin": 0.8692230434370966,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_010_rep7_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_010",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.113175749615017,
+        "detection_time_sec": 46800.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_010",
+      "m3_confidence": 0.76,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "confidence": 0.76,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "calibrated_confidence": 0.9483565115765061,
+        "probability_margin": 0.9008309499616528,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_010_rep13_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_010",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.7115443823382086,
+        "detection_time_sec": 39000.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_010",
+      "m3_confidence": 0.56,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "confidence": 0.56,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_010",
+        "calibrated_confidence": 0.7116405472435908,
+        "probability_margin": 0.43351831887814096,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_011_rep16_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_011",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.2661320064212678,
+        "detection_time_sec": 29100.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_011",
+      "m3_confidence": 0.64,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "confidence": 0.64,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "calibrated_confidence": 0.8930076026677959,
+        "probability_margin": 0.8142018539243081,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_011_rep6_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_011",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.754235770081912,
+        "detection_time_sec": 37500.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_011",
+      "m3_confidence": 0.78,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "confidence": 0.78,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "calibrated_confidence": 0.9696508168300503,
+        "probability_margin": 0.9503263509841993,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_011_rep12_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_011",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.776787550439307,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_011",
+      "m3_confidence": 0.82,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "confidence": 0.82,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "calibrated_confidence": 0.9841512789636687,
+        "probability_margin": 0.9722681775612874,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_011_rep19_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_011",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": false,
+        "peak_concentration_gpm3": 1.6640870820198392,
+        "detection_time_sec": null
+      },
+      "m1_nearest_predicted": "s0_background",
+      "m1_privileged_capacity_predicted": "s0_background",
+      "m2_spatial_predicted": "s0_background",
+      "m3_conventional_predicted": "unit_011",
+      "m3_confidence": 0.66,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "confidence": 0.66,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_011",
+        "calibrated_confidence": 0.9192447132103775,
+        "probability_margin": 0.8651404603398266,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_012_rep16_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_012",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 2.540204425031276,
+        "detection_time_sec": 23700.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_012",
+      "m3_confidence": 0.76,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "confidence": 0.76,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "calibrated_confidence": 0.9158556199069543,
+        "probability_margin": 0.8318705269548845,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_012_rep11_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_012",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 4.099300345089144,
+        "detection_time_sec": 32400.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_012",
+      "m3_confidence": 0.89,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "confidence": 0.89,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "calibrated_confidence": 0.9918379335149395,
+        "probability_margin": 0.9856858838963625,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_012_rep18_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_012",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.9438141881001365,
+        "detection_time_sec": 17100.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_012",
+      "m3_confidence": 0.73,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "confidence": 0.73,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "calibrated_confidence": 0.9260319046615896,
+        "probability_margin": 0.8632111565216298,
+        "abstain_cause": null
+      }
+    },
+    {
+      "event_id": "ev_pilot_unit_012_rep6_505",
+      "seed": 505,
+      "condition": "faulted",
+      "true_source_id": "unit_012",
+      "is_background": false,
+      "has_hardware_fault": true,
+      "applied_faults": {
+        "sensor_001": [
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_002": [
+          "STUCK_VALUE",
+          "RANDOM_MISSINGNESS"
+        ],
+        "sensor_003": [
+          "RANDOM_MISSINGNESS"
+        ]
+      },
+      "detection": {
+        "detected": true,
+        "peak_concentration_gpm3": 3.3806901090350405,
+        "detection_time_sec": 35100.0
+      },
+      "m1_nearest_predicted": "unit_012",
+      "m1_privileged_capacity_predicted": "unit_006",
+      "m2_spatial_predicted": "unit_012",
+      "m3_conventional_predicted": "unit_012",
+      "m3_confidence": 0.89,
+      "m3_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "confidence": 0.89,
+        "abstain_cause": null
+      },
+      "m4_selective": {
+        "decision": "ATTRIBUTE",
+        "predicted_source": "unit_012",
+        "calibrated_confidence": 0.9933335292041069,
+        "probability_margin": 0.9888061055036407,
+        "abstain_cause": null
+      }
+    }
+  ],
+  "episode_counts_by_condition": {
+    "clean": 52,
+    "faulted": 52
+  }
+}

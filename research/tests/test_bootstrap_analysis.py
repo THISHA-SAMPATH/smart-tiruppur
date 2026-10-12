@@ -17,9 +17,15 @@ it does not prove or claim that the empirical assumptions of the underlying stat
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any, Dict, List
 import unittest
+
+# Ensure OpenBLAS thread limits
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import numpy as np
 
@@ -475,8 +481,11 @@ class TestBootstrapAnalysis(unittest.TestCase):
                 for i in range(8)
             ]
             (in_path / "episode_predictions.json").write_text(json.dumps(dummy_episodes), encoding="utf-8")
+            (in_path / "run_metadata.json").write_text(json.dumps({"status": "complete"}), encoding="utf-8")
 
             # Run CLI via subprocess
+            env = os.environ.copy()
+            env["OPENBLAS_NUM_THREADS"] = "1"
             proc = subprocess.run(
                 [
                     sys.executable,
@@ -494,6 +503,7 @@ class TestBootstrapAnalysis(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                env=env,
             )
             self.assertEqual(proc.returncode, 0, f"CLI failed: {proc.stderr}")
             self.assertTrue((out_path / "bootstrap_summary.json").exists())
@@ -502,6 +512,24 @@ class TestBootstrapAnalysis(unittest.TestCase):
             summary_data = json.loads((out_path / "bootstrap_summary.json").read_text(encoding="utf-8"))
             self.assertIn("summary", summary_data)
             self.assertIn("clean", summary_data["summary"])
+
+    def test_cli_rejects_incomplete_confirmatory_run(self) -> None:
+        import json
+        import subprocess
+        import sys
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp_in, tempfile.TemporaryDirectory() as tmp_out:
+            in_path = Path(tmp_in)
+            (in_path / "run_metadata.json").write_text(json.dumps({"status": "running"}), encoding="utf-8")
+            (in_path / "episode_predictions.json").write_text("[]", encoding="utf-8")
+            proc = subprocess.run(
+                [sys.executable, "-m", "research.experiments.bootstrap_analysis", "--input-dir", str(in_path), "--output-dir", str(tmp_out)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 1)
+            self.assertIn("requires a completed run", proc.stderr)
 
 
 if __name__ == "__main__":

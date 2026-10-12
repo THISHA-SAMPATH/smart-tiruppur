@@ -49,9 +49,15 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict, dataclass
 import json
+import os
 from pathlib import Path
 import sys
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+
+# Constrain OpenBLAS/MKL thread pools to avoid memory allocation failures on constrained environments
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import numpy as np
 
@@ -914,6 +920,23 @@ def main() -> None:
     input_path = Path(args.input_dir)
     output_path = Path(args.output_dir)
 
+    metadata_file = input_path / "run_metadata.json"
+    if not metadata_file.exists():
+        print(f"Error: Run metadata not found in {input_path}; refusing unverified input.", file=sys.stderr)
+        sys.exit(1)
+    try:
+        run_metadata = json.loads(metadata_file.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"Error reading {metadata_file}: {e}", file=sys.stderr)
+        sys.exit(1)
+    if run_metadata.get("status") != "complete":
+        print(
+            f"Error: Confirmatory run status is {run_metadata.get('status')!r}; "
+            "bootstrap requires a completed run.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     # Validate that required input artifacts exist
     episodes_file = input_path / "episode_predictions.json"
     seeds_file = input_path / "seed_metrics.json"
@@ -954,7 +977,9 @@ def main() -> None:
     )
 
     summary_file = output_path / "bootstrap_summary.json"
-    summary_file.write_text(json.dumps(results, indent=2), encoding="utf-8")
+    temporary_summary = summary_file.with_name(summary_file.name + ".tmp")
+    temporary_summary.write_text(json.dumps(results, indent=2), encoding="utf-8")
+    temporary_summary.replace(summary_file)
 
     report_file = output_path / "bootstrap_report.md"
     generate_bootstrap_markdown_report(results, report_file)

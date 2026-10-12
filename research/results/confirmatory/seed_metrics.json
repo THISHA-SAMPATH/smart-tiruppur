@@ -1,0 +1,3242 @@
+[
+  {
+    "seed": 202,
+    "condition": "clean",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.6875,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 6.511071333470605,
+      "tp": 33,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08711654478244867,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.043387869474825994,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08711654478244867,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.9230769230769231,
+      "macro_f1": 0.91990231990232,
+      "coverage": 1.0,
+      "selective_risk": 0.07692307692307693,
+      "brier_score": 0.15212307692307694,
+      "log_loss": 0.31852917255275853,
+      "ece": 0.1653846153846155,
+      "errors": 4,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.7884615384615384,
+      "abstention_rate": 0.21153846153846154,
+      "selective_risk": 0.024390243902439025,
+      "selective_accuracy": 0.975609756097561,
+      "overall_accuracy_forced": 0.9230769230769231,
+      "abstention_fault_cooccurrence_rate": 0.0,
+      "selective_error_avoidance_rate": 0.2727272727272727,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.6,
+      "accepted_errors": 1,
+      "accepted_count": 41,
+      "abstained_count": 11,
+      "avoided_errors": 3,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.9038461538461539,
+      "abstention_rate": 0.09615384615384616,
+      "selective_risk": 0.02127659574468085,
+      "selective_accuracy": 0.9787234042553191,
+      "overall_accuracy_forced": 0.9230769230769231,
+      "abstention_fault_cooccurrence_rate": 0.0,
+      "selective_error_avoidance_rate": 0.6,
+      "fault_diagnostic_precision": null,
+      "abstention_appropriateness_rate": 0.0,
+      "temperature": 0.4597381055012117,
+      "locked_tau": 0.7,
+      "locked_delta": 0.0,
+      "brier_score": 0.09891681007885499,
+      "log_loss": 0.18129957573451272,
+      "ece": 0.03806407899943893,
+      "validation_tuning_report": {
+        "selected_tau": 0.7,
+        "selected_delta": 0.0,
+        "validation_coverage": 0.8974358974358975,
+        "validation_selective_risk": 0.08571428571428572,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 1,
+      "accepted_count": 47,
+      "abstained_count": 5,
+      "avoided_errors": 3,
+      "diag_vetoes": 0,
+      "diag_true_positives": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.3076923076923077,
+          "selective_risk": 0.0,
+          "accepted_count": 16,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6923076923076923,
+          "selective_risk": 0.027777777777777776,
+          "accepted_count": 36,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.5769230769230769,
+          "selective_risk": 0.0,
+          "accepted_count": 30,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6923076923076923,
+          "selective_risk": 0.027777777777777776,
+          "accepted_count": 36,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.6538461538461539,
+          "selective_risk": 0.0,
+          "accepted_count": 34,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6923076923076923,
+          "selective_risk": 0.027777777777777776,
+          "accepted_count": 36,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 202,
+    "condition": "faulted",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.5416666666666666,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 8.709511473508366,
+      "tp": 26,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.19230769230769232,
+      "macro_f1": 0.07348548887010425,
+      "coverage": 1.0,
+      "selective_risk": 0.8076923076923077,
+      "errors": 42,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.041025641025641026,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.19230769230769232,
+      "macro_f1": 0.07348548887010425,
+      "coverage": 1.0,
+      "selective_risk": 0.8076923076923077,
+      "errors": 42,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.6923076923076923,
+      "macro_f1": 0.6744366744366743,
+      "coverage": 1.0,
+      "selective_risk": 0.3076923076923077,
+      "brier_score": 0.3701423076923076,
+      "log_loss": 0.7604602012968427,
+      "ece": 0.14903846153846156,
+      "errors": 16,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.5961538461538461,
+      "abstention_rate": 0.40384615384615385,
+      "selective_risk": 0.03225806451612903,
+      "selective_accuracy": 0.967741935483871,
+      "overall_accuracy_forced": 0.6923076923076923,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.7142857142857143,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.6,
+      "accepted_errors": 1,
+      "accepted_count": 31,
+      "abstained_count": 21,
+      "avoided_errors": 15,
+      "fault_cooccur_count": 21,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.6923076923076923,
+      "abstention_rate": 0.3076923076923077,
+      "selective_risk": 0.1388888888888889,
+      "selective_accuracy": 0.8611111111111112,
+      "overall_accuracy_forced": 0.6923076923076923,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.6875,
+      "fault_diagnostic_precision": 1.0,
+      "abstention_appropriateness_rate": 1.0,
+      "temperature": 0.4597381055012117,
+      "locked_tau": 0.7,
+      "locked_delta": 0.0,
+      "brier_score": 0.4180236325877671,
+      "log_loss": 0.8459612816963623,
+      "ece": 0.1458189023458511,
+      "validation_tuning_report": {
+        "selected_tau": 0.7,
+        "selected_delta": 0.0,
+        "validation_coverage": 0.8974358974358975,
+        "validation_selective_risk": 0.08571428571428572,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 5,
+      "accepted_count": 36,
+      "abstained_count": 16,
+      "avoided_errors": 11,
+      "diag_vetoes": 10,
+      "diag_true_positives": 10,
+      "fault_cooccur_count": 16,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.17307692307692307,
+          "selective_risk": 0.0,
+          "accepted_count": 9,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.4230769230769231,
+          "selective_risk": 0.0,
+          "accepted_count": 22,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.36538461538461536,
+          "selective_risk": 0.0,
+          "accepted_count": 19,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.4230769230769231,
+          "selective_risk": 0.0,
+          "accepted_count": 22,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.5192307692307693,
+          "selective_risk": 0.0,
+          "accepted_count": 27,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.4230769230769231,
+          "selective_risk": 0.0,
+          "accepted_count": 22,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 303,
+    "condition": "clean",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.75,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 6.91994059634098,
+      "tp": 36,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08777327935222672,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04615384615384616,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08777327935222672,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.9615384615384616,
+      "macro_f1": 0.960927960927961,
+      "coverage": 1.0,
+      "selective_risk": 0.038461538461538464,
+      "brier_score": 0.14795,
+      "log_loss": 0.3225348310128326,
+      "ece": 0.2013461538461538,
+      "errors": 2,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.038461538461538464,
+      "selective_accuracy": 0.9615384615384616,
+      "overall_accuracy_forced": 0.9615384615384616,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 2,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.038461538461538464,
+      "selective_accuracy": 0.9615384615384616,
+      "overall_accuracy_forced": 0.9615384615384616,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "abstention_appropriateness_rate": null,
+      "temperature": 0.21631927886018237,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.06630646804131624,
+      "log_loss": 0.13870745705273416,
+      "ece": 0.030220069657484496,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.0,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 2,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "diag_vetoes": 0,
+      "diag_true_positives": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.2692307692307692,
+          "selective_risk": 0.0,
+          "accepted_count": 14,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9038461538461539,
+          "selective_risk": 0.02127659574468085,
+          "accepted_count": 47,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.85,
+          "achieved_coverage": 0.4230769230769231,
+          "selective_risk": 0.0,
+          "accepted_count": 22,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9038461538461539,
+          "selective_risk": 0.02127659574468085,
+          "accepted_count": 47,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.6538461538461539,
+          "selective_risk": 0.0,
+          "accepted_count": 34,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9038461538461539,
+          "selective_risk": 0.02127659574468085,
+          "accepted_count": 47,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 303,
+    "condition": "faulted",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.6041666666666666,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 7.342971615299529,
+      "tp": 29,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08936872094766832,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04144004144004144,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08936872094766832,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.7884615384615384,
+      "macro_f1": 0.7441003441003441,
+      "coverage": 1.0,
+      "selective_risk": 0.21153846153846154,
+      "brier_score": 0.27276923076923076,
+      "log_loss": 0.5652177101775971,
+      "ece": 0.16480769230769232,
+      "errors": 11,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.9807692307692307,
+      "abstention_rate": 0.019230769230769232,
+      "selective_risk": 0.19607843137254902,
+      "selective_accuracy": 0.803921568627451,
+      "overall_accuracy_forced": 0.7884615384615384,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 1.0,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 10,
+      "accepted_count": 51,
+      "abstained_count": 1,
+      "avoided_errors": 1,
+      "fault_cooccur_count": 1,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.7884615384615384,
+      "abstention_rate": 0.21153846153846154,
+      "selective_risk": 0.17073170731707318,
+      "selective_accuracy": 0.8292682926829268,
+      "overall_accuracy_forced": 0.8076923076923077,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.36363636363636365,
+      "fault_diagnostic_precision": 1.0,
+      "abstention_appropriateness_rate": 1.0,
+      "temperature": 0.21631927886018237,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.3257712904057038,
+      "log_loss": 0.8412459922572902,
+      "ece": 0.1343232087361331,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.0,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 7,
+      "accepted_count": 41,
+      "abstained_count": 11,
+      "avoided_errors": 4,
+      "diag_vetoes": 11,
+      "diag_true_positives": 11,
+      "fault_cooccur_count": 11,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.23076923076923078,
+          "selective_risk": 0.0,
+          "accepted_count": 12,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6346153846153846,
+          "selective_risk": 0.09090909090909091,
+          "accepted_count": 33,
+          "accepted_errors": 3,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.85,
+          "achieved_coverage": 0.3076923076923077,
+          "selective_risk": 0.0,
+          "accepted_count": 16,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6346153846153846,
+          "selective_risk": 0.09090909090909091,
+          "accepted_count": 33,
+          "accepted_errors": 3,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.5576923076923077,
+          "selective_risk": 0.034482758620689655,
+          "accepted_count": 29,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6346153846153846,
+          "selective_risk": 0.09090909090909091,
+          "accepted_count": 33,
+          "accepted_errors": 3,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 404,
+    "condition": "clean",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.6666666666666666,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 6.498187995086871,
+      "tp": 32,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.07954619975080333,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.042735042735042736,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.07954619975080333,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.8269230769230769,
+      "macro_f1": 0.8007326007326008,
+      "coverage": 1.0,
+      "selective_risk": 0.17307692307692307,
+      "brier_score": 0.23561923076923078,
+      "log_loss": 0.450896526634292,
+      "ece": 0.12173076923076925,
+      "errors": 9,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.17307692307692307,
+      "selective_accuracy": 0.8269230769230769,
+      "overall_accuracy_forced": 0.8269230769230769,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 9,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.17307692307692307,
+      "selective_accuracy": 0.8269230769230769,
+      "overall_accuracy_forced": 0.8269230769230769,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "abstention_appropriateness_rate": null,
+      "temperature": 0.45264864008464023,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.22948506559940005,
+      "log_loss": 0.3875976442721859,
+      "ece": 0.04990003900440295,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.07692307692307693,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 9,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "diag_vetoes": 0,
+      "diag_true_positives": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.21153846153846154,
+          "selective_risk": 0.0,
+          "accepted_count": 11,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6730769230769231,
+          "selective_risk": 0.0,
+          "accepted_count": 35,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.4807692307692308,
+          "selective_risk": 0.0,
+          "accepted_count": 25,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6730769230769231,
+          "selective_risk": 0.0,
+          "accepted_count": 35,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.65,
+          "achieved_coverage": 0.6923076923076923,
+          "selective_risk": 0.027777777777777776,
+          "accepted_count": 36,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6730769230769231,
+          "selective_risk": 0.0,
+          "accepted_count": 35,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 404,
+    "condition": "faulted",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.4791666666666667,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 7.899982107082444,
+      "tp": 23,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.08975338387103093,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04144004144004144,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.08975338387103093,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.6730769230769231,
+      "macro_f1": 0.6468864468864469,
+      "coverage": 1.0,
+      "selective_risk": 0.3269230769230769,
+      "brier_score": 0.3919115384615384,
+      "log_loss": 0.8593418055147389,
+      "ece": 0.18557692307692303,
+      "errors": 17,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.9038461538461539,
+      "abstention_rate": 0.09615384615384616,
+      "selective_risk": 0.2553191489361702,
+      "selective_accuracy": 0.7446808510638298,
+      "overall_accuracy_forced": 0.6730769230769231,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 1.0,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 12,
+      "accepted_count": 47,
+      "abstained_count": 5,
+      "avoided_errors": 5,
+      "fault_cooccur_count": 5,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.8461538461538461,
+      "abstention_rate": 0.15384615384615385,
+      "selective_risk": 0.3181818181818182,
+      "selective_accuracy": 0.6818181818181818,
+      "overall_accuracy_forced": 0.6730769230769231,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.375,
+      "fault_diagnostic_precision": 1.0,
+      "abstention_appropriateness_rate": 1.0,
+      "temperature": 0.45264864008464023,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.44229192676780327,
+      "log_loss": 1.0146588596728543,
+      "ece": 0.17374813274255607,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.07692307692307693,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 14,
+      "accepted_count": 44,
+      "abstained_count": 8,
+      "avoided_errors": 3,
+      "diag_vetoes": 8,
+      "diag_true_positives": 8,
+      "fault_cooccur_count": 8,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.17307692307692307,
+          "selective_risk": 0.0,
+          "accepted_count": 9,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.4423076923076923,
+          "selective_risk": 0.0,
+          "accepted_count": 23,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.3076923076923077,
+          "selective_risk": 0.0,
+          "accepted_count": 16,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.4423076923076923,
+          "selective_risk": 0.0,
+          "accepted_count": 23,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.65,
+          "achieved_coverage": 0.5576923076923077,
+          "selective_risk": 0.034482758620689655,
+          "accepted_count": 29,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.4423076923076923,
+          "selective_risk": 0.0,
+          "accepted_count": 23,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 505,
+    "condition": "clean",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.7708333333333334,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 6.855555326974637,
+      "tp": 37,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08777327935222673,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04739804483065073,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08777327935222673,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.9423076923076923,
+      "macro_f1": 0.9423909423909423,
+      "coverage": 1.0,
+      "selective_risk": 0.057692307692307696,
+      "brier_score": 0.17788461538461536,
+      "log_loss": 0.3651303487652846,
+      "ece": 0.18980769230769243,
+      "errors": 3,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.057692307692307696,
+      "selective_accuracy": 0.9423076923076923,
+      "overall_accuracy_forced": 0.9423076923076923,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 3,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.057692307692307696,
+      "selective_accuracy": 0.9423076923076923,
+      "overall_accuracy_forced": 0.9423076923076923,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "abstention_appropriateness_rate": null,
+      "temperature": 0.500263440620707,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.12247818955777484,
+      "log_loss": 0.24179640765063926,
+      "ece": 0.05350711276428451,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.02564102564102564,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 3,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "diag_vetoes": 0,
+      "diag_true_positives": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.23076923076923078,
+          "selective_risk": 0.0,
+          "accepted_count": 12,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6346153846153846,
+          "selective_risk": 0.030303030303030304,
+          "accepted_count": 33,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.4423076923076923,
+          "selective_risk": 0.043478260869565216,
+          "accepted_count": 23,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6346153846153846,
+          "selective_risk": 0.030303030303030304,
+          "accepted_count": 33,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.6346153846153846,
+          "selective_risk": 0.030303030303030304,
+          "accepted_count": 33,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6346153846153846,
+          "selective_risk": 0.030303030303030304,
+          "accepted_count": 33,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 505,
+    "condition": "faulted",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.5625,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 7.517859594428341,
+      "tp": 27,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.08275862068965517,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.1346153846153846,
+      "macro_f1": 0.03610849662017626,
+      "coverage": 1.0,
+      "selective_risk": 0.8653846153846154,
+      "errors": 45,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.08275862068965517,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.7307692307692307,
+      "macro_f1": 0.7048464356156663,
+      "coverage": 1.0,
+      "selective_risk": 0.2692307692307692,
+      "brier_score": 0.3335961538461539,
+      "log_loss": 0.767565671952296,
+      "ece": 0.1315384615384615,
+      "errors": 14,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.9230769230769231,
+      "abstention_rate": 0.07692307692307693,
+      "selective_risk": 0.20833333333333334,
+      "selective_accuracy": 0.7916666666666666,
+      "overall_accuracy_forced": 0.7307692307692307,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 1.0,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 10,
+      "accepted_count": 48,
+      "abstained_count": 4,
+      "avoided_errors": 4,
+      "fault_cooccur_count": 4,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.8461538461538461,
+      "abstention_rate": 0.15384615384615385,
+      "selective_risk": 0.29545454545454547,
+      "selective_accuracy": 0.7045454545454546,
+      "overall_accuracy_forced": 0.7307692307692307,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.125,
+      "fault_diagnostic_precision": 1.0,
+      "abstention_appropriateness_rate": 1.0,
+      "temperature": 0.500263440620707,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.34496556792047434,
+      "log_loss": 0.8311332062807443,
+      "ece": 0.10437436654943973,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.02564102564102564,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 13,
+      "accepted_count": 44,
+      "abstained_count": 8,
+      "avoided_errors": 1,
+      "diag_vetoes": 8,
+      "diag_true_positives": 8,
+      "fault_cooccur_count": 8,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.11538461538461539,
+          "selective_risk": 0.0,
+          "accepted_count": 6,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.5,
+          "selective_risk": 0.038461538461538464,
+          "accepted_count": 26,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.28846153846153844,
+          "selective_risk": 0.0,
+          "accepted_count": 15,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.5,
+          "selective_risk": 0.038461538461538464,
+          "accepted_count": 26,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.5384615384615384,
+          "selective_risk": 0.0,
+          "accepted_count": 28,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.5,
+          "selective_risk": 0.038461538461538464,
+          "accepted_count": 26,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 606,
+    "condition": "clean",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.7708333333333334,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 7.513048192014676,
+      "tp": 37,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08733371891266627,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04739804483065073,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08733371891266627,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.9423076923076923,
+      "macro_f1": 0.9420024420024421,
+      "coverage": 1.0,
+      "selective_risk": 0.057692307692307696,
+      "brier_score": 0.13601923076923078,
+      "log_loss": 0.3156994672799109,
+      "ece": 0.20576923076923073,
+      "errors": 3,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.057692307692307696,
+      "selective_accuracy": 0.9423076923076923,
+      "overall_accuracy_forced": 0.9423076923076923,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 3,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.057692307692307696,
+      "selective_accuracy": 0.9423076923076923,
+      "overall_accuracy_forced": 0.9423076923076923,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "abstention_appropriateness_rate": null,
+      "temperature": 0.20936166339000403,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.053267736377474756,
+      "log_loss": 0.08382530812256278,
+      "ece": 0.019603289910930313,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.0,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 3,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "diag_vetoes": 0,
+      "diag_true_positives": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.15384615384615385,
+          "selective_risk": 0.0,
+          "accepted_count": 8,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.1,
+          "locked_delta": 0.15,
+          "achieved_coverage": 0.9423076923076923,
+          "selective_risk": 0.02040816326530612,
+          "accepted_count": 49,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.85,
+          "achieved_coverage": 0.34615384615384615,
+          "selective_risk": 0.0,
+          "accepted_count": 18,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.1,
+          "locked_delta": 0.15,
+          "achieved_coverage": 0.9423076923076923,
+          "selective_risk": 0.02040816326530612,
+          "accepted_count": 49,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.75,
+          "achieved_coverage": 0.5961538461538461,
+          "selective_risk": 0.0,
+          "accepted_count": 31,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.1,
+          "locked_delta": 0.15,
+          "achieved_coverage": 0.9423076923076923,
+          "selective_risk": 0.02040816326530612,
+          "accepted_count": 49,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 606,
+    "condition": "faulted",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.6666666666666666,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 7.900874489552757,
+      "tp": 32,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08733371891266627,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.042735042735042736,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08733371891266627,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.8269230769230769,
+      "macro_f1": 0.8324786324786325,
+      "coverage": 1.0,
+      "selective_risk": 0.17307692307692307,
+      "brier_score": 0.29086923076923077,
+      "log_loss": 0.6315484201380058,
+      "ece": 0.18076923076923082,
+      "errors": 9,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.9423076923076923,
+      "abstention_rate": 0.057692307692307696,
+      "selective_risk": 0.16326530612244897,
+      "selective_accuracy": 0.8367346938775511,
+      "overall_accuracy_forced": 0.8269230769230769,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.3333333333333333,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 8,
+      "accepted_count": 49,
+      "abstained_count": 3,
+      "avoided_errors": 1,
+      "fault_cooccur_count": 3,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.7884615384615384,
+      "abstention_rate": 0.21153846153846154,
+      "selective_risk": 0.21951219512195122,
+      "selective_accuracy": 0.7804878048780488,
+      "overall_accuracy_forced": 0.8076923076923077,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.0,
+      "fault_diagnostic_precision": 1.0,
+      "abstention_appropriateness_rate": 1.0,
+      "temperature": 0.20936166339000403,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.2631475032712479,
+      "log_loss": 0.7379991451162032,
+      "ece": 0.09980133191552717,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.0,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 9,
+      "accepted_count": 41,
+      "abstained_count": 11,
+      "avoided_errors": 0,
+      "diag_vetoes": 11,
+      "diag_true_positives": 11,
+      "fault_cooccur_count": 11,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.1346153846153846,
+          "selective_risk": 0.0,
+          "accepted_count": 7,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.1,
+          "locked_delta": 0.15,
+          "achieved_coverage": 0.7115384615384616,
+          "selective_risk": 0.1891891891891892,
+          "accepted_count": 37,
+          "accepted_errors": 7,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.85,
+          "achieved_coverage": 0.21153846153846154,
+          "selective_risk": 0.0,
+          "accepted_count": 11,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.1,
+          "locked_delta": 0.15,
+          "achieved_coverage": 0.7115384615384616,
+          "selective_risk": 0.1891891891891892,
+          "accepted_count": 37,
+          "accepted_errors": 7,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.75,
+          "achieved_coverage": 0.3269230769230769,
+          "selective_risk": 0.0,
+          "accepted_count": 17,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.1,
+          "locked_delta": 0.15,
+          "achieved_coverage": 0.7115384615384616,
+          "selective_risk": 0.1891891891891892,
+          "accepted_count": 37,
+          "accepted_errors": 7,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 707,
+    "condition": "clean",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.6041666666666666,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 5.783200481682378,
+      "tp": 29,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.09055759055759055,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04144004144004144,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.09055759055759055,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.8653846153846154,
+      "macro_f1": 0.8620879120879121,
+      "coverage": 1.0,
+      "selective_risk": 0.1346153846153846,
+      "brier_score": 0.22148461538461536,
+      "log_loss": 0.42982687127687125,
+      "ece": 0.12480769230769227,
+      "errors": 7,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.1346153846153846,
+      "selective_accuracy": 0.8653846153846154,
+      "overall_accuracy_forced": 0.8653846153846154,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 7,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.1346153846153846,
+      "selective_accuracy": 0.8653846153846154,
+      "overall_accuracy_forced": 0.8653846153846154,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "abstention_appropriateness_rate": null,
+      "temperature": 0.39555686416575,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.21074324762553123,
+      "log_loss": 0.3772652725894712,
+      "ece": 0.08367786514256169,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.02564102564102564,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 7,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "diag_vetoes": 0,
+      "diag_true_positives": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.17307692307692307,
+          "selective_risk": 0.0,
+          "accepted_count": 9,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.7307692307692307,
+          "selective_risk": 0.02631578947368421,
+          "accepted_count": 38,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.40384615384615385,
+          "selective_risk": 0.0,
+          "accepted_count": 21,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.7307692307692307,
+          "selective_risk": 0.02631578947368421,
+          "accepted_count": 38,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.6538461538461539,
+          "selective_risk": 0.029411764705882353,
+          "accepted_count": 34,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.7307692307692307,
+          "selective_risk": 0.02631578947368421,
+          "accepted_count": 38,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 707,
+    "condition": "faulted",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.4166666666666667,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 6.2942581747356545,
+      "tp": 20,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.09401709401709403,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.1346153846153846,
+      "macro_f1": 0.03632478632478632,
+      "coverage": 1.0,
+      "selective_risk": 0.8653846153846154,
+      "errors": 45,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.09401709401709403,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.7692307692307693,
+      "macro_f1": 0.765995115995116,
+      "coverage": 1.0,
+      "selective_risk": 0.23076923076923078,
+      "brier_score": 0.3529769230769231,
+      "log_loss": 0.7689503765496419,
+      "ece": 0.11961538461538462,
+      "errors": 12,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.9807692307692307,
+      "abstention_rate": 0.019230769230769232,
+      "selective_risk": 0.21568627450980393,
+      "selective_accuracy": 0.7843137254901961,
+      "overall_accuracy_forced": 0.7692307692307693,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 1.0,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 11,
+      "accepted_count": 51,
+      "abstained_count": 1,
+      "avoided_errors": 1,
+      "fault_cooccur_count": 1,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.8076923076923077,
+      "abstention_rate": 0.19230769230769232,
+      "selective_risk": 0.19047619047619047,
+      "selective_accuracy": 0.8095238095238095,
+      "overall_accuracy_forced": 0.7692307692307693,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.4,
+      "fault_diagnostic_precision": 1.0,
+      "abstention_appropriateness_rate": 1.0,
+      "temperature": 0.39555686416575,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.35757979358505987,
+      "log_loss": 0.8641122910237031,
+      "ece": 0.09118175963526154,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.02564102564102564,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 8,
+      "accepted_count": 42,
+      "abstained_count": 10,
+      "avoided_errors": 4,
+      "diag_vetoes": 10,
+      "diag_true_positives": 10,
+      "fault_cooccur_count": 10,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.15384615384615385,
+          "selective_risk": 0.0,
+          "accepted_count": 8,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.4807692307692308,
+          "selective_risk": 0.0,
+          "accepted_count": 25,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.3076923076923077,
+          "selective_risk": 0.0,
+          "accepted_count": 16,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.4807692307692308,
+          "selective_risk": 0.0,
+          "accepted_count": 25,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.46153846153846156,
+          "selective_risk": 0.0,
+          "accepted_count": 24,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.4807692307692308,
+          "selective_risk": 0.0,
+          "accepted_count": 25,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 808,
+    "condition": "clean",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.75,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 7.232430684730748,
+      "tp": 36,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.0794871794871795,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04615384615384616,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.0794871794871795,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.9423076923076923,
+      "macro_f1": 0.9394383394383395,
+      "coverage": 1.0,
+      "selective_risk": 0.057692307692307696,
+      "brier_score": 0.12838461538461537,
+      "log_loss": 0.28964243156097114,
+      "ece": 0.15942307692307695,
+      "errors": 3,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.057692307692307696,
+      "selective_accuracy": 0.9423076923076923,
+      "overall_accuracy_forced": 0.9423076923076923,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 3,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.057692307692307696,
+      "selective_accuracy": 0.9423076923076923,
+      "overall_accuracy_forced": 0.9423076923076923,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "abstention_appropriateness_rate": null,
+      "temperature": 0.18743401892363398,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.08484605321464653,
+      "log_loss": 0.16679005250879558,
+      "ece": 0.05264357620760931,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.07692307692307693,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 3,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "diag_vetoes": 0,
+      "diag_true_positives": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.21153846153846154,
+          "selective_risk": 0.0,
+          "accepted_count": 11,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9423076923076923,
+          "selective_risk": 0.02040816326530612,
+          "accepted_count": 49,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.5576923076923077,
+          "selective_risk": 0.0,
+          "accepted_count": 29,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9423076923076923,
+          "selective_risk": 0.02040816326530612,
+          "accepted_count": 49,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.6923076923076923,
+          "selective_risk": 0.0,
+          "accepted_count": 36,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9423076923076923,
+          "selective_risk": 0.02040816326530612,
+          "accepted_count": 49,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 808,
+    "condition": "faulted",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.6041666666666666,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 7.85488668437525,
+      "tp": 29,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.0820680408915703,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04144004144004144,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.0820680408915703,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.7307692307692307,
+      "macro_f1": 0.6918636918636918,
+      "coverage": 1.0,
+      "selective_risk": 0.2692307692307692,
+      "brier_score": 0.32203076923076923,
+      "log_loss": 0.716271909783372,
+      "ece": 0.1711538461538461,
+      "errors": 14,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.9230769230769231,
+      "abstention_rate": 0.07692307692307693,
+      "selective_risk": 0.20833333333333334,
+      "selective_accuracy": 0.7916666666666666,
+      "overall_accuracy_forced": 0.7307692307692307,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 1.0,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 10,
+      "accepted_count": 48,
+      "abstained_count": 4,
+      "avoided_errors": 4,
+      "fault_cooccur_count": 4,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.8076923076923077,
+      "abstention_rate": 0.19230769230769232,
+      "selective_risk": 0.23809523809523808,
+      "selective_accuracy": 0.7619047619047619,
+      "overall_accuracy_forced": 0.7307692307692307,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.4,
+      "fault_diagnostic_precision": 1.0,
+      "abstention_appropriateness_rate": 1.0,
+      "temperature": 0.18743401892363398,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.4333486112387503,
+      "log_loss": 1.5087404019729553,
+      "ece": 0.2094402367782448,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.07692307692307693,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 10,
+      "accepted_count": 42,
+      "abstained_count": 10,
+      "avoided_errors": 4,
+      "diag_vetoes": 10,
+      "diag_true_positives": 10,
+      "fault_cooccur_count": 10,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.17307692307692307,
+          "selective_risk": 0.0,
+          "accepted_count": 9,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.7307692307692307,
+          "selective_risk": 0.15789473684210525,
+          "accepted_count": 38,
+          "accepted_errors": 6,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.38461538461538464,
+          "selective_risk": 0.0,
+          "accepted_count": 20,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.7307692307692307,
+          "selective_risk": 0.15789473684210525,
+          "accepted_count": 38,
+          "accepted_errors": 6,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.4807692307692308,
+          "selective_risk": 0.0,
+          "accepted_count": 25,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.7307692307692307,
+          "selective_risk": 0.15789473684210525,
+          "accepted_count": 38,
+          "accepted_errors": 6,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 909,
+    "condition": "clean",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.7083333333333334,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 6.957024679536981,
+      "tp": 34,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08658008658008659,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04416635995583364,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08658008658008659,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.9038461538461539,
+      "macro_f1": 0.9032356532356534,
+      "coverage": 1.0,
+      "selective_risk": 0.09615384615384616,
+      "brier_score": 0.17290384615384619,
+      "log_loss": 0.3387774159594338,
+      "ece": 0.1296153846153847,
+      "errors": 5,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.09615384615384616,
+      "selective_accuracy": 0.9038461538461539,
+      "overall_accuracy_forced": 0.9038461538461539,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 5,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.09615384615384616,
+      "selective_accuracy": 0.9038461538461539,
+      "overall_accuracy_forced": 0.9038461538461539,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "abstention_appropriateness_rate": null,
+      "temperature": 0.3238090067944596,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.14548156989534608,
+      "log_loss": 0.23967319508540155,
+      "ece": 0.04344243749476342,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.07692307692307693,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 5,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "diag_vetoes": 0,
+      "diag_true_positives": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.38461538461538464,
+          "selective_risk": 0.0,
+          "accepted_count": 20,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.7692307692307693,
+          "selective_risk": 0.0,
+          "accepted_count": 40,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.5192307692307693,
+          "selective_risk": 0.0,
+          "accepted_count": 27,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.7692307692307693,
+          "selective_risk": 0.0,
+          "accepted_count": 40,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.65,
+          "achieved_coverage": 0.75,
+          "selective_risk": 0.02564102564102564,
+          "accepted_count": 39,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.7692307692307693,
+          "selective_risk": 0.0,
+          "accepted_count": 40,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 909,
+    "condition": "faulted",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.5625,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 8.388443208078568,
+      "tp": 27,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.08469514570310326,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.1346153846153846,
+      "macro_f1": 0.03610849662017626,
+      "coverage": 1.0,
+      "selective_risk": 0.8653846153846154,
+      "errors": 45,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.08469514570310326,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.7115384615384616,
+      "macro_f1": 0.6898212898212898,
+      "coverage": 1.0,
+      "selective_risk": 0.28846153846153844,
+      "brier_score": 0.3598038461538462,
+      "log_loss": 1.402141539038267,
+      "ece": 0.14480769230769233,
+      "errors": 15,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.9615384615384616,
+      "abstention_rate": 0.038461538461538464,
+      "selective_risk": 0.26,
+      "selective_accuracy": 0.74,
+      "overall_accuracy_forced": 0.7115384615384616,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 1.0,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 13,
+      "accepted_count": 50,
+      "abstained_count": 2,
+      "avoided_errors": 2,
+      "fault_cooccur_count": 2,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.8076923076923077,
+      "abstention_rate": 0.19230769230769232,
+      "selective_risk": 0.2857142857142857,
+      "selective_accuracy": 0.7142857142857143,
+      "overall_accuracy_forced": 0.7115384615384616,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.3,
+      "fault_diagnostic_precision": 1.0,
+      "abstention_appropriateness_rate": 1.0,
+      "temperature": 0.3238090067944596,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.42929635938881333,
+      "log_loss": 1.6831356713571017,
+      "ece": 0.17550996482939174,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.07692307692307693,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 12,
+      "accepted_count": 42,
+      "abstained_count": 10,
+      "avoided_errors": 3,
+      "diag_vetoes": 10,
+      "diag_true_positives": 10,
+      "fault_cooccur_count": 10,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.25,
+          "selective_risk": 0.0,
+          "accepted_count": 13,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.5192307692307693,
+          "selective_risk": 0.1111111111111111,
+          "accepted_count": 27,
+          "accepted_errors": 3,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.36538461538461536,
+          "selective_risk": 0.0,
+          "accepted_count": 19,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.5192307692307693,
+          "selective_risk": 0.1111111111111111,
+          "accepted_count": 27,
+          "accepted_errors": 3,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.65,
+          "achieved_coverage": 0.5769230769230769,
+          "selective_risk": 0.06666666666666667,
+          "accepted_count": 30,
+          "accepted_errors": 2,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.5192307692307693,
+          "selective_risk": 0.1111111111111111,
+          "accepted_count": 27,
+          "accepted_errors": 3,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 1010,
+    "condition": "clean",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.7083333333333334,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 6.524049934248122,
+      "tp": 34,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08780108780108781,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04416635995583364,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08780108780108781,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.9230769230769231,
+      "macro_f1": 0.9197191697191697,
+      "coverage": 1.0,
+      "selective_risk": 0.07692307692307693,
+      "brier_score": 0.14926430769230772,
+      "log_loss": 0.3147338317751514,
+      "ece": 0.16053846153846157,
+      "errors": 4,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.07692307692307693,
+      "selective_accuracy": 0.9230769230769231,
+      "overall_accuracy_forced": 0.9230769230769231,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 4,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 1.0,
+      "abstention_rate": 0.0,
+      "selective_risk": 0.07692307692307693,
+      "selective_accuracy": 0.9230769230769231,
+      "overall_accuracy_forced": 0.9230769230769231,
+      "abstention_fault_cooccurrence_rate": null,
+      "selective_error_avoidance_rate": null,
+      "fault_diagnostic_precision": null,
+      "abstention_appropriateness_rate": null,
+      "temperature": 0.21962975403164378,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.08589243194711017,
+      "log_loss": 0.13970672150675947,
+      "ece": 0.036008181815472676,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.05128205128205128,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 4,
+      "accepted_count": 52,
+      "abstained_count": 0,
+      "avoided_errors": 0,
+      "diag_vetoes": 0,
+      "diag_true_positives": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.25,
+          "selective_risk": 0.0,
+          "accepted_count": 13,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.7,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9230769230769231,
+          "selective_risk": 0.020833333333333332,
+          "accepted_count": 48,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.46153846153846156,
+          "selective_risk": 0.0,
+          "accepted_count": 24,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.7,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9230769230769231,
+          "selective_risk": 0.020833333333333332,
+          "accepted_count": 48,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.7115384615384616,
+          "selective_risk": 0.0,
+          "accepted_count": 37,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.7,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9230769230769231,
+          "selective_risk": 0.020833333333333332,
+          "accepted_count": 48,
+          "accepted_errors": 1,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 1010,
+    "condition": "faulted",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.5208333333333334,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 7.260860818872782,
+      "tp": 25,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.09506479183898538,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04107127577650381,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.09506479183898538,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.7307692307692307,
+      "macro_f1": 0.6987179487179488,
+      "coverage": 1.0,
+      "selective_risk": 0.2692307692307692,
+      "brier_score": 0.358116,
+      "log_loss": 0.7813650726374033,
+      "ece": 0.11546153846153848,
+      "errors": 14,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.9615384615384616,
+      "abstention_rate": 0.038461538461538464,
+      "selective_risk": 0.26,
+      "selective_accuracy": 0.74,
+      "overall_accuracy_forced": 0.7307692307692307,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.5,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.3,
+      "accepted_errors": 13,
+      "accepted_count": 50,
+      "abstained_count": 2,
+      "avoided_errors": 1,
+      "fault_cooccur_count": 2,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.7884615384615384,
+      "abstention_rate": 0.21153846153846154,
+      "selective_risk": 0.24390243902439024,
+      "selective_accuracy": 0.7560975609756098,
+      "overall_accuracy_forced": 0.75,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.2727272727272727,
+      "fault_diagnostic_precision": 1.0,
+      "abstention_appropriateness_rate": 1.0,
+      "temperature": 0.21962975403164378,
+      "locked_tau": 0.3,
+      "locked_delta": 0.0,
+      "brier_score": 0.4243832946701075,
+      "log_loss": 1.4138379223588944,
+      "ece": 0.1696146744454979,
+      "validation_tuning_report": {
+        "selected_tau": 0.3,
+        "selected_delta": 0.0,
+        "validation_coverage": 1.0,
+        "validation_selective_risk": 0.05128205128205128,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 10,
+      "accepted_count": 41,
+      "abstained_count": 11,
+      "avoided_errors": 3,
+      "diag_vetoes": 11,
+      "diag_true_positives": 11,
+      "fault_cooccur_count": 11,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.23076923076923078,
+          "selective_risk": 0.0,
+          "accepted_count": 12,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.7,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6730769230769231,
+          "selective_risk": 0.17142857142857143,
+          "accepted_count": 35,
+          "accepted_errors": 6,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.8,
+          "achieved_coverage": 0.34615384615384615,
+          "selective_risk": 0.0,
+          "accepted_count": 18,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.7,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6730769230769231,
+          "selective_risk": 0.17142857142857143,
+          "accepted_count": 35,
+          "accepted_errors": 6,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.7,
+          "achieved_coverage": 0.4423076923076923,
+          "selective_risk": 0.0,
+          "accepted_count": 23,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.7,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.6730769230769231,
+          "selective_risk": 0.17142857142857143,
+          "accepted_count": 35,
+          "accepted_errors": 6,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 1111,
+    "condition": "clean",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.7291666666666666,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 6.502980229253347,
+      "tp": 35,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08810744810744811,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.15384615384615385,
+      "macro_f1": 0.04508312200619892,
+      "coverage": 1.0,
+      "selective_risk": 0.8461538461538461,
+      "errors": 44,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.23076923076923078,
+      "macro_f1": 0.08810744810744811,
+      "coverage": 1.0,
+      "selective_risk": 0.7692307692307693,
+      "errors": 40,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.9038461538461539,
+      "macro_f1": 0.9053724053724053,
+      "coverage": 1.0,
+      "selective_risk": 0.09615384615384616,
+      "brier_score": 0.16330605413105415,
+      "log_loss": 0.3268959158867897,
+      "ece": 0.12728632478632482,
+      "errors": 5,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.9230769230769231,
+      "abstention_rate": 0.07692307692307693,
+      "selective_risk": 0.0625,
+      "selective_accuracy": 0.9375,
+      "overall_accuracy_forced": 0.9038461538461539,
+      "abstention_fault_cooccurrence_rate": 0.0,
+      "selective_error_avoidance_rate": 0.5,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.5,
+      "accepted_errors": 3,
+      "accepted_count": 48,
+      "abstained_count": 4,
+      "avoided_errors": 2,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.9615384615384616,
+      "abstention_rate": 0.038461538461538464,
+      "selective_risk": 0.08,
+      "selective_accuracy": 0.92,
+      "overall_accuracy_forced": 0.9038461538461539,
+      "abstention_fault_cooccurrence_rate": 0.0,
+      "selective_error_avoidance_rate": 0.5,
+      "fault_diagnostic_precision": null,
+      "abstention_appropriateness_rate": 0.0,
+      "temperature": 0.1000052749944835,
+      "locked_tau": 0.7,
+      "locked_delta": 0.0,
+      "brier_score": 0.17954811573569993,
+      "log_loss": 0.4819747994540036,
+      "ece": 0.073805807190356,
+      "validation_tuning_report": {
+        "selected_tau": 0.7,
+        "selected_delta": 0.0,
+        "validation_coverage": 0.9487179487179487,
+        "validation_selective_risk": 0.08108108108108109,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 4,
+      "accepted_count": 50,
+      "abstained_count": 2,
+      "avoided_errors": 1,
+      "diag_vetoes": 0,
+      "diag_true_positives": 0,
+      "fault_cooccur_count": 0,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.36538461538461536,
+          "selective_risk": 0.0,
+          "accepted_count": 19,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9423076923076923,
+          "selective_risk": 0.08163265306122448,
+          "accepted_count": 49,
+          "accepted_errors": 4,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.75,
+          "achieved_coverage": 0.5961538461538461,
+          "selective_risk": 0.0,
+          "accepted_count": 31,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9423076923076923,
+          "selective_risk": 0.08163265306122448,
+          "accepted_count": 49,
+          "accepted_errors": 4,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.65,
+          "achieved_coverage": 0.7884615384615384,
+          "selective_risk": 0.0,
+          "accepted_count": 41,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.9423076923076923,
+          "selective_risk": 0.08163265306122448,
+          "accepted_count": 49,
+          "accepted_errors": 4,
+          "total_episodes": 52
+        }
+      }
+    }
+  },
+  {
+    "seed": 1111,
+    "condition": "faulted",
+    "test_episodes_count": 52,
+    "task1_detection": {
+      "detection_rate": 0.5,
+      "false_alarm_rate": 0.0,
+      "mean_ttd_hours": 7.36194920122868,
+      "tp": 24,
+      "n_pos": 48,
+      "fp": 0,
+      "n_clean": 4
+    },
+    "m1_nearest_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.08638583638583638,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m1_secondary_privileged_capacity": {
+      "overall_accuracy": 0.1346153846153846,
+      "macro_f1": 0.03571428571428571,
+      "coverage": 1.0,
+      "selective_risk": 0.8653846153846154,
+      "errors": 45,
+      "total": 52,
+      "is_privileged_prior": true
+    },
+    "m2_spatial_transit_heuristic": {
+      "overall_accuracy": 0.21153846153846154,
+      "macro_f1": 0.08638583638583638,
+      "coverage": 1.0,
+      "selective_risk": 0.7884615384615384,
+      "errors": 41,
+      "total": 52
+    },
+    "m3_conventional_classifier": {
+      "overall_accuracy": 0.8461538461538461,
+      "macro_f1": 0.8154068154068154,
+      "coverage": 1.0,
+      "selective_risk": 0.15384615384615385,
+      "brier_score": 0.2705039173789173,
+      "log_loss": 0.5714410765006174,
+      "ece": 0.14574786324786326,
+      "errors": 8,
+      "total": 52
+    },
+    "m3_selective_confidence_only": {
+      "decision_coverage": 0.9038461538461539,
+      "abstention_rate": 0.09615384615384616,
+      "selective_risk": 0.10638297872340426,
+      "selective_accuracy": 0.8936170212765957,
+      "overall_accuracy_forced": 0.8461538461538461,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.6,
+      "fault_diagnostic_precision": null,
+      "locked_tau": 0.5,
+      "accepted_errors": 5,
+      "accepted_count": 47,
+      "abstained_count": 5,
+      "avoided_errors": 3,
+      "fault_cooccur_count": 5,
+      "total_episodes": 52
+    },
+    "m4_selective_attributor": {
+      "decision_coverage": 0.7692307692307693,
+      "abstention_rate": 0.23076923076923078,
+      "selective_risk": 0.075,
+      "selective_accuracy": 0.925,
+      "overall_accuracy_forced": 0.8461538461538461,
+      "abstention_fault_cooccurrence_rate": 1.0,
+      "selective_error_avoidance_rate": 0.4166666666666667,
+      "fault_diagnostic_precision": 1.0,
+      "abstention_appropriateness_rate": 1.0,
+      "temperature": 0.1000052749944835,
+      "locked_tau": 0.7,
+      "locked_delta": 0.0,
+      "brier_score": 0.2814711341278159,
+      "log_loss": 1.9416987220135793,
+      "ece": 0.13435884590661082,
+      "validation_tuning_report": {
+        "selected_tau": 0.7,
+        "selected_delta": 0.0,
+        "validation_coverage": 0.9487179487179487,
+        "validation_selective_risk": 0.08108108108108109,
+        "target_max_risk": 0.1,
+        "grid_evaluated_count": 40
+      },
+      "accepted_errors": 3,
+      "accepted_count": 40,
+      "abstained_count": 12,
+      "avoided_errors": 5,
+      "diag_vetoes": 12,
+      "diag_true_positives": 12,
+      "fault_cooccur_count": 12,
+      "total_episodes": 52
+    },
+    "target_coverage_evaluations": {
+      "0.30": {
+        "target_coverage": 0.3,
+        "m3_selective": {
+          "locked_tau": 0.9,
+          "achieved_coverage": 0.19230769230769232,
+          "selective_risk": 0.0,
+          "accepted_count": 10,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.75,
+          "selective_risk": 0.05128205128205128,
+          "accepted_count": 39,
+          "accepted_errors": 2,
+          "total_episodes": 52
+        }
+      },
+      "0.50": {
+        "target_coverage": 0.5,
+        "m3_selective": {
+          "locked_tau": 0.75,
+          "achieved_coverage": 0.4423076923076923,
+          "selective_risk": 0.0,
+          "accepted_count": 23,
+          "accepted_errors": 0,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.75,
+          "selective_risk": 0.05128205128205128,
+          "accepted_count": 39,
+          "accepted_errors": 2,
+          "total_episodes": 52
+        }
+      },
+      "0.70": {
+        "target_coverage": 0.7,
+        "m3_selective": {
+          "locked_tau": 0.65,
+          "achieved_coverage": 0.6538461538461539,
+          "selective_risk": 0.08823529411764706,
+          "accepted_count": 34,
+          "accepted_errors": 3,
+          "total_episodes": 52
+        },
+        "m4_selective": {
+          "locked_tau": 0.9,
+          "locked_delta": 0.0,
+          "achieved_coverage": 0.75,
+          "selective_risk": 0.05128205128205128,
+          "accepted_count": 39,
+          "accepted_errors": 2,
+          "total_episodes": 52
+        }
+      }
+    }
+  }
+]
