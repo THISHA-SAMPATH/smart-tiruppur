@@ -536,19 +536,35 @@ tr:hover td {
 
 .unit-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+
+.unit-grid > a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
 }
 
 .unit-grid .card {
   height: 100%;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 
-.unit-grid a:hover .card {
+.unit-grid > a:hover .card {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-  border-color: #cbd5e1;
+  border-color: #94a3b8;
+}
+
+.unit-grid > a:hover .card span:last-child {
+  transform: translateX(3px);
 }
 
 .workspace-page {

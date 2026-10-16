@@ -535,7 +535,7 @@ function BuyerView() {
             }}
           />
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {filtered.map((u) => {
               const isSel = selected?.unit_id === u.unit_id;
               return (
@@ -543,6 +543,7 @@ function BuyerView() {
                   key={u.unit_id}
                   onClick={() => selectUnit(u)}
                   style={{
+                    width: "100%",
                     textAlign: "left",
                     padding: "10px 12px",
                     borderRadius: "var(--radius-sm)",
@@ -553,10 +554,22 @@ function BuyerView() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    gap: "10px",
+                    boxSizing: "border-box",
                   }}
                 >
-                  <div>
-                    <div style={{ fontSize: "13px", fontWeight: isSel ? 700 : 500, color: isSel ? "var(--teal)" : "var(--ink)" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: isSel ? 700 : 600,
+                        color: isSel ? "var(--teal)" : "var(--ink)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={u.name}
+                    >
                       {u.name}
                     </div>
                     <div className="mono" style={{ fontSize: "11px", color: "var(--ink-soft)", marginTop: "2px" }}>
@@ -565,6 +578,7 @@ function BuyerView() {
                   </div>
                   <span
                     style={{
+                      flexShrink: 0,
                       fontSize: "9.5px",
                       fontWeight: 700,
                       padding: "2px 6px",

@@ -73,35 +73,73 @@ export default function IndustrialUnitsLayer({
           icon={industrialIcon}
         >
           <Popup>
-            <div style={{ fontFamily: "IBM Plex Sans, sans-serif", padding: "4px", minWidth: "200px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
-                <h4 style={{ margin: 0, fontFamily: "Fraunces, serif", fontSize: "16px", color: "#1f2a24" }}>
+            <div style={{ fontFamily: "Inter, sans-serif", padding: "6px", minWidth: "220px", color: "var(--ink, #0f172a)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "8px" }}>
+                <h4 style={{ margin: 0, fontWeight: 700, fontSize: "14.5px", color: "#0f172a", lineHeight: 1.3 }}>
                   {unit.name || unit.unit_id}
                 </h4>
-                <span className="mono small muted" style={{ fontSize: "11px" }}>{unit.unit_id}</span>
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    color: "#475569",
+                    background: "#f1f5f9",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    border: "1px solid #e2e8f0",
+                    flexShrink: 0,
+                  }}
+                >
+                  {unit.unit_id}
+                </span>
               </div>
 
-              <div style={{ fontSize: "12.5px", lineHeight: "1.6", marginBottom: "10px" }}>
-                <div><strong>CETP/ZLD Status:</strong> {unit.cetp_zld_status || "—"}</div>
-                <div><strong>Compliance:</strong> <span style={{ color: "#3e6b63", fontWeight: 600 }}>{unit.compliance_status || "—"}</span></div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "90px 1fr",
+                  gap: "4px 8px",
+                  fontSize: "12px",
+                  background: "#f8fafc",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  border: "1px solid #e2e8f0",
+                  marginBottom: "10px",
+                }}
+              >
+                <span style={{ color: "#64748b" }}>Status:</span>
+                <span style={{ fontWeight: 600 }}>{unit.cetp_zld_status || "Operational ZLD"}</span>
+
+                <span style={{ color: "#64748b" }}>Compliance:</span>
+                <span style={{ color: "#059669", fontWeight: 700 }}>{unit.compliance_status || "Compliant"}</span>
+
                 {unit.reuse_percentage != null && (
-                  <div><strong>Water Reuse:</strong> {unit.reuse_percentage}%</div>
+                  <>
+                    <span style={{ color: "#64748b" }}>Water Reuse:</span>
+                    <span className="mono" style={{ fontWeight: 700, color: "#0d9488" }}>{unit.reuse_percentage}%</span>
+                  </>
                 )}
               </div>
 
               <Link
                 href={`/units/${unit.unit_id}`}
-                className="btn btn-ghost"
+                className="btn btn-primary"
                 style={{
-                  display: "inline-block",
+                  display: "block",
                   width: "100%",
                   textAlign: "center",
-                  padding: "5px 10px",
+                  padding: "6px 12px",
                   fontSize: "12px",
+                  fontWeight: 600,
                   textDecoration: "none",
+                  borderRadius: "4px",
+                  background: "#0d9488",
+                  color: "#ffffff",
+                  boxSizing: "border-box",
                 }}
               >
-                View Unit Details →
+                View Facility Profile →
               </Link>
             </div>
           </Popup>
