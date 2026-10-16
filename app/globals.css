@@ -686,3 +686,385 @@ tr:hover td {
     font-weight: 600;
   }
 }
+
+/* ==========================================================================
+   GROUNDWATER OUTLOOK & FIRKA STEWARDSHIP STYLES
+   ========================================================================== */
+
+.groundwater-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.groundwater-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.groundwater-card:hover {
+  border-color: #cbd5e1;
+}
+
+.groundwater-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.groundwater-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin: 4px 0 6px;
+}
+
+.groundwater-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 280px;
+}
+
+.groundwater-select-wrapper label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.groundwater-select {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  color: var(--ink);
+  background: #ffffff;
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-md);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.groundwater-select:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.scenario-control {
+  background: #f8fafc;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.scenario-control-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.scenario-buttons-group {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hairline);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  gap: 2px;
+}
+
+.scenario-button {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.scenario-button:hover:not(:disabled) {
+  color: var(--ink);
+  background: #f1f5f9;
+}
+
+.scenario-button.active {
+  background: var(--ink);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+}
+
+.scenario-button.active.scenario-conservative {
+  background: #10b981;
+}
+
+.scenario-button.active.scenario-stress {
+  background: #f59e0b;
+}
+
+.groundwater-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--hairline);
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.groundwater-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  background: #f8fafc;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+}
+
+.groundwater-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.groundwater-summary-item span {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.groundwater-summary-item strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.risk-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+
+.risk-pill::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.risk-safe,
+.risk-pill.risk-safe {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.risk-semi-critical,
+.risk-pill.risk-semi-critical {
+  background: rgba(202, 138, 4, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(202, 138, 4, 0.3);
+}
+
+.risk-critical,
+.risk-pill.risk-critical {
+  background: rgba(234, 88, 12, 0.12);
+  color: #c2410c;
+  border: 1px solid rgba(234, 88, 12, 0.3);
+}
+
+.risk-over-exploited,
+.risk-pill.risk-over-exploited {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.groundwater-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.groundwater-metric {
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.groundwater-metric:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow-md);
+}
+
+.groundwater-metric > span {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.groundwater-metric > strong {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.groundwater-metric > small {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Stage Progress Gauge */
+.stage-gauge-container {
+  background: #ffffff;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage-gauge-track {
+  position: relative;
+  height: 20px;
+  border-radius: 999px;
+  display: flex;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.stage-gauge-segment {
+  height: 100%;
+  position: relative;
+}
+
+.stage-gauge-segment.safe {
+  width: 56%;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+.stage-gauge-segment.semi-critical {
+  width: 16%;
+  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+.stage-gauge-segment.critical {
+  width: 8%;
+  background: linear-gradient(90deg, #fb923c 0%, #ea580c 100%);
+}
+
+.stage-gauge-segment.over-exploited {
+  width: 20%;
+  background: linear-gradient(90deg, #f87171 0%, #dc2626 100%);
+}
+
+.stage-gauge-marker-bar {
+  position: relative;
+  height: 24px;
+  margin-top: 4px;
+}
+
+.stage-gauge-pin {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stage-gauge-pin-pointer {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid var(--ink);
+}
+
+.stage-gauge-pin-label {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--ink);
+  color: #ffffff;
+  white-space: nowrap;
+  font-family: "JetBrains Mono", monospace;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+}
+
+.stage-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+.stage-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stage-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}

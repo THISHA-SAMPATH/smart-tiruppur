@@ -267,22 +267,45 @@ export function getSensorReadings(sensor = "S_A", interval = 1) {
 // Groundwater service
 // ---------------------------------------------------------------------------
 
-export function getGroundwaterZones() {
-  return fetchWithFallback<GroundwaterZone[]>(
+import {
+  getFallbackGroundwaterZones,
+  getFallbackGroundwaterAssessment,
+} from "@/lib/groundwater/firka-registry";
+
+export async function getGroundwaterZones() {
+  const res = await fetchWithFallback<GroundwaterZone[]>(
     "groundwater_zones",
     `${GROUNDWATER_BASE_URL}/zones`,
   );
+  if (!res.data || res.data.length === 0) {
+    return {
+      data: getFallbackGroundwaterZones(),
+      stale: true,
+      error: res.error,
+      fetchedAt: new Date().toISOString(),
+    };
+  }
+  return res;
 }
 
-export function getGroundwaterAssessment(
+export async function getGroundwaterAssessment(
   zoneId: string,
   extractionMultiplier = 1,
 ) {
   const params = new URLSearchParams({
     extraction_multiplier: String(extractionMultiplier),
   });
-  return fetchWithFallback<GroundwaterAssessment>(
+  const res = await fetchWithFallback<GroundwaterAssessment>(
     `groundwater_assessment_${zoneId}_${extractionMultiplier}`,
     `${GROUNDWATER_BASE_URL}/zones/${encodeURIComponent(zoneId)}/assess?${params.toString()}`,
   );
+  if (!res.data) {
+    return {
+      data: getFallbackGroundwaterAssessment(zoneId, extractionMultiplier),
+      stale: true,
+      error: res.error,
+      fetchedAt: new Date().toISOString(),
+    };
+  }
+  return res;
 }
