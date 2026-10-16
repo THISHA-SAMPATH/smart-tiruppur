@@ -52,6 +52,10 @@ function AlertCard({
       setMessage("Enter the action taken before recording it.");
       return;
     }
+    if (trimmedAction === (ev.regulator_action ?? "").trim()) {
+      setMessage("This action is already recorded for this event.");
+      return;
+    }
     setSaving(true);
     setMessage(null);
     const error = await onRecordAction(ev.event_id, trimmedAction);

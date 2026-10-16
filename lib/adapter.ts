@@ -136,18 +136,32 @@ export function adaptHariEvent(raw: HariSimulateEventResponse): ContractEvent {
 export function mapLedgerEntryToContractEvent(
   entry: LedgerEntry,
 ): ContractEvent {
-  const decision = (entry.decision?.toLowerCase() as Decision) || "abstain";
+  const rawDecision = entry.decision?.trim().toLowerCase();
+
+  const decision: Decision =
+    rawDecision === "investigate" ||
+    rawDecision === "abstain" ||
+    rawDecision === "normal"
+      ? rawDecision
+      : "abstain";
+
+  const confidence =
+    typeof entry.confidence === "number" && Number.isFinite(entry.confidence)
+      ? Math.min(1, Math.max(0, entry.confidence))
+      : 0;
+
   return {
     event_id: entry.event_id,
     timestamp: entry.timestamp,
     status: decision === "investigate" ? "flagged" : "normal",
     decision,
     most_likely_source: decision === "investigate" ? entry.unit_id : null,
-    source_probability: decision === "investigate" ? entry.confidence : null,
+    source_probability: decision === "investigate" ? confidence : null,
     top_candidates: [],
     estimated_release_severity: null,
-    confidence: entry.confidence ?? 0,
-    evidence_sufficiency: decision === "abstain" ? "insufficient" : "adequate",
+    confidence,
+    evidence_sufficiency:
+      decision === "abstain" ? "insufficient" : "adequate",
     sensor_conditions: {
       missing_sensor_count: 0,
       drift_detected: false,

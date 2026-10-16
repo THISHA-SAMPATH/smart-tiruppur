@@ -46,6 +46,8 @@ function writeCache<T>(key: string, data: T) {
   }
 }
 
+const REQUEST_TIMEOUT_MS = 6000;
+
 async function fetchWithFallback<T>(
   key: string,
   url: string,
@@ -54,11 +56,32 @@ async function fetchWithFallback<T>(
   // A cached mutation response is unsafe: it can report an action as recorded
   // even when a later request never reached the ledger.
   const isReadRequest = !init?.method || init.method.toUpperCase() === "GET";
+
+  const controller = new AbortController();
+  const callerSignal = init?.signal;
+
+  if (callerSignal?.aborted) {
+    controller.abort(callerSignal.reason);
+  }
+
+  const onCallerAbort = () => {
+    controller.abort(callerSignal?.reason);
+  };
+
+  if (callerSignal && !callerSignal.aborted) {
+    callerSignal.addEventListener("abort", onCallerAbort, { once: true });
+  }
+
+  const timeoutId = setTimeout(() => {
+    controller.abort(new Error("Request timed out after 6000ms"));
+  }, REQUEST_TIMEOUT_MS);
+
   try {
     const res = await fetch(url, {
       ...init,
       headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
       cache: "no-store",
+      signal: controller.signal,
     });
     if (!res.ok) {
       throw new Error(`${res.status} ${res.statusText}`);
@@ -87,6 +110,11 @@ async function fetchWithFallback<T>(
       error: err instanceof Error ? err.message : "Request failed",
       fetchedAt: null,
     };
+  } finally {
+    clearTimeout(timeoutId);
+    if (callerSignal) {
+      callerSignal.removeEventListener("abort", onCallerAbort);
+    }
   }
 }
 
