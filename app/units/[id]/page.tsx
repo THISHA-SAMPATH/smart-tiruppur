@@ -8,6 +8,7 @@ import { resolveLedgerUrl } from "@/lib/config";
 import type { DppResponse, LedgerUnit, UnitLedgerResponse } from "@/lib/types";
 import StaleBanner from "@/components/StaleBanner";
 import { useAuth } from "@/components/AuthProvider";
+import QrCodeDisplay from "@/components/QrCodeDisplay";
 
 export default function UnitDetailPage() {
   const params = useParams<{ id: string }>();
@@ -173,15 +174,15 @@ export default function UnitDetailPage() {
                   Open verification page
                 </Link>
               )}
-              {dpp.qr_url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={resolveLedgerUrl(dpp.qr_url)}
-                  alt="DPP QR code"
-                  width={72}
-                  height={72}
-                />
-              )}
+              <QrCodeDisplay
+                value={
+                  typeof window !== "undefined"
+                    ? `${window.location.origin}/verify?verification_id=${dpp.verification_id}`
+                    : `/verify?verification_id=${dpp.verification_id}`
+                }
+                size={72}
+                title={`DPP QR Passport: ${dpp.verification_id}`}
+              />
             </div>
           </div>
         ) : (

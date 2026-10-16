@@ -94,15 +94,40 @@ async function fetchWithFallback<T>(
 // Vamika's ledger service
 // ---------------------------------------------------------------------------
 
-export function getUnits() {
-  return fetchWithFallback<LedgerUnit[]>("units", `${LEDGER_BASE_URL}/units`);
+import {
+  FALLBACK_UNITS,
+  getFallbackUnitDpp,
+  getFallbackVerify,
+} from "@/lib/ledger/fallback-units";
+
+export async function getUnits() {
+  const res = await fetchWithFallback<LedgerUnit[]>("units", `${LEDGER_BASE_URL}/units`);
+  if (!res.data || res.data.length === 0) {
+    return {
+      data: FALLBACK_UNITS,
+      stale: true,
+      error: res.error,
+      fetchedAt: new Date().toISOString(),
+    };
+  }
+  return res;
 }
 
-export function getUnit(unitId: string) {
-  return fetchWithFallback<LedgerUnit>(
+export async function getUnit(unitId: string) {
+  const res = await fetchWithFallback<LedgerUnit>(
     `unit_${unitId}`,
     `${LEDGER_BASE_URL}/units/${unitId}`,
   );
+  if (!res.data) {
+    const fallback = FALLBACK_UNITS.find((u) => u.unit_id.toLowerCase() === unitId.toLowerCase()) || FALLBACK_UNITS[0];
+    return {
+      data: fallback,
+      stale: true,
+      error: res.error,
+      fetchedAt: new Date().toISOString(),
+    };
+  }
+  return res;
 }
 
 function isDashboardDpp(
@@ -143,9 +168,17 @@ export async function getUnitDpp(unitId: string): Promise<FetchResult<DppRespons
     `dpp_${unitId}`,
     `${LEDGER_BASE_URL}/units/${unitId}/dpp`,
   );
+  if (!res.data) {
+    return {
+      data: getFallbackUnitDpp(unitId),
+      stale: true,
+      error: res.error,
+      fetchedAt: new Date().toISOString(),
+    };
+  }
   return {
     ...res,
-    data: res.data ? adaptLedgerDpp(res.data) : null,
+    data: adaptLedgerDpp(res.data),
   };
 }
 
@@ -169,11 +202,21 @@ export async function getGlobalEvents(): Promise<FetchResult<ContractEvent[]>> {
   };
 }
 
-export function getVerify(verificationId: string) {
-  return fetchWithFallback<VerifyResponse>(
-    `verify_${verificationId}`,
-    `${LEDGER_BASE_URL}/verify/${verificationId}`,
+export async function getVerify(verificationId: string) {
+  const cleanId = verificationId.trim();
+  const res = await fetchWithFallback<VerifyResponse>(
+    `verify_${cleanId}`,
+    `${LEDGER_BASE_URL}/verify/${encodeURIComponent(cleanId)}`,
   );
+  if (!res.data) {
+    return {
+      data: getFallbackVerify(cleanId),
+      stale: true,
+      error: res.error,
+      fetchedAt: new Date().toISOString(),
+    };
+  }
+  return res;
 }
 
 export function postEventToLedger(event: ContractEvent) {

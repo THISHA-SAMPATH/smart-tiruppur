@@ -1,6 +1,7 @@
 "use client";
 
 import type { DppResponse, LedgerUnit } from "@/lib/types";
+import QrCodeDisplay from "@/components/QrCodeDisplay";
 
 interface DppCertificateModalProps {
   isOpen: boolean;
@@ -218,25 +219,32 @@ export default function DppCertificateModal({
                 Facility ID: {unit.unit_id} | Location: Tiruppur Industrial Cluster
               </p>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <p
-                style={{
-                  fontSize: "11px",
-                  textTransform: "uppercase",
-                  color: "#6b7280",
-                  fontWeight: 700,
-                  margin: "0 0 4px",
-                }}
-              >
-                Issue Date
-              </p>
-              <p style={{ fontSize: "14px", fontWeight: 600, margin: 0, color: "#111827" }}>
-                {new Date(dpp.issue_date || Date.now()).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
+            <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: "14px", justifyContent: "flex-end" }}>
+              <QrCodeDisplay
+                value={`/verify?verification_id=${verificationHash}`}
+                size={54}
+                title={`EU DPP Passport: ${verificationHash}`}
+              />
+              <div>
+                <p
+                  style={{
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    color: "#6b7280",
+                    fontWeight: 700,
+                    margin: "0 0 4px",
+                  }}
+                >
+                  Issue Date
+                </p>
+                <p style={{ fontSize: "14px", fontWeight: 600, margin: 0, color: "#111827" }}>
+                  {new Date(dpp.issue_date || Date.now()).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
             </div>
           </div>
 

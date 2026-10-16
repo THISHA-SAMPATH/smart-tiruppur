@@ -6,8 +6,9 @@ import { getUnitDpp, getUnits, getVerify } from "@/lib/api";
 import { resolveLedgerUrl } from "@/lib/config";
 import type { DppResponse, LedgerUnit, VerifyResponse } from "@/lib/types";
 import StaleBanner from "@/components/StaleBanner";
-import QrCameraScannerModal from "@/components/QrCameraScannerModal";
+import QrCameraScannerModal, { parseQrScannedCode } from "@/components/QrCameraScannerModal";
 import DppCertificateModal from "@/components/DppCertificateModal";
+import QrCodeDisplay from "@/components/QrCodeDisplay";
 
 type LangKey = "EN" | "DE" | "FR" | "IT" | "ES";
 
@@ -258,17 +259,41 @@ function BuyerView() {
   }
 
   async function handleVerify(idOverride?: string) {
-    const id = idOverride ?? verifyId;
-    if (!id) return;
+    const rawId = idOverride ?? verifyId;
+    const cleanId = parseQrScannedCode(rawId);
+    if (!cleanId) return;
+    setVerifyId(cleanId);
     setVerifyError(null);
-    const r = await getVerify(id);
-    if (r.data) setVerifyResult(r.data);
-    else setVerifyError(r.error || "Verification ID not found.");
+    const r = await getVerify(cleanId);
+    if (r.data) {
+      setVerifyResult(r.data);
+      // Auto-match unit in the list if available
+      const matchedUnit = units.find(
+        (u) =>
+          u.unit_id.toLowerCase() === r.data!.unit_id.toLowerCase() ||
+          cleanId.toLowerCase().includes(u.unit_id.toLowerCase())
+      );
+      if (matchedUnit && matchedUnit.unit_id !== selected?.unit_id) {
+        void selectUnit(matchedUnit);
+      }
+    } else {
+      setVerifyError(r.error || "Verification ID not found.");
+    }
   }
 
   const handleCameraScanSuccess = (scannedCode: string) => {
-    setVerifyId(scannedCode);
-    handleVerify(scannedCode);
+    const cleanId = parseQrScannedCode(scannedCode);
+    setVerifyId(cleanId);
+    void handleVerify(cleanId);
+
+    // If matches a unit, select it
+    const lower = cleanId.toLowerCase();
+    const matched = units.find(
+      (u) => u.unit_id.toLowerCase() === lower || lower.includes(u.unit_id.toLowerCase())
+    );
+    if (matched) {
+      void selectUnit(matched);
+    }
   };
 
   const filtered = units.filter(
@@ -639,16 +664,16 @@ function BuyerView() {
                     border: "1px solid var(--hairline)",
                   }}
                 >
-                  {dpp.qr_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={resolveLedgerUrl(dpp.qr_url)}
-                      alt="DPP QR code"
-                      width={76}
-                      height={76}
-                      style={{ borderRadius: "4px", background: "#ffffff", padding: "4px", border: "1px solid var(--hairline)" }}
-                    />
-                  )}
+                  <QrCodeDisplay
+                    value={
+                      typeof window !== "undefined"
+                        ? `${window.location.origin}/verify?verification_id=${dpp.verification_id}`
+                        : `/verify?verification_id=${dpp.verification_id}`
+                    }
+                    size={76}
+                    title={`Garment DPP Passport: ${dpp.verification_id}`}
+                    showDownload
+                  />
                   <div style={{ fontSize: "12px" }}>
                     <div style={{ color: "var(--ink-soft)", fontWeight: 600 }}>{t.hashLabel}</div>
                     <div className="mono" style={{ fontWeight: 700, color: "var(--teal)", fontSize: "13px", marginTop: "2px" }}>

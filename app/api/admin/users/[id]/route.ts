@@ -53,6 +53,13 @@ export async function PATCH(
       data: updateData,
     });
 
+    if (!updatedUser) {
+      return NextResponse.json(
+        { error: "User not found." },
+        { status: 404 }
+      );
+    }
+
     const { passwordHash: _, ...sanitized } = updatedUser;
 
     return NextResponse.json({ success: true, user: sanitized });

@@ -5,6 +5,7 @@ import { resolveLedgerUrl } from "@/lib/config";
 import StaleBanner from "@/components/StaleBanner";
 import ZldMembraneHealthCard from "@/components/ZldMembraneHealthCard";
 import WaterRecyclingRoiCard from "@/components/WaterRecyclingRoiCard";
+import QrCodeDisplay from "@/components/QrCodeDisplay";
 
 export const dynamic = "force-dynamic";
 
@@ -119,16 +120,11 @@ export default async function IndustryDashboardPage() {
                   Verify DPP Passport ↗
                 </Link>
               )}
-              {dpp.qr_url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={resolveLedgerUrl(dpp.qr_url)}
-                  alt="DPP Verification QR Code"
-                  width={64}
-                  height={64}
-                  style={{ border: "1px solid var(--hairline)", borderRadius: "var(--radius-sm)" }}
-                />
-              )}
+              <QrCodeDisplay
+                value={`/verify?verification_id=${dpp.verification_id}`}
+                size={68}
+                title={`DPP Verification QR: ${dpp.verification_id}`}
+              />
             </div>
           </div>
         ) : (
